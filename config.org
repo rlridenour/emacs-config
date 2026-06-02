@@ -1,0 +1,531 @@
+#+title: Emacs Configuration
+#+author: Randy Ridenour
+#+email: rlridenour@fastmail.com
+#+STARTUP: overview
+#+PROPERTY: header-args :tangle init.el
+
+
+
+* Early Init File
+:PROPERTIES:
+:header-args: :tangle early-init.el
+:END:
+
+** Header
+
+Set the header and prevent package initialization.
+
+#+begin_src emacs-lisp
+  ;; early-init.el -*- lexical-binding: t; -*-
+#+end_src
+
+#+begin_src emacs-lisp :lexical t
+;;  (setq package-enable-at-startup nil)
+  (setq inhibit-default-init nil)
+#+end_src
+
+** Performance
+
+*** Garbage Collection
+
+#+begin_src emacs-lisp
+  ;; Temporarily increase GC threshold during startup
+  (setq gc-cons-threshold most-positive-fixnum)
+
+  ;; Restore to normal value after startup (e.g. 50MB)
+  (add-hook 'emacs-startup-hook
+	    (lambda () (setq gc-cons-threshold (* 50 1024 1024))))
+#+end_src
+
+*** Native Comp
+
+Improve execution speed.
+
+#+begin_src emacs-lisp
+  (customize-set-variable 'native-comp-speed 2)
+  (customize-set-variable 'native-comp-deferred-compilation t)
+#+end_src
+
+Silence native compilation warnings.
+
+#+begin_src emacs-lisp
+  (setq native-comp-async-report-warnings-errors nil)
+#+end_src
+
+*** File-Name-Handler-Alist
+
+Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
+
+#+begin_src emacs-lisp :lexical t
+  (defvar default-file-name-handler-alist file-name-handler-alist)
+  (setq file-name-handler-alist nil)
+#+end_src
+
+** Personal Identification
+
+Set my name and email.
+
+#+begin_src emacs-lisp
+  (setq user-full-name "Randy Ridenour"
+	user-mail-address "rlridenour@fastmail.com")
+#+end_src
+
+** UI
+
+*** Clean Up UI
+
+Remove unnecessary GUI elements.
+
+#+begin_src emacs-lisp
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (tooltip-mode -1)
+  (setq-default frame-inhibit-implied-resize t)
+  (setq-default inhibit-startup-screen t)
+  (setq-default inhibit-startup-message t)
+  (setq-default initial-scratch-message nil)
+  (setq use-dialog-box nil)
+#+end_src
+
+Silence warning bells.
+
+#+begin_src emacs-lisp
+  (setq ring-bell-function 'ignore)
+#+end_src
+
+Make scrolling smoother.
+
+#+begin_src emacs-lisp
+  (setq scroll-conservatively 10
+	scroll-margin 0)
+#+end_src
+
+*** Initial Frame
+
+Suppress "When done with this frame..." message.
+
+#+begin_src emacs-lisp
+  (setq server-client-instructions nil)
+#+end_src
+
+
+
+Set initial frame size to fullheight.
+
+#+begin_src emacs-lisp
+  (setq frame-resize-pixelwise t)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+#+end_src
+
+Bring new frame to front. From [[https://www.reddit.com/r/emacs/comments/1g2hkh8/a_useful_snippet_to_bring_emacs_client_to_the/][a useful snippet to bring emacs client to the front on OS X : r/emacs]].
+
+#+begin_src emacs-lisp
+  (defun initd/bring-emacs-to-front ()
+    "Using applescript, force the Emacs frame to be activated."
+    (when (eq system-type 'darwin)
+      (start-process "bring-emacs-to-front" nil
+		     "osascript"
+		     "-e"
+		     "tell application \"Emacs\" to activate")))
+  (add-hook 'server-after-make-frame-hook #'initd/bring-emacs-to-front)
+#+end_src
+
+Set the frame title format.
+
+#+begin_src emacs-lisp
+  (setq-default cursor-in-non-selected-windows nil
+		frame-title-format '("%f [%m]"))
+#+end_src
+
+Set window title to file name.
+
+#+begin_src emacs-lisp
+  (setq frame-title-format
+	'(buffer-file-name (:eval (abbreviate-file-name buffer-file-name))
+			   (dired-directory dired-directory
+					    "%b")))
+#+end_src
+
+Focus new frames
+
+#+begin_src emacs-lisp
+  (defun rr/focus-new-client-frame ()
+    (select-frame-set-input-focus (selected-frame)))
+  (add-hook 'server-after-make-frame-hook #'rr/focus-new-client-frame)
+#+end_src
+
+** Font
+
+Set font to Apple's San Francisco
+
+#+begin_src emacs-lisp
+  ;; Main typeface
+  (set-face-attribute 'default nil :family "SF Mono" :height 160 :weight 'medium)
+  ;; Proportionately spaced typeface
+  (set-face-attribute 'variable-pitch nil :family "SF Pro Text" :height 1.0 :weight 'medium)
+  ;; Monospaced typeface
+  (set-face-attribute 'fixed-pitch nil :family "SF Mono" :height 1.0 :weight 'medium)
+#+end_src
+
+Increase font size.
+
+#+begin_src emacs-lisp
+  (set-face-attribute 'default nil :height 160)
+#+end_src
+
+Add some space between lines.
+
+#+begin_src emacs-lisp
+  (setq-default line-spacing 0.25)
+#+end_src
+
+** Footer
+
+#+begin_src emacs-lisp
+  ;; Local Variables:
+  ;; no-byte-compile: t
+  ;; no-native-compile: t
+  ;; no-update-autoloads: t
+  ;; End:
+#+end_src
+
+* Preliminaries
+
+Enable lexical bindings in the exported Emacs Lisp file.
+
+#+begin_src emacs-lisp
+  ;;; init.el -*- lexical-binding: t; -*-
+#+end_src
+
+
+Add Melpa
+
+#+begin_src emacs-lisp
+(with-eval-after-load 'package
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
+#+end_src
+
+Always ensure declared packages.
+
+#+begin_src emacs-lisp
+  (setq use-package-always-ensure t)
+#+end_src
+
+** Custom Variables
+
+Keep custom-set variables separate from configuration file.
+
+#+begin_src emacs-lisp
+  (setq custom-file (concat user-emacs-directory "custom.el"))
+  (load custom-file)
+#+end_src
+
+Use =C-x c= to kill Emacs.
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
+#+end_src
+
+* File Locations
+** Set Path
+
+Use Exec-Path-From-Shell to set path.
+
+#+begin_src emacs-lisp
+  (use-package exec-path-from-shell
+    :config
+    (exec-path-from-shell-initialize))
+#+end_src
+
+
+Don't make all those files that look like =#foo.ext=.
+
+#+begin_src emacs-lisp
+  (setq create-lockfiles nil)
+#+end_src
+
+** Bookmarks
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :config
+    (require 'bookmark)
+    (bookmark-bmenu-list)
+    (setq bookmark-save-flag 1))
+#+end_src
+
+
+** Trash
+
+Send deleted files to an Emacs folder in system trash.
+
+#+begin_src emacs-lisp
+  (setq delete-by-moving-to-trash t
+	trash-directory "~/.Trash/emacs")
+#+end_src
+
+
+
+
+** Open Config
+
+*** Emacs Config
+
+Open Emacs init file in fixed-pitch mode.
+
+#+begin_src emacs-lisp
+  (defun rr/open-init-file ()
+    (interactive)
+    (progn (find-file "~/.config/emacs/config.org")
+	   (variable-pitch-mode -1)))
+#+end_src
+
+*** Fish Functions
+
+Open fish functions directory.
+
+#+begin_src emacs-lisp
+  (defun open-fish-functions ()
+    (interactive)
+    (dired "~/.config/fish/functions"))
+#+end_src
+
+
+* Completion
+
+** Vertico
+
+#+begin_src emacs-lisp
+  ;; Enable Vertico.
+  (use-package vertico
+
+    :custom
+    (vertico-cycle t)
+    ;; (vertico-scroll-margin 0) ;; Different scroll margin
+    ;; (vertico-count 20) ;; Show more candidates
+    ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+    ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+    :init
+    (vertico-mode)
+    :config
+    (vertico-multiform-mode 1)
+    (setq vertico-multiform-categories
+	  '((file grid)
+	    ;; (jinx grid (vertico-grid-annotate . 20))
+	    ;; (citar buffer)
+	    ))
+    :bind
+    (:map vertico-map
+	  ;; keybindings to cycle through vertico results.
+	  ("C-h" . #'+minibuffer-up-dir)
+	  ("<backspace>" . #'vertico-directory-delete-char)
+	  ("RET" . #'vertico-directory-enter)))
+
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :init
+    (savehist-mode))
+
+  ;; Emacs minibuffer configurations.
+  (use-package emacs
+    :custom
+    ;; Enable context menu. `vertico-multiform-mode' adds a menu in the minibuffer
+    ;; to switch display modes.
+    (context-menu-mode t)
+    ;; Support opening new minibuffers from inside existing minibuffers.
+    (enable-recursive-minibuffers t)
+    ;; Hide commands in M-x which do not work in the current mode.  Vertico
+    ;; commands are hidden in normal buffers. This setting is useful beyond
+    ;; Vertico.
+    (read-extended-command-predicate #'command-completion-default-include-p)
+    ;; Do not allow the cursor in the minibuffer prompt
+    (minibuffer-prompt-properties
+     '(read-only t cursor-intangible t face minibuffer-prompt)))
+#+end_src
+
+** Orderless
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+** Marginalia
+
+Enrich existing commands with completion annotations
+
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :ensure
+    :config (marginalia-mode))
+#+end_src
+
+** Consult
+
+#+begin_src emacs-lisp
+  (use-package consult
+    :ensure
+    :demand
+    :bind
+    (("C-x b" . #'consult-buffer)
+     ("s-f" . #'consult-line)
+     ("s-r" . #'consult-buffer)
+     ("M-y" . #'consult-yank-pop)))
+#+end_src
+
+Some functions to use with Consult.
+
+#+begin_src emacs-lisp
+  (defun rlr/consult-rg ()
+    "Function for consult-ripgrep with the universal-argument."
+    (interactive)
+    (consult-ripgrep (list 4)))
+
+  (defun rlr/consult-fd ()
+    "Function for consult-find with the universal-argument."
+    (interactive)
+    (consult-find (list 4)))
+#+end_src
+
+** Embark
+
+#+begin_src emacs-lisp :tangle no
+  (use-package embark
+    :bind
+    (("C-." . #'embark-act)
+     ("C-S-a" . #'embark-act)
+     ("C-:" . #'embark-dwim)
+     ("C-h B" . #'embark-bindings))
+    :init
+    (setq prefix-help-command #'embark-prefix-help-command)
+    :config
+    (add-to-list 'display-buffer-alist
+		 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+		   nil
+		   (window-parameters (mode-line-format . none)))))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (use-package embark-consult
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+
+** Cape
+
+#+begin_src emacs-lisp :tangle no
+  (use-package cape
+    :commands (cape-file)
+    :bind
+    (("M-p p" . #'completion-at-point) ;; capf
+     ("M-p d" . #'cape-dabbrev)        ;; or dabbrev-completion
+     ("M-p a" . #'cape-abbrev)
+     ("M-p w" . #'cape-dict)
+     ("M-p \\" . #'cape-tex)
+     ("M-p _" . #'cape-tex)
+     ("M-p ^" . #'cape-tex))
+    :init
+    ;; Add to the global default value of `completion-at-point-functions' which is
+    ;; used by `completion-at-point'.  The order of the functions matters, the
+    ;; first function returning a result wins.  Note that the list of buffer-local
+    ;; completion functions takes precedence over the global list.
+    (add-hook 'completion-at-point-functions #'cape-dabbrev)
+    (add-hook 'completion-at-point-functions #'cape-file)
+    (add-hook 'completion-at-point-functions #'cape-elisp-block)
+    (add-hook 'completion-at-point-functions #'cape-history)
+    )
+#+end_src
+
+** Corfu
+
+#+begin_src emacs-lisp :tangle no
+    :custom
+    (corfu-cycle t)
+    :config
+    (global-corfu-mode))
+#+end_src
+
+** Abbrev
+
+#+begin_src emacs-lisp :tangle no
+  (set-default 'abbrev-mode t)
+  (load "~/Dropbox/emacs/my-emacs-abbrev")
+#+end_src
+
+** Snippets
+
+*** Yasnippet
+
+YASnippet is a template system for Emacs.
+
+https://github.com/joaotavora/yasnippet
+
+#+begin_src emacs-lisp :tangle no
+  (use-package yasnippet
+    :config
+    :custom
+    (yas-snippet-dirs '("~/.config/emacs/snippets"))
+    (yas-global-mode 1))
+#+end_src
+
+*** Yankpad
+
+#+begin_src emacs-lisp :tangle no
+  (use-package yankpad
+    :ensure
+    :init
+    (setq yankpad-file "~/Library/Mobile Documents/com~apple~CloudDocs/org/yankpad.org")
+    :bind
+    (("<f6>" . #'yankpad-insert)))
+#+end_src
+
+
+
+
+
+* Finish
+
+** Reload Init
+
+This reloads the Emacs config file to test changes.
+
+#+begin_src emacs-lisp
+  (defun reload-user-init-file()
+    (interactive)
+    (load-file user-init-file))
+#+end_src
+
+
+** Display Startup Time
+
+#+begin_src emacs-lisp
+  (defun rlr/display-startup-time ()
+    (message "Emacs loaded in %s with %d garbage collections."
+	     (format "%.2f seconds"
+		     (float-time
+		(time-subtract after-init-time before-init-time)))
+	     gcs-done))
+
+  (add-hook 'emacs-startup-hook #'rlr/display-startup-time)
+#+end_src
+
+
+
+
+** Set Default Directory
+
+#+begin_src emacs-lisp
+  (setq default-directory "~/")
+#+end_src
+
+** Footer
+
+#+begin_src emacs-lisp
+  ;; Local Variables:
+  ;; no-byte-compile: t
+  ;; no-native-compile: t
+  ;; no-update-autoloads: t
+  ;; End:
+#+end_src
