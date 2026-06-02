@@ -17,9 +17,8 @@ dist/
 *.~undo-tree
 
 .DS_Store
-
-
-
+*.eld
+history
 elpaca/
 eshell/
 eln-cache/
