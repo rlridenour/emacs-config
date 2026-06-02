@@ -1,0 +1,10 @@
+#+LANGUAGE: en-us
+#+EXPORT_FILE_NAME: canvas.html
+#+HTML_DOCTYPE: html5
+#+OPTIONS: toc:nil
+#+OPTIONS: title:nil
+#+OPTIONS: html-style:nil
+#+OPTIONS: num:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://randyridenour.net/css/canvas-slides.css"/>
+
+#+include: "canvas-data.org" :minlevel 1

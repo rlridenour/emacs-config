@@ -1,0 +1,4 @@
+#name : (date)
+# key: datelisp
+# --
+(insert (format-time-string "%Y%m%d")))

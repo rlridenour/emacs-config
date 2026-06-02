@@ -1,0 +1,48 @@
+# -*- mode: snippet -*-
+# name: beamer header
+# key: beamer
+# group: beamer
+# --
+
+#+TITLE: ${1:Title}
+:drawer:
+#+AUTHOR: ${2:Dr.} Ridenour
+#+DATE: `(format-time-string "%B %d, %Y")`
+#+SUBTITLE: $3
+#+BEAMER_HEADER: \institute{Department of Philosophy}
+#+LANGUAGE: en-us
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_options: [aspectratio=169,12pt,ignorenonframetext]
+#+BEAMER_THEME: basicwhite[sections]
+# Use univ or school options for title page logos.
+#+OPTIONS: H:3
+#+LATEX_HEADER: \usepackage{fancyvrb, graphicx, amsmath, amssymb, bm, here}
+# #+LATEX_HEADER: \setbeameroption{show notes on second screen}
+#+LATEX_HEADER: \setbeamerfont{note page}{size=\footnotesize}
+#+LATEX_HEADER: \addtobeamertemplate{note page}{\setbeamerfont{itemize/enumerate subbody}{size=\footnotesize}}{}
+#+LATEX_HEADER: \setbeamercolor{alerted text}{fg=black}
+#+LATEX_HEADER: \setbeamerfont{alerted text}{series=\bfseries}
+#+LATEX_HEADER: \mode<article>{\setbeamertemplate{alerted text begin}{\bfseries\upshape} \setbeamertemplate{alerted text end}{}}
+#+LATEX_HEADER: \usepackage{hyperref}
+#+LATEX_HEADER: \hypersetup{pdfkeywords={SP-Right}}
+#+LATEX_COMPILER: pdflatex
+#+OPTIONS: toc:nil
+#+startup: beamer 
+:end:
+
+*** Title :B_fullframe:
+:PROPERTIES:
+:BEAMER_env: fullframe
+:END:
+
+\maketitle
+
+
+# *** Table of Contents :B_fullframe:
+# :PROPERTIES:
+# :BEAMER_env: fullframe
+# :END:
+
+# \tableofcontents
+
+$0

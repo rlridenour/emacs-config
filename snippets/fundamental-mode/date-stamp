@@ -1,0 +1,4 @@
+# name: date string (YYYYMMDD)
+# key: xds
+# --
+`(format-time-string "%Y%m%d")`-

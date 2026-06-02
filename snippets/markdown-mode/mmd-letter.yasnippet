@@ -1,0 +1,26 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: mmdletter
+# group: mmd header
+# name: mmd letter
+# --
+
+latex input:		mmd-letterhead-header  
+Title:				${1:Title}  
+Author:				${2:Randy Ridenour}  
+email:				${3:rlridenour@gmail.com}  
+address:			1904A Alameda St.  
+					Norman, OK  73071
+phone:				${4:(405) 310-9309}  
+Date:				${5:Date}  
+recipient:			${6:Some Recipient}  
+Recipient Address:	${7:Street}  
+					${8:City}, ${9:State}  ${10:ZIP}  
+latex xslt:			custom-letterhead.xslt  
+black and white:	true  
+base header level:	2  
+latex mode:			memoir  
+latex footer:		mmd-letterhead-footer  
+latex input:		mmd-letterhead-begin-doc
+
+$0

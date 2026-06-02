@@ -1,0 +1,25 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: handout
+# group: skeleton
+# name: handout
+# --
+% arara: lualatex: { interaction: nonstopmode, synctex: yes }
+
+\documentclass[11pt]{rlrhandout}
+
+
+\title{${1:Title}}
+\author{Randy Ridenour}
+%\date{}  % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\RaggedRight
+
+$0
+
+%\printbibliography
+
+\end{document}

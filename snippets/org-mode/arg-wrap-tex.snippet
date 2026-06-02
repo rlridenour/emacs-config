@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name : arg-wrap-tex
+# expand-env : ((yas-wrap-around-region nil) (item-string "\\\\item  "))
+# binding :
+# --
+#+BEGIN_EXPORT latex
+\begin{enumerate}
+`(let ((text (yas-selected-text))) (when text (replace-regexp-in-string "^" item-string text)))`$0
+\end{enumerate}
+#+END_EXPORT

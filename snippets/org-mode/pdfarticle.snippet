@@ -1,0 +1,41 @@
+# -*- mode: snippet -*-
+# name: pdf-article
+# key: pdfarticle
+# group: template
+# --
+#+TITLE: ${1:Title}
+:drawer:
+#+AUTHOR: Randy Ridenour
+#+DATE: `(format-time-string "%B %e, %Y")`
+#+LANGUAGE: en-us
+#+LATEX_COMPILER: pdflatex
+#+LaTeX_CLASS: org-article
+#+LaTeX_CLASS_OPTIONS: [11pt]
+#+LaTeX_HEADER: \usepackage{amsmath,amssymb,bm}
+#+LaTeX_HEADER: \usepackage{tabularray}
+#+LaTeX_HEADER: \UseTblrLibrary{booktabs}
+#+LaTeX_HEADER: \usepackage{csquotes}
+#+LaTeX_HEADER: \usepackage{graphicx}
+#+LaTeX_HEADER: \usepackage{wrapfig}
+#+LaTeX_HEADER: \usepackage{rotating}
+#+LaTeX_HEADER: \usepackage{url}
+#+LaTeX_HEADER: \usepackage[normalem]{ulem}
+#+LaTeX_HEADER: \usepackage{microtype}
+#+LaTeX_HEADER: \usepackage[american]{babel}
+#+LaTeX_HEADER: \usepackage[letterpaper,centering]{geometry}
+#+LaTeX_HEADER: \usepackage[sf]{titlesec}
+#+LaTeX_HEADER: \usepackage[parfill]{parskip} % Line between paragraphs
+#+LaTeX_HEADER: % \usepackage[authordate,url=false,isbn=false,backend=biber]{biblatex-chicago} %Change authordate to notes if desired.
+#+LaTeX_HEADER: % \addbibresource{/Users/rlridenour/Dropbox/bibtex/rlr.bib}
+#+LaTeX_HEADER: \clubpenalty = 10000 % Reduce orphans and widows
+#+LaTeX_HEADER: \widowpenalty = 10000
+#+LaTeX_HEADER: \usepackage{enumitem}
+#+LaTeX_HEADER: \setlist[itemize]{label=\textbullet}
+#+LaTeX_HEADER: \setlist{nosep}
+#+LaTeX_HEADER: \usepackage{newpx}
+#+LaTeX_HEADER: \usepackage[T1]{fontenc}
+#+LaTeX_HEADER: \usepackage{hyperref}
+#+OPTIONS: toc:nil
+:end:
+
+$0

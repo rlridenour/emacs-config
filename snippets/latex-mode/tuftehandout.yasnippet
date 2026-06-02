@@ -1,0 +1,33 @@
+# -*- mode: snippet -*-
+# contributor: Mads D. Kristensen <madsdk@gmail.com>
+# contributor : Song Qiang <tsiangsung@gmail.com>
+# key: tuftehandout
+# group: skeleton
+# name: \documentclass{handout} ...
+# --
+\documentclass[nobib]{tufte-handout}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{\`convert #1 \`dirname #1\`/\`basename #1 .tif\`.png}
+\usepackage{hyphenat}
+\usepackage[authordate,url=false,isbn=false,backend=biber]{biblatex-chicago} %Change authordate to notes if desired.
+\addbibresource{/Users/rlridenour/Dropbox/bibtex/randybib.bib}
+
+
+\title{${1:Title}}
+\author{Dr. Randy Ridenour}
+%\date{}  % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+$0
+
+%\printbibliography
+
+\end{document}

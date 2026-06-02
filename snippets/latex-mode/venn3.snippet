@@ -1,0 +1,28 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: venn3
+# group: math
+# name: venn diagram (3 sets)
+# --
+\begin{venndiagram3sets}
+  [
+  tikzoptions={scale=1,thick},
+  showframe=false,
+  labelA=S,
+  labelB=P,
+  labelC=M,
+  labelOnlyA={x},
+  labelOnlyBC={x},
+  labelABC={x}
+  ]
+  \fillANotB
+  \fillBCapC
+  % To put an x on the lines, uncomment the following:
+  % \setpostvennhook
+  % {
+  % \node[above = 1.6cm of labelC] {X};
+  % \node[above left = 1.4cm and .25cm of labelC, rotate=45] {X};
+  % }
+\end{venndiagram3sets}
+
+$0

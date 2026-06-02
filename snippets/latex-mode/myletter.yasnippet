@@ -1,0 +1,38 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: myletter
+# group: skeleton
+# name: myletter
+# --
+% arara: pdflatex: { interaction: nonstopmode }
+\documentclass[12pt]{obuletter} % For OBU letterhead
+% \documentclass[12pt]{myletter} % For personal letterhead
+
+
+% Customize variables --- for the entire list, see obuletter.cls and myletter.cls.
+\newcommand{\obuDept}{Department of Philosophy} % For personal letterhead, use name here.
+\newcommand{\Sender}{Randy Ridenour, Ph.D.}
+\newcommand{\obuTitle}{Professor of Philosophy}
+\newcommand{\obuCollege}{Hobbs School of Theology and Ministry} % For personal letterhead, use title here.
+\newcommand{\obuPhone}{405.585.4432}
+\newcommand{\obuFax}{405.878.2401}
+\newcommand{\obuBox}{61273}
+\newcommand{\closing}{Sincerely,}
+\newcommand{\toName}{${1:Recipient}}
+\newcommand{\toAddress}{${2:Street Address}\\\\${3:City}, ${4:State} ${5:ZIP}}
+
+% \date{} % Uncomment to add a particular date.
+
+\begin{document}
+
+\heading
+
+Dear ${6:Recipient},
+
+% Body of letter goes here.
+$0
+
+\signature
+
+
+\end{document}

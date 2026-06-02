@@ -1,0 +1,29 @@
+# -*- mode: snippet -*-
+# name: roll-sheet
+# key: rollsheet
+# --
+#+TITLE: ${1:F25} 1043${2:A} Attendance
+:drawer:
+#+AUTHOR: Randy Ridenour
+#+DATE: `(format-time-string "%B %e, %Y")`
+#+LANGUAGE: en-us
+#+LATEX_COMPILER: lualatex
+#+LaTeX_CLASS: org-article
+#+LaTeX_CLASS_OPTIONS: [11pt]
+#+LaTeX_HEADER:  \usepackage{tabularray,microtype}
+#+LaTeX_HEADER: \usepackage{polyglossia}
+#+LaTeX_HEADER: \setdefaultlanguage{english}
+#+LaTeX_HEADER: \usepackage[letterpaper,centering, margin=1in]{geometry}
+#+LaTeX_HEADER: \usepackage[parfill]{parskip}
+#+LaTeX_HEADER: \clubpenalty = 10000 % Reduce orphans and widows
+#+LaTeX_HEADER: \widowpenalty = 10000
+#+LaTeX_HEADER: \usepackage{fontspec}
+#+LaTeX_HEADER: \setmainfont{Libertinus Serif}
+#+LaTeX_HEADER: \usepackage[unicode=true]{hyperref}
+#+OPTIONS: toc:nil
+#+OPTIONS: title:nil
+:end:$0
+
+*PHIL 1043$2*\\\\
+*\today*
+

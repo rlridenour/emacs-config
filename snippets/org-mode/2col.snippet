@@ -1,0 +1,21 @@
+# -*- mode: snippet -*-
+# name: 2 column
+# group: beamer
+# key: 2col
+# --
+
+** ${1:Slide title}
+
+*** A       :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.5
+:BEAMER_opt: [t]
+:END:
+
+$0
+
+*** B       :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.5
+:BEAMER_opt: [t]
+:END:

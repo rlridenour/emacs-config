@@ -1,0 +1,94 @@
+# -*- mode: snippet -*-
+# contributor: Mads D. Kristensen <madsdk@gmail.com>
+# contributor : Song Qiang <tsiangsung@gmail.com>
+# key: xvenn
+# group: 
+# name: venn diagram
+# --
+
+% Add to preamble
+% \usepackage{tikz}
+% \usetikzlibrary{shapes,backgrounds}
+
+\def\sub{(0,0) circle (1.5cm)}
+\def\mid{(-60:2cm) circle (1.5cm)}
+\def\pred{(0:2cm) circle (1.5cm)}
+
+
+\begin{tikzpicture}[thick,scale=1, every node/.style={transform shape}]
+  \begin{scope}
+    % A-Sentences
+
+    % \begin{scope}[even odd rule]% Shade S without P
+    %   \clip \pred (-1.5,-1.5) rectangle (1.5,1.5);
+    %   \fill[gray] \sub;
+    % \end{scope}
+
+    % \begin{scope}[even odd rule]% Shade S without M
+    %   \clip \mid (-1.5,-1.5) rectangle (1.5,1.5);
+    %   \fill[gray] \sub;
+    % \end{scope}
+
+    % \begin{scope}[even odd rule]% Shade M without S
+    %   \clip \sub (-0.5,-3.3) rectangle (2.5,0);
+    %   \fill[gray] \mid;
+    % \end{scope}
+
+    % \begin{scope}[even odd rule]% Shade M without P
+    %   \clip \pred (-0.5,-3.3) rectangle (2.5,0);
+    %   \fill[gray] \mid;
+    % \end{scope}
+
+    % \begin{scope}[even odd rule]% Shade P without M
+    %   \clip \mid (-0,-1.5) rectangle (3.5,1.5);
+    %   \fill[gray] \pred;
+    % \end{scope}
+
+    % \begin{scope}[even odd rule]% Shade P without S
+    %   \clip \sub (0,-1.5) rectangle (3.5,1.5);
+    %   \fill[gray] \pred;
+    % \end{scope}
+
+    % E Sentences
+
+    % \begin{scope} %Shade intersection of S and P
+    %   \clip \pred;
+    %   \fill[gray] \sub;
+    % \end{scope}
+
+    % \begin{scope} %Shade intersection of S and M
+    %   \clip \mid;
+    %   \fill[gray] \sub;
+    % \end{scope}
+
+    % \begin{scope} %Shade intersection of M and P
+    %   \clip \pred;
+    %   \fill[gray] \mid;
+    % \end{scope}
+
+    % Mark I and O Sentences
+
+    % \draw (-0.5,0.3) node {1};
+    % \draw (1,0.3) node {2};
+    % \draw (2.5,0.3) node {3};
+    % \draw (0.2,-0.9) node {4};
+    % \draw (1,-0.6) node {5};
+    % \draw (1.8,-0.9) node {6};
+    % \draw (1,-2) node {7};
+
+    % Label Circles
+
+    \draw (-2,-0) node {$S$};
+    \draw (1,-4) node {$M$};
+    \draw (4,0) node {$P$};
+
+    % Draw Circles
+
+    \draw \sub;
+    \draw \pred;
+    \draw \mid;
+  \end{scope}
+
+\end{tikzpicture}
+
+$0

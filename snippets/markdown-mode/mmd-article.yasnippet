@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: mmdarticle
+# group: mmd header
+# name: mmd article
+# --
+
+latex input:		mmd-article-header  
+Title:				${1:Title}  
+Subtitle:			${2:}  
+Author:				${3:Randy Ridenour}
+Affiliation:		${4:Oklahoma Baptist University}  
+Date:				${5:}  
+latex input:		mmd-article-begin-doc  
+latex footer:		mmd-memoir-footer  
+Base Header Level:	3  
+Keywords:			$6
+
+$0
+

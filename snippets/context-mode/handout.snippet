@@ -1,0 +1,54 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: handout
+# name: handout
+# group: setup
+# expand-env: ((yas-indent-line 'fixed))
+# --
+
+\setupinteraction[state=start,  % make hyperlinks active, define metadata
+  title={${1:Title}},
+  % subtitle={${2:Subtitle}},
+  author={${3:Randy Ridenour}},
+  keyword={${4:Keywords}}]
+  
+\setuppapersize[letter]
+\setuppagenumbering[location={footer,middle}]
+\setupwhitespace[medium] % For space between paragraphs
+
+\definefontfamily [linux] [serif] [Linux Libertine O]
+\definefontfamily [linux] [sans]  [Linux Biolinum O]
+\definefontfamily [linux] [mono]  [Linux Libertine O]
+\definefontfamily [linux] [math]  [Linux Libertine O]
+\setupbodyfont[linux]
+
+\setuphead[section][style={\tfa\em}]
+\setuphead[subsection][style={\tf\em}]
+
+
+\setuplayout[
+    backspace=72pt,
+    width=312pt,
+    leftmargin=30pt,
+    rightmargindistance=24pt,
+    rightmargin=144pt,
+    topspace=30pt,
+    header=14pt,
+    headerdistance=28pt,
+    footer=12pt,
+    footerdistance=18pt,
+    height=688pt]
+
+
+
+\starttext
+
+{\tfc \em $1}
+
+{\tfa \em Dr. Randy Ridenour}
+
+{\tfa \em \currentdate}
+
+$0
+
+\stoptext

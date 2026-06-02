@@ -1,0 +1,54 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: article
+# name: article
+# group: setup
+# expand-env: ((yas-indent-line 'fixed))
+# --
+
+\setupinteraction[state=start,  % make hyperlinks active, define metadata
+  title={${1:Title}},
+  % subtitle={${2:Subtitle}},
+  author={${3:Randy Ridenour}},
+  keyword={${4:Keywords}}]
+  
+\setuppapersize[letter]
+\setuppagenumbering[location={footer,middle}]
+\setupwhitespace[medium] % For space between paragraphs
+
+\definefontfamily [linux] [serif] [Linux Libertine O]
+\definefontfamily [linux] [sans]  [Linux Biolinum O]
+\definefontfamily [linux] [mono]  [Linux Libertine O]
+\definefontfamily [linux] [math]  [Linux Libertine O]
+\setupbodyfont[linux]
+
+\setuphead[section][style={\tfb\sc\ss}]
+\setuphead[subsection][style={\tfa\sc\ss}]
+\setuphead[subsubsection][style={\tf\sc\ss}]
+
+\setuplayout[
+    backspace=91pt,
+    width=430pt,
+    margin=44pt,
+    topspace=81pt,
+    header=12pt,
+    headerdistance=25pt,
+    footer=12pt,
+    footerdistance=18pt,
+    height=623pt]
+    
+\starttext
+
+\startalignment[center]
+  \blank[2*big]
+  {\tfc $1}
+  \blank[3*medium]
+  {\tfa $3}
+  \blank[2*medium]
+  {\tfa \currentdate}
+  \blank[3*medium]
+\stopalignment
+
+$0
+
+\stoptext

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: harg
+# group:
+# name: html-argument
+# --
+
+#+ATTR_HTML: :class arg
+1. $0

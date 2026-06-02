@@ -1,0 +1,4 @@
+#name : (current time)
+# key: xtime
+# --
+`(current-time-string)`

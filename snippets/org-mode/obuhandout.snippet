@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: handout
+# key: handout
+# group: template
+# --
+#+TITLE: ${1:Title}
+:drawer:
+#+AUTHOR: Dr. Ridenour
+#+LaTeX_CLASS: org-handout
+#+LaTeX_CLASS_OPTIONS: [11pt]
+#+LaTeX_HEADER: % arara: latexmk: { engine: pdflatex }
+#+LaTeX_HEADER: % \usepackage[authordate,url=false,isbn=false,backend=biber]{biblatex-chicago} %Change authordate to notes if desired.
+#+LaTeX_HEADER: % \addbibresource{/Users/rlridenour/Dropbox/bibtex/rlr.bib}
+#+OPTIONS: toc:nil
+#+OPTIONS: num:1
+#+LATEX: \thispagestyle{empty}
+#+LATEX: \RaggedRight
+:end:
+
+$0

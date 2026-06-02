@@ -1,0 +1,18 @@
+# -*- mode: snippet -*-
+# name: org-plot histogram image
+# --
+#+PLOT: title:"${1:Line Example}"
+#+PLOT: set:"term ${2:$$(yas-choose-value '("svg" "jpeg" "png"))} size 846, 594 font 'Futura,12'"
+#+PLOT: type:2d
+#+PLOT: set:"style histogram ${3:$$(yas-choose-value '("clustered" "rowstacked"))}${3:$(when (equal yas-text "clustered") " gap 1")}"
+#+PLOT: set:"style fill solid 1.0 border -1"
+#+PLOT: set:"key right top"
+#+PLOT: set:"xlabel '${4:x label}'"
+#+PLOT: set:"ylabel '${5:y label}'"
+#+PLOT: set:"xtics font ',10'"
+#+PLOT: set:"ytics font ',10'"
+#+PLOT: set:"yrange [0:]"
+#+PLOT: with:histograms
+#+PLOT: ind:${6:1} deps:(${7:2})
+#+PLOT: file:"${8:image}.${2:$(cond ((equal yas-text "svg") "svg") ((equal yas-text "jpeg") "jpg") ((equal yas-text "png") "png"))}"
+$0

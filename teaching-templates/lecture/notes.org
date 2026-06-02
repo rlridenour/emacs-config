@@ -1,0 +1,31 @@
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [11pt]
+#+LaTeX_HEADER: % arara: latexmk: { engine: pdflatex }
+#+LaTeX_HEADER: \usepackage{beamerarticle}
+#+LaTeX_HEADER: \usepackage{amsmath,amssymb,bm,graphicx,wrapfig,rotating}
+#+LATEX_HEADER: \usepackage[normalem]{ulem}
+#+LaTeX_HEADER: \usepackage{url}
+#+LaTeX_HEADER: \usepackage[normalem]{ulem}
+#+LaTeX_HEADER: \usepackage{microtype}
+#+LaTeX_HEADER: \usepackage[american]{babel}
+#+LaTeX_HEADER: \usepackage[letterpaper,centering]{geometry}
+#+LaTeX_HEADER: \usepackage[parfill]{parskip} % Line between paragraphs
+#+LaTeX_HEADER: % \usepackage[authordate,url=false,isbn=false,backend=biber]{biblatex-chicago} %Change authordate to notes if desired.
+#+LaTeX_HEADER: % \addbibresource{/Users/rlridenour/zotero.bib}
+#+LaTeX_HEADER: \clubpenalty = 10000 % Reduce orphans and widows
+#+LaTeX_HEADER: \widowpenalty = 10000
+#+LaTeX_HEADER: \usepackage{enumitem}
+#+LaTeX_HEADER: \setlist[itemize]{noitemsep} % Comment out for wider separation in lists.
+#+LaTeX_HEADER: \setlist[enumerate]{noitemsep}
+#+LaTeX_HEADER: \usepackage{tcolorbox}
+#+LaTeX_HEADER: \mode<article>{\setbeamertemplate{frame begin}{\begin{tcolorbox}[colback=white, colframe=gray,]} \setbeamertemplate{frame end}{\end{tcolorbox}}}
+#+LaTeX_HEADER: \usepackage{fontspec}
+#+LaTeX_HEADER: \usepackage[math-style=upright]{unicode-math}
+#+LaTeX_HEADER: \usepackage{termes-otf}
+#+LATEX_HEADER: \mode<article>{\setbeamertemplate{alerted text begin}{\bfseries\upshape} \setbeamertemplate{alerted text end}{}}
+#+LaTeX_HEADER:\usepackage{hyperref}
+#+LATEX_COMPILER: lualatex
+#+OPTIONS: toc:nil
+
+
+

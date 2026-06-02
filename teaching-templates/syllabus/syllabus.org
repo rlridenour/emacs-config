@@ -1,0 +1,40 @@
+#+LaTeX_CLASS: org-article
+#+LaTeX_CLASS_OPTIONS: [10pt]
+#+LaTeX_HEADER: \usepackage{amssymb,url,microtype,csquotes,booktabs,longtable,multirow,pdfpages}
+#+LATEX_HEADER: \usepackage[normalem]{ulem}
+#+LaTeX_HEADER: \usepackage[american]{babel}
+#+LaTeX_HEADER: \usepackage[letterpaper,centering,headheight=5in]{geometry}
+#+LaTeX_HEADER: \usepackage[absolute]{textpos}
+#+LaTeX_HEADER: \usepackage[dvipsnames]{xcolor}
+#+LaTeX_HEADER: \definecolor{OBUGREEN}{HTML}{005826}
+#+LaTeX_HEADER: \usepackage[parfill]{parskip} % Line between paragraphs
+#+LaTeX_HEADER: %\usepackage[authordate,url=false,isbn=false,backend=biber]{biblatex-chicago} %Change authordate to notes if desired.
+#+LaTeX_HEADER: %\addbibresource{/Users/rlridenour/Dropbox/bibtex/randybib.bib}
+#+LaTeX_HEADER: \clubpenalty = 10000 % Reduce orphans and widows
+#+LaTeX_HEADER: \widowpenalty = 10000
+#+LaTeX_HEADER: \usepackage{fancyhdr}
+#+LaTeX_HEADER: \pagestyle{fancy}
+#+LaTeX_HEADER: \fancyhead[C]{}
+#+LaTeX_HEADER: \fancyhead[R]{\begin{textblock*}{1in}(6.4in,0.5in) \thepage \end{textblock*} \textbf{\textcolor{OBUGREEN}{\Large SYLLABUS}}}
+#+LaTeX_HEADER: \fancyhead[L]{\begin{textblock*}{2in}(1.2in,0.65in) \includegraphics[width=1.5in]{/Users/rlridenour/Dropbox/images/OBU-Green} \end{textblock*}}
+#+LaTeX_HEADER: \fancyfoot[C]{\tiny OBU exists to equip the next generation of Future Shapers to live all of life, all for Jesus.}
+#+LaTeX_HEADER: \fancyfoot[R]{}
+#+LaTeX_HEADER: \fancyfoot[L]{}
+#+LaTeX_HEADER: \renewcommand{\headrulewidth}{0.4pt}
+#+LaTeX_HEADER: \renewcommand{\footrulewidth}{0.4pt}
+#+LaTeX_HEADER: \usepackage{enumitem}
+#+LaTeX_HEADER: \setlist[itemize]{noitemsep} % Comment out for wider separation in lists.
+#+LaTeX_HEADER: \setlist[enumerate]{noitemsep}
+#+LaTeX_HEADER: \setlist[description]{noitemsep}
+#+LaTeX_HEADER: \usepackage{fontspec}
+#+LaTeX_HEADER: \usepackage[default]{heros-otf}
+#+LaTeX_HEADER:\usepackage[unicode=true]{hyperref}
+#+LaTeX_HEADER: \usepackage{sectsty}
+#+LaTeX_HEADER: \sectionfont{\color{OBUGREEN}}
+#+LaTeX_HEADER: \usepackage{titlesec}
+#+LaTeX_HEADER: \titlespacing{\section}{0pt}{*2}{*0.5}
+#+LaTeX_HEADER: \titlespacing{\subsection}{0pt}{*2}{*0.5}
+#+OPTIONS: title:nil
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+

@@ -1,0 +1,21 @@
+# -*- mode: snippet -*-
+# key: barg
+# group: beamer
+# name: beamer-argument
+# --
+
+#+BEGIN_EXPORT latex
+\begin{enumerate}
+\item $1
+\item \underline{$2}
+\item [] $3
+\end{enumerate}
+#+END_EXPORT
+
+#+BEGIN_EXPORT html
+<ol class="arg">
+  <li>$1</li>
+  <li>$2</li>
+  <li>$3</li>
+</ol>
+#+END_EXPORT

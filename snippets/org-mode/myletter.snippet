@@ -1,0 +1,33 @@
+# -*- mode: snippet -*-
+# name: myletter
+# key: myletter
+# group: template
+# --
+#+TITLE: ${1:Title}
+:drawer:
+#+AUTHOR: Randy Ridenour
+#+DATE: `(format-time-string "%B %e, %Y")`
+#+LANGUAGE: en-us
+#+LATEX_COMPILER: lualatex
+#+LaTeX_CLASS: org-my-letter
+#+LaTeX_CLASS_OPTIONS: [12pt]
+#+LaTeX_HEADER: \newcommand{\obuDept}{Department of Philosophy} 
+#+LaTeX_HEADER: \newcommand{\Sender}{Randy Ridenour, Ph.D.}
+#+LaTeX_HEADER: \newcommand{\obuTitle}{Professor of Philosophy}
+#+LaTeX_HEADER: \newcommand{\obuCollege}{Hobbs School of Theology and Ministry} 
+#+LaTeX_HEADER: \newcommand{\obuPhone}{405.585.4432}
+#+LaTeX_HEADER: \newcommand{\obuFax}{405.878.2401}
+#+LaTeX_HEADER: \newcommand{\obuBox}{61273}
+#+LaTeX_HEADER: \newcommand{\closing}{Sincerely,}
+#+LaTeX_HEADER: \newcommand{\toName}{${2:Recipient}}
+#+LaTeX_HEADER: \newcommand{\toAddress}{${4:Street Address}\\\\${5:City}, ${6:State} ${7:ZIP}}
+#+OPTIONS: toc:nil
+#+OPTIONS: title:nil
+:end:
+
+\heading
+
+$0
+
+
+\signature

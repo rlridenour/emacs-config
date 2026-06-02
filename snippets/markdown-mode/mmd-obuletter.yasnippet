@@ -1,0 +1,22 @@
+# -*- mode: snippet -*-
+# contributor: Randy Ridenour <rlridenour@gmail.com>
+# key: mmdobuletter
+# group: mmd header
+# name: obu letter
+# --
+
+latex input:		obu-letterhead-header  
+Author:				${1:Randy Ridenour, Ph.D.}  
+Date:				${2:Date}  
+recipient:			${3:Recipient Name}  
+Recipient Address:	${4:Street}  
+					${5:City}, ${6:State}  ${6:ZIP}  
+latex xslt:			custom-letterhead.xslt  
+black and white:	false  
+Graphic Signature:	true
+base header level:	2  
+latex mode:			memoir  
+latex footer:		mmd-letterhead-footer  
+latex input:		obu-letterhead-begin-doc
+
+$0

@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name : arg-wrap-html
+# expand-env : ((yas-wrap-around-region nil)) 
+# binding :
+# --
+#+BEGIN_EXPORT html
+<ol class="arg">
+`(let ((text (yas-selected-text))) (when text (replace-regexp-in-string "^\\(.*\\)$" "<li>\\1</li>" text t)))` $0
+</ol>
+#+END_EXPORT

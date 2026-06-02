@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: rlink
+# key: rlink
+# --
+[[lid:${1:id}][${}]]
+
+#+LINK-ID: $1 ${URL}
+
+$0
