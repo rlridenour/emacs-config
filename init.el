@@ -47,7 +47,7 @@
 (use-package major-mode-hydra
   :commands (pretty-hydra-define)
   :bind
-  ("s-m" . #'major-mode-hydra))
+  ("s-m" . major-mode-hydra))
 
 (use-package emacs
   :config
@@ -88,9 +88,9 @@
   :bind
   (:map vertico-map
 	  ;; keybindings to cycle through vertico results.
-	  ("C-h" . #'+minibuffer-up-dir)
-	  ("<backspace>" . #'vertico-directory-delete-char)
-	  ("RET" . #'vertico-directory-enter)))
+	  ("C-h" . +minibuffer-up-dir)
+	  ("<backspace>" . vertico-directory-delete-char)
+	  ("RET" . vertico-directory-enter)))
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
@@ -126,10 +126,10 @@
   :ensure
   :demand
   :bind
-  (("C-x b" . #'consult-buffer)
-   ("s-f" . #'consult-line)
-   ("s-r" . #'consult-buffer)
-   ("M-y" . #'consult-yank-pop)))
+  (("C-x b" . consult-buffer)
+   ("s-f" . consult-line)
+   ("s-r" . consult-buffer)
+   ("M-y" . consult-yank-pop)))
 
 (defun rlr/consult-rg ()
   "Function for consult-ripgrep with the universal-argument."
@@ -246,7 +246,7 @@
 (use-package modus-themes
   :demand
   :bind
-  (("<f9>" . #'modus-themes-toggle))
+  (("<f9>" . modus-themes-toggle))
   :config
   ;; Add all your customizations prior to loading the themes
   (setq modus-themes-italic-constructs t
@@ -277,12 +277,114 @@
 
 (add-hook 'modus-themes-after-load-theme-hook #'rlr/customize-org-headings)
 
+(defun rlr/color-scheme:emacs (&optional given-scheme)
+  "Function to load named theme."
+  (let ((scheme
+	   (or given-scheme
+	       (funcall
+		(intern
+		 (format "rlr/color-scheme-func:%s" system-type))))))
+    (modus-themes-select (plist-get rlr/themes-plist scheme))))
+
+(setq rlr/themes-plist '(:dark modus-vivendi :light modus-operandi))
+
+(defun rlr/color-scheme-func:darwin ()
+  "Determine MacOS preferred/current theme."
+  (if (equal "Dark"
+	       (substring
+		(shell-command-to-string
+		 "defaults read -g AppleInterfaceStyle") 0 4))
+	:dark :light))
+
+(defun rlr/color-scheme-system-toggle:darwin ()
+  "Toggle the darwin system scheme."
+  (shell-command
+   (concat "osascript -e 'tell application \"System Events\" "
+	 "to tell appearance preferences "
+	 "to set dark mode to not dark mode'"))
+  (rlr/color-scheme:emacs))
+
+(defun rlr/color-scheme-system-toggle ()
+  "Toggle system-wide Dark or Light setting."
+  (interactive)
+  (funcall
+   (intern
+    (format "rlr/color-scheme-system-toggle:%s" system-type))))
+
+(defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
+
+(use-package doom-modeline
+  :init
+  (doom-modeline-mode 1)
+  :config
+  (setopt doom-modeline-enable-word-count t)
+  (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+  (setopt display-time-day-and-date t))
+
+(use-package spacious-padding
+  :demand
+  :after modus-themes doom-modeline
+  :init
+  (setq spacious-padding-subtle-mode-line t)
+  (setq spacious-padding-widths
+	  '( :internal-border-width 30
+	     :header-line-width 4
+	     :mode-line-width 10
+	     :tab-width 4
+	     :right-divider-width 30
+	     :scroll-bar-width 8
+	     :fringe-width 8))
+  :bind
+  ("C-M-s-p" . spacious-padding-mode))
+
+(add-hook 'server-after-make-frame-hook #'spacious-padding-mode)
+
+(setq tab-bar-show t)                      ;; hide bar if <= 1 tabs open
+(setq tab-bar-close-button-show nil
+	tab-bar-new-button-show nil)
+(setq tab-bar-format '(tab-bar-format-tabs tab-bar-separator))
+
+(defun rlr/find-file-new-tab ()
+  "Open new tab and select recent file."
+  (interactive)
+  (tab-new)
+  (consult-buffer))
+
+(use-package pulsar
+  :commands pulsar-pulse-line
+  :config
+  (pulsar-global-mode 1))
+
+(use-package olivetti)
+
+(bind-keys
+ ("C-+" . text-scale-increase)
+ ("C--" . text-scale-decrease))
+
+(global-set-key (kbd "<pinch>") 'ignore)
+(global-set-key (kbd "<C-wheel-up>") 'ignore)
+(global-set-key (kbd "<C-wheel-down>") 'ignore)
+
+(use-package ultra-scroll
+:vc (:url "https://github.com/jdtsmith/ultra-scroll")
+    :init
+    (setq scroll-conservatively 3 ; or whatever value you prefer, since v0.4
+	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
+    :config
+    (ultra-scroll-mode 1))
+
+(global-visual-wrap-prefix-mode 1)
+
 (recentf-mode)
 (setopt recentf-max-menu-items 1000
 	  recentf-max-saved-items 1000)
 
 (setq save-place-file (expand-file-name "saveplaces" rr-cache-dir))
 (save-place-mode)
+;; Center the page after the restore.
+(advice-add 'save-place-find-file-hook :after
+	    (lambda (&rest _)
+	      (when buffer-file-name (ignore-errors (recenter)))))
 
 (require 'uniquify)
 
@@ -364,19 +466,50 @@
 	time-stamp-format "Last changed %Y-%02m-%02d %02H:%02M:%02S by %u")
 (add-hook 'write-file-hooks 'time-stamp) ; Update when saving.
 
-(global-set-key (kbd "C-x C-b") #'ibuffer)
-(global-set-key (kbd "s-o") #'find-file)
-(global-set-key (kbd "s-k") #'kill-current-buffer)
-(global-set-key (kbd "M-s-k") #'kill-buffer-and-window)
-(global-set-key (kbd "s-K") #'nuke-all-buffers)
+(bind-keys
+  ( "C-x C-b" . ibuffer)
+  ( "s-o" . find-file)
+  ( "s-k" . kill-current-buffer)
+  ( "M-s-k" . kill-buffer-and-window)
+  ( "s-K".  #'nuke-all-buffers))
+
+(setq initial-major-mode 'org-mode)
+
+(defun unkillable-scratch-buffer ()
+  (if (equal (buffer-name (current-buffer)) "*scratch*")
+	(progn
+	  (delete-region (point-min) (point-max))
+	  nil)
+    t))
+(add-hook 'kill-buffer-query-functions 'unkillable-scratch-buffer)
+
+(defun goto-scratch ()
+  "this sends you to the scratch buffer"
+  (interactive)
+  (let ((goto-scratch-buffer (get-buffer-create "*scratch*")))
+    (switch-to-buffer goto-scratch-buffer)
+    (org-mode)))
+
+(bind-key "C-M-S-s-s" 'goto-scratch)
+
+(use-package persistent-scratch
+  :init
+  (persistent-scratch-setup-default)
+  :commands persistent-scratch-save)
+
+(use-package project
+  :ensure nil
+  :init
+  (setq project-vc-ignores '("*.aux" "*.bbl" "*.bcf" "*.blg" "*.fdb_latexmk" "*.fls" "*.log" "*.out" "*.run.xml" "*.run.xml" "*.synctex.gz" "auto/" "*.pdf"))
+  (setq project-vc-extra-root-markers '(".proj")))
 
 (use-package ace-window
   :ensure
   :config
   (setq aw-dispatch-always t)
   :bind
-  (("M-O" . #'ace-window)
-   ("M-o" . #'rlr/quick-window-jump)))
+  (("M-O" . ace-window)
+   ("M-o" . rlr/quick-window-jump)))
 
 (defun rlr/quick-window-jump ()
   "If only one window, switch to previous buffer, otherwise call ace-window."
@@ -486,24 +619,204 @@
 	  (tab-close)
 	(error (delete-frame)))))
 
-(global-set-key (kbd "s-0") #'delete-window)
-(global-set-key (kbd "s-1") #'delete-other-windows)
-(global-set-key (kbd "s-2") #'rlr/find-file-below)
-(global-set-key (kbd "s-3") #'rlr/find-file-right)
-(global-set-key (kbd "s-4") #'split-window-below-focus)
-(global-set-key (kbd "s-5") #'split-window-right-focus)
-(global-set-key (kbd "s-6") #'toggle-window-split)
-(global-set-key (kbd "S-C-<left>") #'shrink-window-horizontally)
-(global-set-key (kbd "S-C-<right>") #'enlarge-window-horizontally)
-(global-set-key (kbd "S-C-<down>") #'shrink-window)
-(global-set-key (kbd "S-C-<up>") #'enlarge-window)
-(global-set-key (kbd "C-x w") #'delete-frame)
-;; (global-set-key (kbd "M-o") #'crux-other-window-or-switch-buffer)
-(global-set-key (kbd "s-\"") #'previous-window-any-frame)
-(global-set-key (kbd "s-t") #'tab-new)
-(global-set-key (kbd "s-T") #'rlr/find-file-new-tab)
-(global-set-key (kbd "s-w") #'rlr/delete-tab-or-frame)
-(global-set-key (kbd "s-W") #'rlr/kill-buffer-delete-tab-or-frame)
+(winner-mode +1)
+(setq winner-dont-bind-my-keys t)
+(defun toggle-delete-other-windows ()
+  "Delete other windows in frame if any, or restore previous window config."
+  (interactive)
+  (if (and winner-mode
+	     (equal (selected-window) (next-window)))
+	(winner-undo)
+    (delete-other-windows)))
+
+(bind-key "C-x 1" 'toggle-delete-other-windows)
+
+(bind-keys
+  ("s-0" . delete-window)
+  ("s-1" . delete-other-windows)
+  ("s-2" . rlr/find-file-below)
+  ("s-3" . rlr/find-file-right)
+  ("s-4" . split-window-below-focus)
+  ("s-5" . split-window-right-focus)
+  ("s-6" . toggle-window-split)
+  ("S-C-<left>" . shrink-window-horizontally)
+  ("S-C-<right>" . enlarge-window-horizontally)
+  ("S-C-<down>" . shrink-window)
+  ("S-C-<up>" . enlarge-window)
+  ("C-x w" . delete-frame)
+  ;; ("M-o" . crux-other-window-or-switch-buffer)
+  ("s-\"" . previous-window-any-frame)
+  ("s-t" . tab-new)
+  ("s-T" . rlr/find-file-new-tab)
+  ("s-w" . rlr/delete-tab-or-frame)
+  ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
+
+(setq case-replace nil)
+
+(setq isearch-lazy-count t)
+(setq lazy-count-prefix-format nil)
+(setq lazy-count-suffix-format "   (%s/%s)")
+
+(setq locate-command "mdfind")
+
+(defun occur-non-ascii ()
+  "Find any non-ascii characters in the current buffer."
+  (interactive)
+  (occur "[^[:ascii:]]"))
+
+(use-package avy
+  :config
+  (avy-setup-default)
+  :bind
+  ("s-/" . avy-goto-char-timer)
+  ("C-c C-j" . avy-resume))
+
+(use-package fzf
+  :commands (fzf fzf-directory)
+  :config
+  (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
+	  fzf/executable "fzf"
+	  fzf/git-grep-args "-i --line-number %s"
+	  ;; command used for `fzf-grep-*` functions
+	  ;; example usage for ripgrep:
+	  fzf/grep-command "rg --no-heading -nH"
+	  ;; fzf/grep-command "grep -nrH"
+	  ;; If nil, the fzf buffer will appear at the top of the window
+	  fzf/position-bottom t
+	  fzf/window-height 15))
+
+(use-package rg
+  :commands rg
+  :config
+  (rg-enable-default-bindings))
+
+(use-package wgrep
+  :vc (:url https://github.com/mhayashi1120/Emacs-wgrep)
+  :commands wgrep-save-all-buffers)
+
+(use-package deadgrep
+  :bind
+  ("<f5>" . deadgrep))
+
+(use-package dired+
+  :vc (:url "https://github.com/emacsmirror/dired-plus"))
+
+(defun hide-dired-details-include-all-subdir-paths ()
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward dired-subdir-regexp nil t)
+	(let* ((match-bounds (cons (match-beginning 1) (match-end 1)))
+	       (path (file-name-directory (buffer-substring (car match-bounds)
+							    (cdr match-bounds))))
+	       (path-start (car match-bounds))
+	       (path-end (+ (car match-bounds) (length path)))
+	       (inhibit-read-only t))
+	  (put-text-property path-start path-end
+			     'invisible 'dired-hide-details-information)))))
+
+(use-package dired
+  :ensure nil
+  :hook ((dired-mode . dired-hide-details-mode)
+	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+
+(use-package diredfl
+  :defer
+  :config
+  (diredfl-global-mode 1))
+
+(use-package dired-x
+  :ensure nil
+  :config
+  (progn
+    (setq dired-omit-verbose nil)
+    ;; toggle `dired-omit-mode' with C-x M-o
+    (setq dired-omit-files
+	    (concat dired-omit-files "\\|^.DS_STORE$\\|^.projectile$\\|^\\..+$"))
+    (setq-default dired-omit-extensions '(".fdb_latexmk" ".aux" ".bbl" ".blg" ".fls" ".glo" ".idx" ".ilg" ".ind" ".ist" ".log" ".out" ".gz" ".DS_Store" ".xml" ".bcf" ".nav" ".snm" ".toc"))))
+
+(add-hook 'dired-mode-hook #'dired-omit-mode)
+
+(setq dired-dwim-target t)
+
+(setopt dired-keep-marker-rename 82)
+
+(defun rlr/dired-search-and-enter ()
+  "Search file or directory with `consult-line' and then visit it."
+  (interactive)
+  (consult-line)
+  (dired-find-file))
+
+(defun my-substspaces (str)
+  (subst-char-in-string ?\s ?- str))
+
+(defun my-dired-substspaces (&optional arg)
+  "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+  (interactive "P")
+  (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
+
+(bind-keys
+ :map dired-mode-map
+ ("j" rlr/dired-search-and-enter)
+ ("J" dired-goto-file)
+ ("%s" . my-dired-substspaces))
+
+(use-package reveal-in-osx-finder
+  :bind
+  ("C-c z" . 'reveal-in-osx-finder))
+
+(use-package eat
+  :config
+  (when (eq system-type 'darwin)
+  (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
+  (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
+
+(use-package term-toggle
+:vc (:url "https://github.com/amno1/emacs-term-toggle")
+    :config
+    (setq term-toggle-no-confirm-exit t)
+    (defun term-toggle-eat ()
+      "Toggle `term'."
+      (interactive) (term-toggle 'eat))
+    ;; (defun term-toggle-ghostel ()
+    ;;   "Toggle `term'."
+    ;;   (interactive) (term-toggle 'ghostel))
+    :bind
+    ("<f2>" . term-toggle-eat)
+     ("<S-f2>" . term-toggle-eshell))
+
+(setq async-shell-command-buffer "new-buffer")
+
+(defun async-shell-command-no-window
+    (command)
+  (interactive)
+  (let
+	((display-buffer-alist
+	  (list
+	   (cons
+	    "\\*Async Shell Command\\*.*"
+	    (cons #'display-buffer-no-window nil)))))
+    (async-shell-command
+     command)))
+
+(setq eshell-scroll-to-bottom-on-input "this")
+
+(use-package terminal-here
+  :config
+  (setq terminal-here-mac-terminal-command 'ghostty)
+  :bind
+  ("C-c t" . terminal-here-launch))
+
+(use-package tldr
+  :commands tldr)
+
+(setq help-window-select t)
+(setq Man-notify-method 'aggressive)
+
+(use-package helpful
+  :bind
+  ("C-h v" . helpful-variable)
+   ("C-h k" . helpful-key)
+   ("C-h x" . helpful-command))
 
 (defun insert-date-string ()
   "Insert current date yyyymmdd."
@@ -621,23 +934,23 @@
 
 (use-package crux
   :bind
-  (("s-p" . #'crux-create-scratch-buffer)
-   ("s-j" . #'crux-top-join-line)
-   ("<S-return>" . #'crux-smart-open-line)
-   ("<C-S-return>" . #'crux-smart-open-line-above)
-   ("<escape>" . #'crux-keyboard-quit-dwim)))
+  (("s-p" . crux-create-scratch-buffer)
+   ("s-j" . crux-top-join-line)
+   ("<S-return>" . crux-smart-open-line)
+   ("<C-S-return>" . crux-smart-open-line-above)
+   ("<escape>" . crux-keyboard-quit-dwim)))
 
 (use-package dired
   :ensure nil
   :bind
   (:map dired-mode-map
-	  ("M-<RET>" . #'crux-open-with)))
+	  ("M-<RET>" . crux-open-with)))
 
 (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 
 (use-package evil-nerd-commenter
   :bind
-  ("M-;" . #'evilnc-comment-or-uncomment-lines))
+  ("M-;" . evilnc-comment-or-uncomment-lines))
 
 (use-package magit
   :after transient
@@ -657,25 +970,26 @@
   (setq ispell-silently-savep t)
   :hook (emacs-startup . global-jinx-mode)
   :bind
-  (([remap ispell-word] . #'jinx-correct)
-   ("<f7>" . #'jinx-correct)
-   ("S-<f7>" . #'jinx-correct-all)))
+  (([remap ispell-word] . jinx-correct)
+   ("<f7>" . jinx-correct)
+   ("S-<f7>" . jinx-correct-all)))
 
-(global-set-key (kbd "<s-up>") #'beginning-of-buffer)
-(global-set-key (kbd "<s-down>")  #'end-of-buffer)
-(global-set-key (kbd "<s-right>") #'end-of-visual-line)
-(global-set-key (kbd "<s-left>") #'beginning-of-visual-line)
-(global-set-key (kbd "<M-down>") #'forward-paragraph)
-(global-set-key (kbd "<M-up>") #'backward-paragraph)
-(global-set-key (kbd "M-u") #'upcase-dwim)
-(global-set-key (kbd "M-l") #'downcase-dwim)
-(global-set-key (kbd "M-c") #'capitalize-dwim)
-(global-set-key (kbd "RET") #'newline-and-indent)
-(global-set-key (kbd "M-/") #'hippie-expand)
-(global-set-key (kbd "<s-backspace>") #'kill-whole-line)
-(global-set-key (kbd "<C-d d>") #'insert-standard-date)
-(global-set-key (kbd "M-q") #'reformat-paragraph)
-(global-set-key (kbd "M-#") #'dictionary-lookup-definition)
+(bind-keys
+  ("<s-up>" . beginning-of-buffer)
+  ("<s-down>" .  end-of-buffer)
+  ("<s-right>" . end-of-visual-line)
+  ("<s-left>" . beginning-of-visual-line)
+  ("<M-down>" . forward-paragraph)
+  ("<M-up>" . backward-paragraph)
+  ("M-u" . upcase-dwim)
+  ("M-l" . downcase-dwim)
+  ("M-c" . capitalize-dwim)
+  ("RET" . newline-and-indent)
+  ("M-/" . hippie-expand)
+  ("<s-backspace>" . kill-whole-line)
+  ("<C-d d>" . insert-standard-date)
+  ("M-q" . reformat-paragraph)
+  ("M-#" . dictionary-lookup-definition))
 
 (use-package org
   :ensure nil
@@ -967,29 +1281,6 @@ and convert it to Org using the pandoc utility."
 
 (add-to-list 'safe-local-variable-values
 	       '(before-save-hook . (rlr/org-sort)))
-
-(use-package org-super-agenda
-  :after org
-  :config
-  (setq org-agenda-skip-scheduled-if-done t
-	  org-agenda-skip-deadline-if-done t
-	  setq org-agenda-skip-scheduled-if-deadline-is-shown t
-	  org-agenda-skip-deadline-prewarning-if-scheduled t
-	  org-agenda-include-deadlines t
-	  org-deadline-warning-days 1
-	  org-agenda-block-separator nil
-	  org-agenda-compact-blocks t
-	  org-agenda-start-day nil ;; i.e. today
-	  org-agenda-span 1
-	  org-agenda-window-setup "current-window"
-	  org-agenda-include-diary nil
-	  org-agenda-start-on-weekday nil)
-  (setq org-agenda-time-grid
-	  '((daily today remove-match)
-	()
-	"......"
-	""))
-  (org-super-agenda-mode))
 
 (setq org-agenda-custom-commands
 	'(("d" "Agenda for today" agenda ""
@@ -1772,9 +2063,9 @@ and convert it to Org using the pandoc utility."
 
 (use-package citar
   :bind
-  (("C-c C-b" . #'citar-insert-citation)
+  (("C-c C-b" . citar-insert-citation)
   :map minibuffer-local-map
-	  ("M-b" . #'citar-insert-preset))
+	  ("M-b" . citar-insert-preset))
   :custom
   (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
   (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
@@ -1806,8 +2097,8 @@ and convert it to Org using the pandoc utility."
 
 (use-package consult-denote
   :bind
-  ("C-c n f" . #'consult-denote-find)
-  ("C-c n g" . #'consult-denote-grep)
+  ("C-c n f" . consult-denote-find)
+  ("C-c n g" . consult-denote-grep)
   :config
   (consult-denote-mode 1))
 
@@ -1857,6 +2148,370 @@ and convert it to Org using the pandoc utility."
   (grove-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/grove/")
   :config
   (global-grove-mode 1))
+
+(use-package mu4e
+  :ensure nil
+  :commands (mu4e mu4e-update-mail-and-index)
+  :bind
+  (:map mu4e-headers-mode-map
+	          ("q"  . kill-current-buffer)
+	          ("C-<tab>" . tab-next)
+	          ("g" . my-mu4e-mark-add-tag)
+  :map mu4e-thread-mode-map
+	          ("C-<tab>" . tab-next)
+  :map mu4e-main-mode-map
+	          ("q"  . rlr/quit-mu4e)
+	          ("u" . mu4e-update-mail-and-index)
+  :map mu4e-view-mode-map
+	          ("," . link-hint-open-link)
+	          ("." . rlr/link-hint-open-link-in-secondary-browser)
+	          ("C-," . mu4e-sexp-at-point))
+  :after org
+  :init
+  (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
+  :config
+  (setq mail-user-agent 'mu4e-user-agent)
+  (setq mu4e-maildir "~/.maildir/")
+  (setq mu4e-get-mail-command "mbsync -a")
+  (setq mu4e-update-interval 300) ;; update every 5 minutes
+  (setq mu4e-read-option-use-builtin nil
+	          mu4e-completing-read-function 'completing-read)
+  (setq mu4e-split-view 'horizontal)
+  (setq mu4e-index-update-error-warning nil)
+  (setq mu4e-headers-skip-duplicates  t)
+  (setq mu4e-view-show-images t)
+  (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
+  (setq mu4e-view-show-addresses t)
+  (setq mu4e-use-fancy-chars t)
+  (setq mu4e-compose-format-flowed t)
+  (setq mu4e-date-format "%y/%m/%d")
+  (setq mu4e-headers-date-format "%Y/%m/%d")
+  (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
+  (setq mu4e-change-filenames-when-moving t)
+  ;; customize the reply-quote-string
+  (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
+  ;; choose to use the formatted string
+  (setq message-citation-line-function 'message-insert-formatted-citation-line)
+  (setq mu4e-attachment-dir "~/Downloads")
+  (setq mu4e-context-policy 'pick-first)
+  (setq  mu4e-contexts (list
+				  (make-mu4e-context
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@fastmail.com")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/fastmail/Drafts")
+					     (mu4e-sent-folder  . "/fastmail/Sent")
+					     (mu4e-trash-folder  . "/fastmail/Trash")
+					     (mu4e-refile-folder  . "/fastmail/Archive")
+					     (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
+					     (smtpmail-smtp-server  . "smtp.fastmail.com")
+					     ))
+				  (make-mu4e-context
+				   :name "obu"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/obu/Drafts")
+					     (mu4e-sent-folder  . "/obu/Sent")
+					     (mu4e-trash-folder . "/obu/Trash")
+					     (mu4e-refile-folder  . "/obu/Archive")
+					     ;; (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-smtp-server  . "localhost")
+					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+					     (smtpmail-stream-type . plain)
+					     (smtpmail-smtp-service . 1025)
+					     ))
+				  (make-mu4e-context
+				   :name "gmail"
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@gmail.com")
+					     (user-full-name . "Randy Ridenour")
+					     (mu4e-drafts-folder . "/gmail/Drafts")
+					     (mu4e-refile-folder . "/gmail/Archive")
+					     (mu4e-sent-folder . "/gmail/Sent")
+					     (mu4e-trash-folder . "/gmail/Trash")))
+				  ))
+
+  (setq mu4e-bookmarks
+	          '((:name "Unread messages"
+		         :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
+		         :key ?b)
+	        (:name "Flagged messages"
+		         :query "flag:flagged"
+		         :key ?f)
+	        ( :name "All inboxes"
+	          :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
+	          :key ?A)
+	        ( :name "Today's messages"
+	          :query "date:today..now"
+	          :key ?t)
+	        ( :name "Last 7 days"
+	          :query "date:7d..now"
+	          :hide-unread t
+	          :key ?w)
+	        ( :name "Messages with images"
+	          :query "mime:image/*"
+	          :key ?p)))
+  (setq mu4e-maildir-shortcuts
+	          '((:maildir "/obu/INBOX" :key ?u)
+	        (:maildir "/fastmail/INBOX" :key ?f)
+	        (:maildir "/gmail/INBOX" :key ?g)))
+  (require 'mu4e-transient))
+
+(defun my-confirm-empty-subject ()
+  "Allow user to quit when current message subject is empty."
+  (or (message-field-value "Subject")
+      (yes-or-no-p "Really send without Subject? ")
+      (keyboard-quit)))
+
+(add-hook 'message-send-hook #'my-confirm-empty-subject)
+
+(defun rlr/quit-mu4e ()
+  (interactive)
+  (mu4e-quit)
+  (rlr/delete-tab-or-frame))
+
+(use-package mu4e-alert
+  :after mu4e
+  :config
+  (mu4e-alert-enable-mode-line-display))
+
+(defun obu-signature ()
+  (interactive)
+  (insert (concat
+	 "\n--\n"
+	 "Randy Ridenour, Ph.D.\n"
+	 "Professor of Philosophy\n"
+	 "Oklahoma Baptist University\n"
+	 "220 Montgomery Hall\n"
+	 "500 W. University St.\n"
+	 "Shawnee, OK  74804\n"
+	 "Office: (405) 585-4432\n")))
+
+(defun informal-signature ()
+  (interactive)
+  (insert (concat
+	 "\n--\n"
+	 "Randy")))
+
+(defun home-signature ()
+  (interactive)
+  (insert (concat
+	 "\n--\n"
+	 "Randy Ridenour\n"
+	 "1613 Central Pkwy\n"
+	 "Norman, OK  73071\n"
+	 "(405) 613-7516")))
+
+(defun rlr/open-mu4e-new-tab ()
+  (interactive)
+  (tab-new)
+  (mu4e)
+  (mu4e-update-mail-and-index 1))
+
+(bind-keys
+ ("H-m" . mu4e-transient-menu)
+ ("C-M-S-s-m" . rlr/open-mu4e-new-tab))
+
+(defun rlr/browser-default ()
+  (interactive)
+  (setq browse-url-browser-function 'browse-url-default-browser))
+
+(defun rlr/browser-qutebrowser ()
+  (interactive)
+  (setq browse-url-browser-function 'browse-url-generic
+	  browse-url-generic-program "qutebrowser"))
+
+(defun rlr/browser-eww ()
+  (interactive)
+  (setq browse-url-browser-function 'eww-browse-url))
+
+(defun rlr/select-browser ()
+  (interactive)
+  (let* ((choices '(("System Default" . rlr/browser-default)
+		      ("Qutebrowser" . rlr/browser-qutebrowser)
+		      ("EWW" . rlr/browser-eww)))
+	   (choice   (completing-read "Choose one: " choices)))
+    (call-interactively (cdr (assoc choice choices)))))
+
+(bind-key "C-M-S-s-b"  #'rlr/select-browser)
+
+(use-package elfeed
+  :demand
+  :init
+  ;; (setq elfeed-db-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed")
+  (setq elfeed-db-directory "~/.elfeed-db")
+  :config
+  :bind
+  (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
+  :map elfeed-search-mode-map
+	      ("q" . rlr/elfeed-save-db-and-quit)
+  :map elfeed-show-mode-map
+	      ("S-<SPC>" . scroll-down)
+	      ("," . link-hint-open-link)
+	      ("." . rlr/link-hint-open-link-in-secondary-browser))
+  :commands elfeed)
+
+(defvar rlr/elfeed-db-save-timer nil
+  "Timer for debounced elfeed database saves.")
+
+(defun rlr/elfeed-db-save-and-backup ()
+  "Save the elfeed database and commit to git."
+  (when (and (boundp 'elfeed-db) elfeed-db)
+    (elfeed-db-save)
+    (let ((default-directory elfeed-db-directory))
+	(when (file-exists-p ".git")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "add" "-A")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "commit" "-m" "auto-backup")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "push" "origin" "main")))))
+
+(defun rlr/elfeed-db-save-soon ()
+  "Schedule a database save after 10 seconds of idle."
+  (interactive)
+  (when rlr/elfeed-db-save-timer
+    (cancel-timer rlr/elfeed-db-save-timer))
+  (setq rlr/elfeed-db-save-timer
+	  (run-with-idle-timer 10 nil #'rlr/elfeed-db-save-and-backup)))
+
+;; Save and backup when tags change (elfeed-web usage)
+(add-hook 'elfeed-tag-hooks   (lambda (&rest _) (rlr/elfeed-db-save-soon)))
+(add-hook 'elfeed-untag-hooks (lambda (&rest _) (rlr/elfeed-db-save-soon)))
+
+;; Save and backup when new entries are added
+(add-hook 'elfeed-db-update-hook #'rlr/elfeed-db-save-soon)
+
+(defun rlr/elfeed-load-db-and-open ()
+  "Load elfeed db before opening"
+  (interactive)
+  (shell-command "elfeed-pull")
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+(defun rlr/open-elfeed-new-tab ()
+  (interactive)
+  (tab-new)
+  (rlr/elfeed-load-db-and-open)
+  (elfeed-update))
+
+(defun rlr/elfeed-save-db-and-quit ()
+  (interactive)
+  (rlr/elfeed-db-save-and-backup)
+  (kill-matching-buffers-no-ask "elfeed")
+  (rlr/delete-tab-or-frame))
+
+(defmacro elfeed-tag-selection-as (mytag)
+  "Tag elfeed entry as MYTAG"
+  `(lambda (&optional user-generic-p)
+     (interactive "P")
+     (let ((entries (elfeed-search-selected)))
+	 (cl-loop for entry in entries
+		  do (funcall (if (elfeed-tagged-p ,mytag entry)
+				  #'elfeed-untag #'elfeed-tag)
+			      entry ,mytag)
+		  do (elfeed-untag entry 'unread))
+	 (mapc #'elfeed-search-update-entry entries)
+	 (unless (use-region-p) (forward-line)))))
+
+(bind-keys
+ :map elfeed-search-mode-map
+ ("l" . (elfeed-tag-selection-as 'readlater))
+ ("d" . (elfeed-tag-selection-as 'junk))
+ ("m" . (elfeed-tag-selection-as 'starred))
+ ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
+ ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
+ )
+
+(defun rlr/elfeed-show-toggle-tag (tag)
+  "Toggle tag for elfeed article."
+  (interactive)
+  (if (elfeed-tagged-p tag elfeed-show-entry)
+	(elfeed-show-untag tag)
+    (elfeed-show-tag tag)))
+
+(defun rlr/elfeed-show-toggle-starred ()
+  "Toggle starred tag for elfeed article"
+  (interactive)
+  (rlr/elfeed-show-toggle-tag 'starred))
+
+(defun rlr/elfeed-show-toggle-readlater ()
+  "Toggle starred tag for elfeed article"
+  (interactive)
+  (rlr/elfeed-show-toggle-tag 'readlater))
+
+(bind-keys
+ :map elfeed-show-mode-map
+ ("l" . rlr/elfeed-show-toggle-readlater)
+ ("m" . rlr/elfeed-show-toggle-starred))
+
+(defun ar/elfeed-search-browse-background-url ()
+  "Open current `elfeed' entry (or region entries) in browser without losing focus."
+  (interactive)
+  (let ((entries (elfeed-search-selected)))
+    (mapc (lambda (entry)
+	      (cl-assert (memq system-type '(darwin)) t "open command is macOS only")
+	      (start-process (concat "open " (elfeed-entry-link entry))
+			     nil "open" "--background" (elfeed-entry-link entry))
+	      (elfeed-untag entry 'unread)
+	      (elfeed-search-update-entry entry))
+	    entries)
+    (unless (or elfeed-search-remain-on-entry (use-region-p))
+	(forward-line))))
+
+(bind-key "B" #'ar/elfeed-search-browse-background-url 'elfeed-search-mode-map)
+
+(use-package elfeed-org
+  :after elfeed
+  :init
+  (elfeed-org)
+  ;; (setq rmh-elfeed-org-files (list "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed/elfeed.org"))
+  (setq rmh-elfeed-org-files (list "~/.elfeed-db/elfeed.org"))
+  :config
+  ;; (setq rmh-elfeed-org-auto-ignore-invalid-feeds t)
+  )
+
+(use-package elfeed-webkit
+  :ensure
+  :bind (:map elfeed-show-mode-map
+	      ("%" . elfeed-webkit-toggle)))
+
+(defun rlr/elfeed-open-in-eww ()
+  "Open the current elfeed entry in EWW."
+  (interactive)
+  (let* ((entry (if (eq major-mode 'elfeed-show-mode)
+		      elfeed-show-entry
+		    (elfeed-search-selected :ignore-region)))
+	   (url (and entry (elfeed-entry-link entry))))
+    (when url
+	(tab-new)
+	(eww url))))
+
+(bind-keys
+     :map elfeed-show-mode-map
+     ("e" . rlr/elfeed-open-in-eww)
+   :map elfeed-search-mode-map
+   ("e" . rlr/elfeed-open-in-eww))
 
 (defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
 (defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
@@ -1953,8 +2608,8 @@ and convert it to Org using the pandoc utility."
   (setq website2org-directory "~/icloud/web-saves/website2org/") ;; if needed, see below
   (setq website2org-additional-meta nil)
   :bind
-  ("C-M-s-<down>" . #'website2org)
-   ("C-M-s-<up>" . #'website2org-temp))
+  ("C-M-s-<down>" . website2org)
+   ("C-M-s-<up>" . website2org-temp))
 
 (use-package htmlize
   :commands (htmlize-file))
@@ -1992,10 +2647,10 @@ and convert it to Org using the pandoc utility."
   :bind
   (nil
   :map eww-mode-map
-	      ("I" . #'rlr/eww-toggle-images)
-	      ("f" . #'link-hint-open-link)
-	      ("F" . #'rlr/open-eww-link-new-buffer)
-	      ("T" . #'eww-toggle-fonts)))
+	      ("I" . rlr/eww-toggle-images)
+	      ("f" . link-hint-open-link)
+	      ("F" . rlr/open-eww-link-new-buffer)
+	      ("T" . eww-toggle-fonts)))
 
 (defun jao-eww-to-org (&optional dest)
   "Render the current eww buffer using org markup.
@@ -2132,9 +2787,9 @@ and convert it to Org using the pandoc utility."
 
 (use-package link-hint
   :bind
-  ("s-," . #'link-hint-open-link)
-   ("C-c l o" . #'link-hint-open-link)
-   ("C-c l c" . #'link-hint-copy-link))
+  ("s-," . link-hint-open-link)
+   ("C-c l o" . link-hint-open-link)
+   ("C-c l c" . link-hint-copy-link))
 
 (defun rlr/link-hint-open-link-in-secondary-browser ()
   (interactive)
@@ -2147,7 +2802,7 @@ and convert it to Org using the pandoc utility."
 
 (use-package calc
 :bind
-("C-M-S-s-c" . #'calc))
+("C-M-S-s-c" . calc))
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
@@ -2327,6 +2982,16 @@ and convert it to Org using the pandoc utility."
     ("m" surround-mark "mark inner")
     ("d" surround-delete "surround delete")
     )))
+
+(bind-keys
+ ("H-h" . hydra-hydras/body)
+ ("s-l" . hydra-locate/body)
+ ("s-n" . hydra-new/body)
+ ("H-t" . hydra-toggle/body)
+ ("H-w" . hydra-window/body)
+ ("H-b" . hydra-buffer/body)
+ ;; "H-'" . hydra-surround/body
+ ("C-x 9" . hydra-logic/body))
 
 (defun reload-user-init-file()
   (interactive)

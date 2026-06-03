@@ -290,7 +290,7 @@ Don't make all those files that look like =#foo.ext=.
   (use-package major-mode-hydra
     :commands (pretty-hydra-define)
     :bind
-    ("s-m" . #'major-mode-hydra))
+    ("s-m" . major-mode-hydra))
 #+end_src
 
 ** Bookmarks
@@ -361,9 +361,9 @@ Open fish functions directory.
     :bind
     (:map vertico-map
 	  ;; keybindings to cycle through vertico results.
-	  ("C-h" . #'+minibuffer-up-dir)
-	  ("<backspace>" . #'vertico-directory-delete-char)
-	  ("RET" . #'vertico-directory-enter)))
+	  ("C-h" . +minibuffer-up-dir)
+	  ("<backspace>" . vertico-directory-delete-char)
+	  ("RET" . vertico-directory-enter)))
 
   ;; Persist history over Emacs restarts. Vertico sorts by history position.
   (use-package savehist
@@ -413,10 +413,10 @@ Enrich existing commands with completion annotations
     :ensure
     :demand
     :bind
-    (("C-x b" . #'consult-buffer)
-     ("s-f" . #'consult-line)
-     ("s-r" . #'consult-buffer)
-     ("M-y" . #'consult-yank-pop)))
+    (("C-x b" . consult-buffer)
+     ("s-f" . consult-line)
+     ("s-r" . consult-buffer)
+     ("M-y" . consult-yank-pop)))
 #+end_src
 
 Some functions to use with Consult.
@@ -438,10 +438,10 @@ Some functions to use with Consult.
 #+begin_src emacs-lisp :tangle no
   (use-package embark
     :bind
-    (("C-." . #'embark-act)
-     ("C-S-a" . #'embark-act)
-     ("C-:" . #'embark-dwim)
-     ("C-h B" . #'embark-bindings))
+    (("C-." . embark-act)
+     ("C-S-a" . embark-act)
+     ("C-:" . embark-dwim)
+     ("C-h B" . embark-bindings))
     :init
     (setq prefix-help-command #'embark-prefix-help-command)
     :config
@@ -463,13 +463,13 @@ Some functions to use with Consult.
   (use-package cape
     :commands (cape-file)
     :bind
-    (("M-p p" . #'completion-at-point) ;; capf
-     ("M-p d" . #'cape-dabbrev)        ;; or dabbrev-completion
-     ("M-p a" . #'cape-abbrev)
-     ("M-p w" . #'cape-dict)
-     ("M-p \\" . #'cape-tex)
-     ("M-p _" . #'cape-tex)
-     ("M-p ^" . #'cape-tex))
+    (("M-p p" . completion-at-point) ;; capf
+     ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
+     ("M-p a" . cape-abbrev)
+     ("M-p w" . cape-dict)
+     ("M-p \\" . cape-tex)
+     ("M-p _" . cape-tex)
+     ("M-p ^" . cape-tex))
     :init
     ;; Add to the global default value of `completion-at-point-functions' which is
     ;; used by `completion-at-point'.  The order of the functions matters, the
@@ -523,7 +523,7 @@ https://github.com/joaotavora/yasnippet
     :init
     (setq yankpad-file "~/Library/Mobile Documents/com~apple~CloudDocs/org/yankpad.org")
     :bind
-    (("<f6>" . #'yankpad-insert)))
+    (("<f6>" . yankpad-insert)))
 #+end_src
 
 * Settings
@@ -759,7 +759,7 @@ Faster Mark Popping
   (use-package modus-themes
     :demand
     :bind
-    (("<f9>" . #'modus-themes-toggle))
+    (("<f9>" . modus-themes-toggle))
     :config
     ;; Add all your customizations prior to loading the themes
     (setq modus-themes-italic-constructs t
@@ -793,6 +793,165 @@ Faster Mark Popping
   (add-hook 'modus-themes-after-load-theme-hook #'rlr/customize-org-headings)
 #+end_src
 
+**** Toggle Dark
+
+Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-lightdark-scheme-in-macos-and-linux/][Managing Light/Dark Scheme in MacOS and Linux // Take on Rules]]
+
+#+begin_src emacs-lisp
+  (defun rlr/color-scheme:emacs (&optional given-scheme)
+    "Function to load named theme."
+    (let ((scheme
+	   (or given-scheme
+	       (funcall
+		(intern
+		 (format "rlr/color-scheme-func:%s" system-type))))))
+      (modus-themes-select (plist-get rlr/themes-plist scheme))))
+#+end_src
+
+#+begin_src emacs-lisp
+  (setq rlr/themes-plist '(:dark modus-vivendi :light modus-operandi))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun rlr/color-scheme-func:darwin ()
+    "Determine MacOS preferred/current theme."
+    (if (equal "Dark"
+	       (substring
+		(shell-command-to-string
+		 "defaults read -g AppleInterfaceStyle") 0 4))
+	:dark :light))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun rlr/color-scheme-system-toggle:darwin ()
+    "Toggle the darwin system scheme."
+    (shell-command
+     (concat "osascript -e 'tell application \"System Events\" "
+	 "to tell appearance preferences "
+	 "to set dark mode to not dark mode'"))
+    (rlr/color-scheme:emacs))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun rlr/color-scheme-system-toggle ()
+    "Toggle system-wide Dark or Light setting."
+    (interactive)
+    (funcall
+     (intern
+      (format "rlr/color-scheme-system-toggle:%s" system-type))))
+
+  (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
+#+end_src
+
+*** Doom Modeline
+
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :init
+    (doom-modeline-mode 1)
+    :config
+    (setopt doom-modeline-enable-word-count t)
+    (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+    (setopt display-time-day-and-date t))
+#+end_src
+
+*** Spacious-Padding
+
+#+begin_src emacs-lisp
+  (use-package spacious-padding
+    :demand
+    :after modus-themes doom-modeline
+    :init
+    (setq spacious-padding-subtle-mode-line t)
+    (setq spacious-padding-widths
+	  '( :internal-border-width 30
+	     :header-line-width 4
+	     :mode-line-width 10
+	     :tab-width 4
+	     :right-divider-width 30
+	     :scroll-bar-width 8
+	     :fringe-width 8))
+    :bind
+    ("C-M-s-p" . spacious-padding-mode))
+#+end_src
+
+#+begin_src emacs-lisp
+  (add-hook 'server-after-make-frame-hook #'spacious-padding-mode)
+#+end_src
+
+
+*** Tab Bar
+
+#+begin_src emacs-lisp
+  (setq tab-bar-show t)                      ;; hide bar if <= 1 tabs open
+  (setq tab-bar-close-button-show nil
+	tab-bar-new-button-show nil)
+  (setq tab-bar-format '(tab-bar-format-tabs tab-bar-separator))
+#+end_src
+
+
+
+I can't imagine wanting the same buffer in two tabs, so this calls consult-buffer when opening a new tab.
+
+#+begin_src emacs-lisp
+  (defun rlr/find-file-new-tab ()
+    "Open new tab and select recent file."
+    (interactive)
+    (tab-new)
+    (consult-buffer))
+#+end_src
+
+*** Pulsar
+
+#+begin_src emacs-lisp
+  (use-package pulsar
+    :commands pulsar-pulse-line
+    :config
+    (pulsar-global-mode 1))
+#+end_src
+
+*** Olivetti
+
+#+begin_src emacs-lisp
+  (use-package olivetti)
+#+end_src
+
+*** Text Scaling
+
+#+begin_src emacs-lisp
+  (bind-keys
+   ("C-+" . text-scale-increase)
+   ("C--" . text-scale-decrease))
+#+end_src
+
+Disable changing text size with mouse and trackpad
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "<pinch>") 'ignore)
+  (global-set-key (kbd "<C-wheel-up>") 'ignore)
+  (global-set-key (kbd "<C-wheel-down>") 'ignore)
+#+end_src
+
+*** Ultra-Scroll
+
+#+begin_src emacs-lisp
+  (use-package ultra-scroll
+:vc (:url "https://github.com/jdtsmith/ultra-scroll")
+    :init
+    (setq scroll-conservatively 3 ; or whatever value you prefer, since v0.4
+	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
+    :config
+    (ultra-scroll-mode 1))
+#+end_src
+
+Indent wrapped lines in bulleted lists.
+
+#+begin_src emacs-lisp
+  (global-visual-wrap-prefix-mode 1)
+#+end_src
+
+
+
 ** Files and Buffers
 
 Increase number of recent files shown.
@@ -808,6 +967,10 @@ Open files to the last edited position.
 #+begin_src emacs-lisp
   (setq save-place-file (expand-file-name "saveplaces" rr-cache-dir))
   (save-place-mode)
+  ;; Center the page after the restore.
+  (advice-add 'save-place-find-file-hook :after
+	    (lambda (&rest _)
+	      (when buffer-file-name (ignore-errors (recenter)))))
 #+end_src
 
 Give buffers uniquely numbered names.
@@ -877,7 +1040,6 @@ Don't display async shell command process buffers.
 #+begin_src emacs-lisp
   (add-to-list 'display-buffer-alist
 	       (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
-
 #+end_src
 
 If necessary, create directories for new files.
@@ -975,11 +1137,66 @@ Add automatic time stamps to files, from [[https://olddeuteronomy.github.io/post
 Keybindings for files and buffers.
 
 #+begin_src emacs-lisp
-  (global-set-key (kbd "C-x C-b") #'ibuffer)
-  (global-set-key (kbd "s-o") #'find-file)
-  (global-set-key (kbd "s-k") #'kill-current-buffer)
-  (global-set-key (kbd "M-s-k") #'kill-buffer-and-window)
-  (global-set-key (kbd "s-K") #'nuke-all-buffers)
+(bind-keys
+  ( "C-x C-b" . ibuffer)
+  ( "s-o" . find-file)
+  ( "s-k" . kill-current-buffer)
+  ( "M-s-k" . kill-buffer-and-window)
+  ( "s-K".  #'nuke-all-buffers))
+#+end_src
+
+** Scratch
+
+Remove scratch buffer message and set the mode to org-mode.
+
+Set scratch buffers to org-mode.
+
+#+begin_src emacs-lisp
+  (setq initial-major-mode 'org-mode)
+#+end_src
+
+Kill the contents of scratch buffer, not the buffer itself. From [[http://emacswiki.org/emacs/RecreateScratchBuffer][TN]].
+
+#+begin_src emacs-lisp
+  (defun unkillable-scratch-buffer ()
+    (if (equal (buffer-name (current-buffer)) "*scratch*")
+	(progn
+	  (delete-region (point-min) (point-max))
+	  nil)
+      t))
+  (add-hook 'kill-buffer-query-functions 'unkillable-scratch-buffer)
+#+end_src
+
+Create a new scratch buffer after saving.
+
+#+begin_src emacs-lisp
+  (defun goto-scratch ()
+    "this sends you to the scratch buffer"
+    (interactive)
+    (let ((goto-scratch-buffer (get-buffer-create "*scratch*")))
+      (switch-to-buffer goto-scratch-buffer)
+      (org-mode)))
+
+  (bind-key "C-M-S-s-s" 'goto-scratch)
+#+end_src
+
+Use ~persistent-scratch~ to save scratch file between sessions.
+
+#+begin_src emacs-lisp
+  (use-package persistent-scratch
+    :init
+    (persistent-scratch-setup-default)
+    :commands persistent-scratch-save)
+#+end_src
+
+** Projects
+
+#+begin_src emacs-lisp
+  (use-package project
+    :ensure nil
+    :init
+    (setq project-vc-ignores '("*.aux" "*.bbl" "*.bcf" "*.blg" "*.fdb_latexmk" "*.fls" "*.log" "*.out" "*.run.xml" "*.run.xml" "*.synctex.gz" "auto/" "*.pdf"))
+    (setq project-vc-extra-root-markers '(".proj")))
 #+end_src
 
 ** Windows
@@ -992,8 +1209,8 @@ Keybindings for files and buffers.
     :config
     (setq aw-dispatch-always t)
     :bind
-    (("M-O" . #'ace-window)
-     ("M-o" . #'rlr/quick-window-jump)))
+    (("M-O" . ace-window)
+     ("M-o" . rlr/quick-window-jump)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -1128,29 +1345,358 @@ If more than one window, delete the window; if only one window, delete the tab; 
 	(error (delete-frame)))))
 #+end_src
 
+Reversible C-x 1
+
+#+begin_src emacs-lisp
+  (winner-mode +1)
+  (setq winner-dont-bind-my-keys t)
+  (defun toggle-delete-other-windows ()
+    "Delete other windows in frame if any, or restore previous window config."
+    (interactive)
+    (if (and winner-mode
+	     (equal (selected-window) (next-window)))
+	(winner-undo)
+      (delete-other-windows)))
+
+  (bind-key "C-x 1" 'toggle-delete-other-windows)
+#+end_src
+
+
 *** Window and Tab Keybindings
 
 #+begin_src emacs-lisp
-
-  (global-set-key (kbd "s-0") #'delete-window)
-  (global-set-key (kbd "s-1") #'delete-other-windows)
-  (global-set-key (kbd "s-2") #'rlr/find-file-below)
-  (global-set-key (kbd "s-3") #'rlr/find-file-right)
-  (global-set-key (kbd "s-4") #'split-window-below-focus)
-  (global-set-key (kbd "s-5") #'split-window-right-focus)
-  (global-set-key (kbd "s-6") #'toggle-window-split)
-  (global-set-key (kbd "S-C-<left>") #'shrink-window-horizontally)
-  (global-set-key (kbd "S-C-<right>") #'enlarge-window-horizontally)
-  (global-set-key (kbd "S-C-<down>") #'shrink-window)
-  (global-set-key (kbd "S-C-<up>") #'enlarge-window)
-  (global-set-key (kbd "C-x w") #'delete-frame)
-  ;; (global-set-key (kbd "M-o") #'crux-other-window-or-switch-buffer)
-  (global-set-key (kbd "s-\"") #'previous-window-any-frame)
-  (global-set-key (kbd "s-t") #'tab-new)
-  (global-set-key (kbd "s-T") #'rlr/find-file-new-tab)
-  (global-set-key (kbd "s-w") #'rlr/delete-tab-or-frame)
-  (global-set-key (kbd "s-W") #'rlr/kill-buffer-delete-tab-or-frame)
+(bind-keys
+  ("s-0" . delete-window)
+  ("s-1" . delete-other-windows)
+  ("s-2" . rlr/find-file-below)
+  ("s-3" . rlr/find-file-right)
+  ("s-4" . split-window-below-focus)
+  ("s-5" . split-window-right-focus)
+  ("s-6" . toggle-window-split)
+  ("S-C-<left>" . shrink-window-horizontally)
+  ("S-C-<right>" . enlarge-window-horizontally)
+  ("S-C-<down>" . shrink-window)
+  ("S-C-<up>" . enlarge-window)
+  ("C-x w" . delete-frame)
+  ;; ("M-o" . crux-other-window-or-switch-buffer)
+  ("s-\"" . previous-window-any-frame)
+  ("s-t" . tab-new)
+  ("s-T" . rlr/find-file-new-tab)
+  ("s-w" . rlr/delete-tab-or-frame)
+  ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
 #+end_src
+
+** Search
+
+Don't preserve case in replacements.
+
+#+begin_src emacs-lisp
+  (setq case-replace nil)
+#+end_src
+
+Show number of matches at the end of search field.
+
+#+begin_src emacs-lisp
+  (setq isearch-lazy-count t)
+  (setq lazy-count-prefix-format nil)
+  (setq lazy-count-suffix-format "   (%s/%s)")
+#+end_src
+
+Use Spotlight for locate.
+
+#+begin_src emacs-lisp
+  (setq locate-command "mdfind")
+#+end_src
+
+Find non-ascii characters in buffer.
+
+#+begin_src emacs-lisp
+  (defun occur-non-ascii ()
+    "Find any non-ascii characters in the current buffer."
+    (interactive)
+    (occur "[^[:ascii:]]"))
+#+end_src
+
+
+*** Avy
+
+#+begin_src emacs-lisp
+  (use-package avy
+    :config
+    (avy-setup-default)
+    :bind
+    ("s-/" . avy-goto-char-timer)
+    ("C-c C-j" . avy-resume))
+#+end_src
+
+
+*** FZF
+
+#+begin_src emacs-lisp
+  (use-package fzf
+    :commands (fzf fzf-directory)
+    :config
+    (setq fzf/args "-x --color bw --print-query --margin=1,0 --no-hscroll"
+	  fzf/executable "fzf"
+	  fzf/git-grep-args "-i --line-number %s"
+	  ;; command used for `fzf-grep-*` functions
+	  ;; example usage for ripgrep:
+	  fzf/grep-command "rg --no-heading -nH"
+	  ;; fzf/grep-command "grep -nrH"
+	  ;; If nil, the fzf buffer will appear at the top of the window
+	  fzf/position-bottom t
+	  fzf/window-height 15))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package rg
+    :commands rg
+    :config
+    (rg-enable-default-bindings))
+#+end_src
+
+*** Wgrep
+
+#+begin_src emacs-lisp
+  (use-package wgrep
+    :vc (:url https://github.com/mhayashi1120/Emacs-wgrep)
+    :commands wgrep-save-all-buffers)
+#+end_src
+
+*** Deadgrep
+
+#+begin_src emacs-lisp
+  (use-package deadgrep
+    :bind
+    ("<f5>" . deadgrep))
+#+end_src
+
+*** Zoxide
+
+#+begin_src emacs-lisp :tangle no
+  (use-package zoxide)
+#+end_src
+
+** Dired
+
+Hide file details and absolute path by default, from [[https://lmno.lol/alvaro/hide-another-detail][Hide another detail]]. Check back later to see if =dired-hide-details-hide-absolute-location= has been merged into Dired.
+
+#+begin_src emacs-lisp
+  (use-package dired+
+    :vc (:url "https://github.com/emacsmirror/dired-plus"))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun hide-dired-details-include-all-subdir-paths ()
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward dired-subdir-regexp nil t)
+  	(let* ((match-bounds (cons (match-beginning 1) (match-end 1)))
+  	       (path (file-name-directory (buffer-substring (car match-bounds)
+  							    (cdr match-bounds))))
+  	       (path-start (car match-bounds))
+  	       (path-end (+ (car match-bounds) (length path)))
+  	       (inhibit-read-only t))
+  	  (put-text-property path-start path-end
+  			     'invisible 'dired-hide-details-information)))))
+
+  (use-package dired
+    :ensure nil
+    :hook ((dired-mode . dired-hide-details-mode)
+  	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+#+end_src
+
+Add some color with diredfl.
+
+#+begin_src emacs-lisp
+  (use-package diredfl
+    :defer
+    :config
+    (diredfl-global-mode 1))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package dired-x
+    :ensure nil
+    :config
+    (progn
+      (setq dired-omit-verbose nil)
+      ;; toggle `dired-omit-mode' with C-x M-o
+      (setq dired-omit-files
+	    (concat dired-omit-files "\\|^.DS_STORE$\\|^.projectile$\\|^\\..+$"))
+      (setq-default dired-omit-extensions '(".fdb_latexmk" ".aux" ".bbl" ".blg" ".fls" ".glo" ".idx" ".ilg" ".ind" ".ist" ".log" ".out" ".gz" ".DS_Store" ".xml" ".bcf" ".nav" ".snm" ".toc"))))
+#+end_src
+
+For some reason, adding the dired-omit-mode hook in the use-package declaration isn't working. This sets it after Emacs starts.
+
+#+begin_src emacs-lisp
+   (add-hook 'dired-mode-hook #'dired-omit-mode)
+#+end_src
+
+Make copying and moving files easier.
+
+#+begin_src emacs-lisp
+  (setq dired-dwim-target t)
+#+end_src
+
+Use "R" to mark renamed files to avoid moving accidental subsequent moves.
+
+#+begin_src emacs-lisp
+  (setopt dired-keep-marker-rename 82)
+#+end_src
+
+Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
+
+#+begin_src emacs-lisp
+  (defun rlr/dired-search-and-enter ()
+    "Search file or directory with `consult-line' and then visit it."
+    (interactive)
+    (consult-line)
+    (dired-find-file))
+#+end_src
+
+Replace spaces in file names with hyphens using "%s" in dired.
+
+#+begin_src emacs-lisp
+  (defun my-substspaces (str)
+    (subst-char-in-string ?\s ?- str))
+
+  (defun my-dired-substspaces (&optional arg)
+    "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+    (interactive "P")
+    (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
+#+end_src
+
+#+begin_src emacs-lisp
+  (bind-keys
+   :map dired-mode-map
+   ("j" rlr/dired-search-and-enter)
+   ("J" dired-goto-file)
+   ("%s" . my-dired-substspaces))
+#+end_src
+
+*** Reveal in Finder
+
+#+begin_src emacs-lisp
+  (use-package reveal-in-osx-finder
+    :bind
+    ("C-c z" . 'reveal-in-osx-finder))
+#+end_src
+
+** Shells
+
+*** Eat
+
+#+begin_src emacs-lisp
+  (use-package eat
+    :config
+    (when (eq system-type 'darwin)
+    (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
+    (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
+#+end_src
+
+*** Ghost.el
+
+I use Ghostty on Mac OS. Not sure if I like this better than Eat, though.
+
+#+begin_src emacs-lisp :tangle no
+  (use-package ghostel
+    :ensure (:type git :host github :repo "dakra/ghostel"))
+#+end_src
+
+*** Term Toggle
+https://github.com/amno1/emacs-term-toggle
+
+#+begin_src emacs-lisp
+  (use-package term-toggle
+:vc (:url "https://github.com/amno1/emacs-term-toggle")
+    :config
+    (setq term-toggle-no-confirm-exit t)
+    (defun term-toggle-eat ()
+      "Toggle `term'."
+      (interactive) (term-toggle 'eat))
+    ;; (defun term-toggle-ghostel ()
+    ;;   "Toggle `term'."
+    ;;   (interactive) (term-toggle 'ghostel))
+    :bind
+    ("<f2>" . term-toggle-eat)
+     ("<S-f2>" . term-toggle-eshell))
+#+end_src
+
+*** Async Shell Command Buffers
+
+Don't ask to create new shell buffers.
+
+#+begin_src emacs-lisp
+  (setq async-shell-command-buffer "new-buffer")
+#+end_src
+
+Run async shell command without creating a window.
+
+#+begin_src emacs-lisp
+  (defun async-shell-command-no-window
+      (command)
+    (interactive)
+    (let
+	((display-buffer-alist
+	  (list
+	   (cons
+	    "\\*Async Shell Command\\*.*"
+	    (cons #'display-buffer-no-window nil)))))
+      (async-shell-command
+       command)))
+#+end_src
+
+*** Eshell
+
+Make output scroll to bottom in Eshell.
+
+#+begin_src emacs-lisp
+  (setq eshell-scroll-to-bottom-on-input "this")
+#+end_src
+
+*** Terminal Here
+
+Go to current directory in Ghostty.
+
+#+begin_src emacs-lisp
+  (use-package terminal-here
+    :config
+    (setq terminal-here-mac-terminal-command 'ghostty)
+    :bind
+    ("C-c t" . terminal-here-launch))
+#+end_src
+
+*** TLDR
+
+#+begin_src emacs-lisp
+  (use-package tldr
+    :commands tldr)
+#+end_src
+
+** Help
+
+Make help buffers active when created, so pressing "q" will immediately close them.
+
+#+begin_src emacs-lisp
+  (setq help-window-select t)
+  (setq Man-notify-method 'aggressive)
+#+end_src
+
+
+*** Helpful
+
+Helpful gives better contextual information in help buffers.
+
+#+begin_src emacs-lisp
+  (use-package helpful
+    :bind
+    ("C-h v" . helpful-variable)
+     ("C-h k" . helpful-key)
+     ("C-h x" . helpful-command))
+#+end_src
+
+
 
 * Editing
 
@@ -1309,17 +1855,17 @@ Ediff settings.
 #+begin_src emacs-lisp
   (use-package crux
     :bind
-    (("s-p" . #'crux-create-scratch-buffer)
-     ("s-j" . #'crux-top-join-line)
-     ("<S-return>" . #'crux-smart-open-line)
-     ("<C-S-return>" . #'crux-smart-open-line-above)
-     ("<escape>" . #'crux-keyboard-quit-dwim)))
+    (("s-p" . crux-create-scratch-buffer)
+     ("s-j" . crux-top-join-line)
+     ("<S-return>" . crux-smart-open-line)
+     ("<C-S-return>" . crux-smart-open-line-above)
+     ("<escape>" . crux-keyboard-quit-dwim)))
 
   (use-package dired
     :ensure nil
     :bind
     (:map dired-mode-map
-	  ("M-<RET>" . #'crux-open-with)))
+	  ("M-<RET>" . crux-open-with)))
 
   (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 #+end_src
@@ -1329,7 +1875,7 @@ Ediff settings.
 #+begin_src emacs-lisp
   (use-package evil-nerd-commenter
     :bind
-    ("M-;" . #'evilnc-comment-or-uncomment-lines))
+    ("M-;" . evilnc-comment-or-uncomment-lines))
 #+end_src
 
 ** Magit
@@ -1364,29 +1910,30 @@ For spell-checking
     (setq ispell-silently-savep t)
     :hook (emacs-startup . global-jinx-mode)
     :bind
-    (([remap ispell-word] . #'jinx-correct)
-     ("<f7>" . #'jinx-correct)
-     ("S-<f7>" . #'jinx-correct-all)))
+    (([remap ispell-word] . jinx-correct)
+     ("<f7>" . jinx-correct)
+     ("S-<f7>" . jinx-correct-all)))
 #+end_src
 
 ** Editing Keybindings
 
 #+begin_src emacs-lisp
-  (global-set-key (kbd "<s-up>") #'beginning-of-buffer)
-  (global-set-key (kbd "<s-down>")  #'end-of-buffer)
-  (global-set-key (kbd "<s-right>") #'end-of-visual-line)
-  (global-set-key (kbd "<s-left>") #'beginning-of-visual-line)
-  (global-set-key (kbd "<M-down>") #'forward-paragraph)
-  (global-set-key (kbd "<M-up>") #'backward-paragraph)
-  (global-set-key (kbd "M-u") #'upcase-dwim)
-  (global-set-key (kbd "M-l") #'downcase-dwim)
-  (global-set-key (kbd "M-c") #'capitalize-dwim)
-  (global-set-key (kbd "RET") #'newline-and-indent)
-  (global-set-key (kbd "M-/") #'hippie-expand)
-  (global-set-key (kbd "<s-backspace>") #'kill-whole-line)
-  (global-set-key (kbd "<C-d d>") #'insert-standard-date)
-  (global-set-key (kbd "M-q") #'reformat-paragraph)
-  (global-set-key (kbd "M-#") #'dictionary-lookup-definition)
+(bind-keys
+  ("<s-up>" . beginning-of-buffer)
+  ("<s-down>" .  end-of-buffer)
+  ("<s-right>" . end-of-visual-line)
+  ("<s-left>" . beginning-of-visual-line)
+  ("<M-down>" . forward-paragraph)
+  ("<M-up>" . backward-paragraph)
+  ("M-u" . upcase-dwim)
+  ("M-l" . downcase-dwim)
+  ("M-c" . capitalize-dwim)
+  ("RET" . newline-and-indent)
+  ("M-/" . hippie-expand)
+  ("<s-backspace>" . kill-whole-line)
+  ("<C-d d>" . insert-standard-date)
+  ("M-q" . reformat-paragraph)
+  ("M-#" . dictionary-lookup-definition))
 #+end_src
 
 * Org Mode
@@ -1743,7 +2290,7 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
 
 ** Org Agenda
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package org-super-agenda
     :after org
     :config
@@ -2798,9 +3345,9 @@ Remove multiple choice questions and save them to the kill ring.
 #+begin_src emacs-lisp
   (use-package citar
     :bind
-    (("C-c C-b" . #'citar-insert-citation)
+    (("C-c C-b" . citar-insert-citation)
     :map minibuffer-local-map
-	  ("M-b" . #'citar-insert-preset))
+	  ("M-b" . citar-insert-preset))
     :custom
     (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
     (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
@@ -2845,8 +3392,8 @@ Remove multiple choice questions and save them to the kill ring.
 #+begin_src emacs-lisp
   (use-package consult-denote
     :bind
-    ("C-c n f" . #'consult-denote-find)
-    ("C-c n g" . #'consult-denote-grep)
+    ("C-c n f" . consult-denote-find)
+    ("C-c n g" . consult-denote-grep)
     :config
     (consult-denote-mode 1))
 #+end_src
@@ -2959,6 +3506,505 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
   (general-define-key
    "C-M-S-s-k" #'copy-kill-buffer)
 #+end_src
+
+* Mail and News
+
+** Mu4e
+
+#+begin_src emacs-lisp
+    (use-package mu4e
+      :ensure nil
+      :commands (mu4e mu4e-update-mail-and-index)
+      :bind
+      (:map mu4e-headers-mode-map
+	          ("q"  . kill-current-buffer)
+	          ("C-<tab>" . tab-next)
+	          ("g" . my-mu4e-mark-add-tag)
+      :map mu4e-thread-mode-map
+	          ("C-<tab>" . tab-next)
+      :map mu4e-main-mode-map
+	          ("q"  . rlr/quit-mu4e)
+	          ("u" . mu4e-update-mail-and-index)
+      :map mu4e-view-mode-map
+	          ("," . link-hint-open-link)
+	          ("." . rlr/link-hint-open-link-in-secondary-browser)
+	          ("C-," . mu4e-sexp-at-point))
+      :after org
+      :init
+      (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
+      :config
+      (setq mail-user-agent 'mu4e-user-agent)
+      (setq mu4e-maildir "~/.maildir/")
+      (setq mu4e-get-mail-command "mbsync -a")
+      (setq mu4e-update-interval 300) ;; update every 5 minutes
+      (setq mu4e-read-option-use-builtin nil
+	          mu4e-completing-read-function 'completing-read)
+      (setq mu4e-split-view 'horizontal)
+      (setq mu4e-index-update-error-warning nil)
+      (setq mu4e-headers-skip-duplicates  t)
+      (setq mu4e-view-show-images t)
+      (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
+      (setq mu4e-view-show-addresses t)
+      (setq mu4e-use-fancy-chars t)
+      (setq mu4e-compose-format-flowed t)
+      (setq mu4e-date-format "%y/%m/%d")
+      (setq mu4e-headers-date-format "%Y/%m/%d")
+      (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
+      (setq mu4e-change-filenames-when-moving t)
+      ;; customize the reply-quote-string
+      (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
+      ;; choose to use the formatted string
+      (setq message-citation-line-function 'message-insert-formatted-citation-line)
+      (setq mu4e-attachment-dir "~/Downloads")
+      (setq mu4e-context-policy 'pick-first)
+      (setq  mu4e-contexts (list
+				  (make-mu4e-context
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@fastmail.com")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/fastmail/Drafts")
+					     (mu4e-sent-folder  . "/fastmail/Sent")
+					     (mu4e-trash-folder  . "/fastmail/Trash")
+					     (mu4e-refile-folder  . "/fastmail/Archive")
+					     (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
+					     (smtpmail-smtp-server  . "smtp.fastmail.com")
+					     ))
+				  (make-mu4e-context
+				   :name "obu"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/obu/Drafts")
+					     (mu4e-sent-folder  . "/obu/Sent")
+					     (mu4e-trash-folder . "/obu/Trash")
+					     (mu4e-refile-folder  . "/obu/Archive")
+					     ;; (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-smtp-server  . "localhost")
+					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+					     (smtpmail-stream-type . plain)
+					     (smtpmail-smtp-service . 1025)
+					     ))
+				  (make-mu4e-context
+				   :name "gmail"
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+					   (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@gmail.com")
+					     (user-full-name . "Randy Ridenour")
+					     (mu4e-drafts-folder . "/gmail/Drafts")
+					     (mu4e-refile-folder . "/gmail/Archive")
+					     (mu4e-sent-folder . "/gmail/Sent")
+					     (mu4e-trash-folder . "/gmail/Trash")))
+				  ))
+
+      (setq mu4e-bookmarks
+	          '((:name "Unread messages"
+		         :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
+		         :key ?b)
+	        (:name "Flagged messages"
+		         :query "flag:flagged"
+		         :key ?f)
+	        ( :name "All inboxes"
+	          :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
+	          :key ?A)
+	        ( :name "Today's messages"
+	          :query "date:today..now"
+	          :key ?t)
+	        ( :name "Last 7 days"
+	          :query "date:7d..now"
+	          :hide-unread t
+	          :key ?w)
+	        ( :name "Messages with images"
+	          :query "mime:image/*"
+	          :key ?p)))
+      (setq mu4e-maildir-shortcuts
+	          '((:maildir "/obu/INBOX" :key ?u)
+	        (:maildir "/fastmail/INBOX" :key ?f)
+	        (:maildir "/gmail/INBOX" :key ?g)))
+      (require 'mu4e-transient))
+#+end_src
+
+This asks before sending messages without subjects. From [[https://emacs.stackexchange.com/questions/41175/how-to-warn-before-sending-email-if-subject-is-empty][message mode - How to warn before sending email if Subject: is empty - Emacs Stack Exchange]]
+
+#+begin_src emacs-lisp
+(defun my-confirm-empty-subject ()
+  "Allow user to quit when current message subject is empty."
+  (or (message-field-value "Subject")
+      (yes-or-no-p "Really send without Subject? ")
+      (keyboard-quit)))
+
+(add-hook 'message-send-hook #'my-confirm-empty-subject)
+#+end_src
+
+Show images from Woot.
+
+#+begin_src emacs-lisp  :tangle no
+    (setq gnus-blocked-images
+	  (lambda(&optional _ignore)
+	(if (mu4e-message-contact-field-matches
+	     (mu4e-message-at-point) :from "store-news@woot.com")
+	    nil ".")))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (use-package org-mime
+    :commands (org-mime-edit-mail-in-org-mode)
+    :config
+    (setq org-mime-export-options '(:section-numbers nil
+						     :with-author nil
+						     :with-toc nil)))
+#+end_src
+
+Quit Mu4e and close tab.
+
+#+begin_src emacs-lisp
+  (defun rlr/quit-mu4e ()
+    (interactive)
+    (mu4e-quit)
+    (rlr/delete-tab-or-frame))
+#+end_src
+
+Mu4e-alert
+
+#+begin_src emacs-lisp
+  (use-package mu4e-alert
+    :after mu4e
+    :config
+    (mu4e-alert-enable-mode-line-display))
+#+end_src
+
+Mail Signatures
+
+#+begin_src emacs-lisp
+  (defun obu-signature ()
+    (interactive)
+    (insert (concat
+	 "\n--\n"
+	 "Randy Ridenour, Ph.D.\n"
+	 "Professor of Philosophy\n"
+	 "Oklahoma Baptist University\n"
+	 "220 Montgomery Hall\n"
+	 "500 W. University St.\n"
+	 "Shawnee, OK  74804\n"
+	 "Office: (405) 585-4432\n")))
+
+  (defun informal-signature ()
+    (interactive)
+    (insert (concat
+	 "\n--\n"
+	 "Randy")))
+
+  (defun home-signature ()
+    (interactive)
+    (insert (concat
+	 "\n--\n"
+	 "Randy Ridenour\n"
+	 "1613 Central Pkwy\n"
+	 "Norman, OK  73071\n"
+	 "(405) 613-7516")))
+#+end_src
+
+Open mu4e in new tab.
+
+#+begin_src emacs-lisp
+  (defun rlr/open-mu4e-new-tab ()
+    (interactive)
+    (tab-new)
+    (mu4e)
+    (mu4e-update-mail-and-index 1))
+
+  (bind-keys
+   ("H-m" . mu4e-transient-menu)
+   ("C-M-S-s-m" . rlr/open-mu4e-new-tab))
+#+end_src
+
+*** Consult MU
+
+#+begin_src emacs-lisp :tangle no
+    (use-package consult-mu
+      :vc (:url "https://github.com/armindarvish/consult-mu")
+      :after (consult mu4e)
+      :commands (consult-mu)
+  :bind
+  (:map mu4e-headers-mode-map
+	  ("s-f" . consult-mu))
+      :custom
+      ;;maximum number of results shown in minibuffer
+      (consult-mu-maxnum 200)
+      ;;show preview when pressing any keys
+      (consult-mu-preview-key 'any)
+      ;;do not mark email as read when previewed. If you turn this to t, be aware that the auto-loaded preview if the preview-key above is 'any would also get marked as read!
+      (consult-mu-mark-previewed-as-read nil)
+      ;;mark email as read when selected.
+      (consult-mu-mark-viewed-as-read t)
+      ;;use reply to all when composing reply emails
+      (consult-mu-use-wide-reply nil)
+      ;; define a template for headers view in minibuffer. The example below adjusts the width based on the width of the screen.
+      (consult-mu-headers-template (lambda () (concat "%f" (number-to-string (floor (* (frame-width) 0.15))) "%s" (number-to-string (floor (* (frame-width) 0.5))) "%d13" "%g" "%x")))
+      :config
+      ;;create a list of saved searches for quick access using `histroy-next-element' with `M-n' in minibuffer. Note the "#" character at the beginning of each query! Change these according to
+      (setq consult-mu-saved-searches-dynamics '("#flag:unread"))
+      (setq consult-mu-saved-searches-async '("#flag:unread"))
+      ;; require embark actions for marking, replying, forwarding, etc. directly from minibuffer
+      (require 'consult-mu-embark)
+      ;; require extra module for composing (e.g. for interactive attachment) as well as embark actions
+      (require 'consult-mu-compose)
+      (require 'consult-mu-compose-embark)
+      ;; require extra module for searching contacts and runing embark actions on contacts
+      (require 'consult-mu-contacts)
+      (require 'consult-mu-contacts-embark)
+      ;; change the prefiew key for compose so you don't open a preview of every file when selecting files to attach
+      (setq consult-mu-compose-preview-key "M-o")
+      ;; pick a key to bind to consult-mu-compose-attach in embark-file-map
+      (setq consult-mu-embark-attach-file-key "C-a")
+      (setq consult-mu-contacts-ignore-list '("^.*no.*reply.*"))
+      (setq consult-mu-contacts-ignore-case-fold-search t)
+      (consult-mu-compose-embark-bind-attach-file-key)
+      ;; choose if you want to use dired for attaching files (choice of 'always, 'in-dired, or nil)
+      (setq consult-mu-compose-use-dired-attachment 'in-dired))
+#+end_src
+
+*** Browser
+
+Functions for setting default browser,
+
+#+begin_src emacs-lisp
+  (defun rlr/browser-default ()
+    (interactive)
+    (setq browse-url-browser-function 'browse-url-default-browser))
+
+  (defun rlr/browser-qutebrowser ()
+    (interactive)
+    (setq browse-url-browser-function 'browse-url-generic
+	  browse-url-generic-program "qutebrowser"))
+
+  (defun rlr/browser-eww ()
+    (interactive)
+    (setq browse-url-browser-function 'eww-browse-url))
+
+  (defun rlr/select-browser ()
+    (interactive)
+    (let* ((choices '(("System Default" . rlr/browser-default)
+		      ("Qutebrowser" . rlr/browser-qutebrowser)
+		      ("EWW" . rlr/browser-eww)))
+	   (choice   (completing-read "Choose one: " choices)))
+      (call-interactively (cdr (assoc choice choices)))))
+
+  (bind-key "C-M-S-s-b"  #'rlr/select-browser)
+#+end_src
+
+** Elfeed
+
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :demand
+    :init
+    ;; (setq elfeed-db-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed")
+    (setq elfeed-db-directory "~/.elfeed-db")
+    :config
+    :bind
+    (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
+    :map elfeed-search-mode-map
+	      ("q" . rlr/elfeed-save-db-and-quit)
+    :map elfeed-show-mode-map
+	      ("S-<SPC>" . scroll-down)
+	      ("," . link-hint-open-link)
+	      ("." . rlr/link-hint-open-link-in-secondary-browser))
+    :commands elfeed)
+#+end_src
+
+Save elfeed-db to Codeberg. From [[https://punchagan.muse-amuse.in/blog/elfeed-db-back-up-hooks/][Elfeed DB backup hooks - Noetic Nought]]
+
+#+begin_src emacs-lisp
+  (defvar rlr/elfeed-db-save-timer nil
+    "Timer for debounced elfeed database saves.")
+
+  (defun rlr/elfeed-db-save-and-backup ()
+    "Save the elfeed database and commit to git."
+    (when (and (boundp 'elfeed-db) elfeed-db)
+      (elfeed-db-save)
+      (let ((default-directory elfeed-db-directory))
+	(when (file-exists-p ".git")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "add" "-A")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "commit" "-m" "auto-backup")
+	  (call-process "git" nil "*elfeed-db-backup*" nil "push" "origin" "main")))))
+
+  (defun rlr/elfeed-db-save-soon ()
+    "Schedule a database save after 10 seconds of idle."
+    (interactive)
+    (when rlr/elfeed-db-save-timer
+      (cancel-timer rlr/elfeed-db-save-timer))
+    (setq rlr/elfeed-db-save-timer
+	  (run-with-idle-timer 10 nil #'rlr/elfeed-db-save-and-backup)))
+
+  ;; Save and backup when tags change (elfeed-web usage)
+  (add-hook 'elfeed-tag-hooks   (lambda (&rest _) (rlr/elfeed-db-save-soon)))
+  (add-hook 'elfeed-untag-hooks (lambda (&rest _) (rlr/elfeed-db-save-soon)))
+
+  ;; Save and backup when new entries are added
+  (add-hook 'elfeed-db-update-hook #'rlr/elfeed-db-save-soon)
+  #+end_src
+
+Functions for syncing the database between machines.
+
+#+begin_src emacs-lisp
+  (defun rlr/elfeed-load-db-and-open ()
+    "Load elfeed db before opening"
+    (interactive)
+    (shell-command "elfeed-pull")
+    (elfeed-db-load)
+    (elfeed)
+    (elfeed-search-update--force)
+    (elfeed-update))
+
+  (defun rlr/open-elfeed-new-tab ()
+    (interactive)
+    (tab-new)
+    (rlr/elfeed-load-db-and-open)
+    (elfeed-update))
+
+  (defun rlr/elfeed-save-db-and-quit ()
+    (interactive)
+    (rlr/elfeed-db-save-and-backup)
+    (kill-matching-buffers-no-ask "elfeed")
+    (rlr/delete-tab-or-frame))
+#+end_src
+
+Tag items — from [[https://www.reddit.com/r/emacs/comments/go5d0v/using_emacs_72_customizing_elfeed/][Karthink]]
+
+#+begin_src emacs-lisp
+  (defmacro elfeed-tag-selection-as (mytag)
+    "Tag elfeed entry as MYTAG"
+    `(lambda (&optional user-generic-p)
+       (interactive "P")
+       (let ((entries (elfeed-search-selected)))
+	 (cl-loop for entry in entries
+		  do (funcall (if (elfeed-tagged-p ,mytag entry)
+				  #'elfeed-untag #'elfeed-tag)
+			      entry ,mytag)
+		  do (elfeed-untag entry 'unread))
+	 (mapc #'elfeed-search-update-entry entries)
+	 (unless (use-region-p) (forward-line)))))
+
+  (bind-keys
+   :map elfeed-search-mode-map
+   ("l" . (elfeed-tag-selection-as 'readlater))
+   ("d" . (elfeed-tag-selection-as 'junk))
+   ("m" . (elfeed-tag-selection-as 'starred))
+   ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
+   ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
+   )
+#+end_src
+
+These functions are for toggling tags when viewing single Elfeed entries. From [[https://github.com/sfromm/emacs.d][sfromm/emacs.d: emacs configuration]]
+
+#+begin_src emacs-lisp
+  (defun rlr/elfeed-show-toggle-tag (tag)
+    "Toggle tag for elfeed article."
+    (interactive)
+    (if (elfeed-tagged-p tag elfeed-show-entry)
+	(elfeed-show-untag tag)
+      (elfeed-show-tag tag)))
+
+  (defun rlr/elfeed-show-toggle-starred ()
+    "Toggle starred tag for elfeed article"
+    (interactive)
+    (rlr/elfeed-show-toggle-tag 'starred))
+
+  (defun rlr/elfeed-show-toggle-readlater ()
+    "Toggle starred tag for elfeed article"
+    (interactive)
+    (rlr/elfeed-show-toggle-tag 'readlater))
+
+  (bind-keys
+   :map elfeed-show-mode-map
+   ("l" . rlr/elfeed-show-toggle-readlater)
+   ("m" . rlr/elfeed-show-toggle-starred))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun ar/elfeed-search-browse-background-url ()
+    "Open current `elfeed' entry (or region entries) in browser without losing focus."
+    (interactive)
+    (let ((entries (elfeed-search-selected)))
+      (mapc (lambda (entry)
+	      (cl-assert (memq system-type '(darwin)) t "open command is macOS only")
+	      (start-process (concat "open " (elfeed-entry-link entry))
+			     nil "open" "--background" (elfeed-entry-link entry))
+	      (elfeed-untag entry 'unread)
+	      (elfeed-search-update-entry entry))
+	    entries)
+      (unless (or elfeed-search-remain-on-entry (use-region-p))
+	(forward-line))))
+
+  (bind-key "B" #'ar/elfeed-search-browse-background-url 'elfeed-search-mode-map)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package elfeed-org
+    :after elfeed
+    :init
+    (elfeed-org)
+    ;; (setq rmh-elfeed-org-files (list "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed/elfeed.org"))
+    (setq rmh-elfeed-org-files (list "~/.elfeed-db/elfeed.org"))
+    :config
+    ;; (setq rmh-elfeed-org-auto-ignore-invalid-feeds t)
+    )
+#+end_src
+
+This uses webkit to display HTML in Elfeed.
+
+
+#+begin_src emacs-lisp
+(use-package elfeed-webkit
+  :ensure
+  :bind (:map elfeed-show-mode-map
+	      ("%" . elfeed-webkit-toggle)))
+#+end_src
+
+
+
+Open Elfeed entry in EWW
+
+#+begin_src emacs-lisp
+  (defun rlr/elfeed-open-in-eww ()
+    "Open the current elfeed entry in EWW."
+    (interactive)
+    (let* ((entry (if (eq major-mode 'elfeed-show-mode)
+		      elfeed-show-entry
+		    (elfeed-search-selected :ignore-region)))
+	   (url (and entry (elfeed-entry-link entry))))
+      (when url
+	(tab-new)
+	(eww url))))
+
+  (bind-keys
+       :map elfeed-show-mode-map
+       ("e" . rlr/elfeed-open-in-eww)
+     :map elfeed-search-mode-map
+     ("e" . rlr/elfeed-open-in-eww))
+#+end_src
+
+
+
 
 
 * HTML and Web
@@ -3102,8 +4148,8 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
     (setq website2org-directory "~/icloud/web-saves/website2org/") ;; if needed, see below
     (setq website2org-additional-meta nil)
     :bind
-    ("C-M-s-<down>" . #'website2org)
-     ("C-M-s-<up>" . #'website2org-temp))
+    ("C-M-s-<down>" . website2org)
+     ("C-M-s-<up>" . website2org-temp))
 #+end_src
 
 ** Htmlize
@@ -3132,7 +4178,7 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
       (setq-local shr-inhibit-images (not shr-inhibit-images))
       (eww-reload t)
       (message "Images are now %s"
-  	       (if shr-inhibit-images "off" "on")))
+	       (if shr-inhibit-images "off" "on")))
     ;; (define-key eww-mode-map (kbd "I") #'rlr/eww-toggle-images)
     ;; (define-key eww-link-keymap (kbd "I") #'rlr/eww-toggle-images)
     ;; minimal rendering by default
@@ -3149,10 +4195,10 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
     :bind
     (nil
     :map eww-mode-map
-  	      ("I" . #'rlr/eww-toggle-images)
-  	      ("f" . #'link-hint-open-link)
-  	      ("F" . #'rlr/open-eww-link-new-buffer)
-  	      ("T" . #'eww-toggle-fonts)))
+	      ("I" . rlr/eww-toggle-images)
+	      ("f" . link-hint-open-link)
+	      ("F" . rlr/open-eww-link-new-buffer)
+	      ("T" . eww-toggle-fonts)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3307,9 +4353,9 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 #+begin_src emacs-lisp
   (use-package link-hint
     :bind
-    ("s-," . #'link-hint-open-link)
-     ("C-c l o" . #'link-hint-open-link)
-     ("C-c l c" . #'link-hint-copy-link))
+    ("s-," . link-hint-open-link)
+     ("C-c l o" . link-hint-open-link)
+     ("C-c l c" . link-hint-copy-link))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3334,7 +4380,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 #+begin_src emacs-lisp
 (use-package calc
 :bind
-("C-M-S-s-c" . #'calc))
+("C-M-S-s-c" . calc))
 #+end_src
 
 
@@ -3555,37 +4601,41 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        )))
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
-  (general-define-key
-   "H-h" #'hydra-hydras/body
-   "s-l" #'hydra-locate/body
-   "s-n" #'hydra-new/body
-   "H-t" #'hydra-toggle/body
-   "H-w" #'hydra-window/body
-   "H-b" #'hydra-buffer/body
-   ;; "H-'" #'hydra-surround/body
-   "C-x 9" #'hydra-logic/body)
+
+#+begin_src emacs-lisp
+  (bind-keys
+   ("H-h" . hydra-hydras/body)
+   ("s-l" . hydra-locate/body)
+   ("s-n" . hydra-new/body)
+   ("H-t" . hydra-toggle/body)
+   ("H-w" . hydra-window/body)
+   ("H-b" . hydra-buffer/body)
+   ;; "H-'" . hydra-surround/body
+   ("C-x 9" . hydra-logic/body))
 #+end_src
+
+
+
 
 ** Major-Mode Hydras
 
 *** Dashboard Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define dashboard-mode
      (:quit-key "q")
      ("Open"
       (("m" consult-bookmark "bookmarks")
        ("a" consult-org-agenda "consult-agenda")
        ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
-       ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks")))))
+       ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))))
 #+end_src
 
 *** Org Agenda Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define org-agenda-mode
      (:quit-key "q")
      ("Open"
@@ -3603,13 +4653,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        )
       "Actions"
       (("s" rlr/save-web-page-as-org-file "Save Safari page as Org")
-       ("e" rlr/open-safari-page-in-eww "Open Safari page in EWW")))))
+       ("e" rlr/open-safari-page-in-eww "Open Safari page in EWW"))))
 #+end_src
 
 *** EWW Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define eww-mode
      (:quit-key "q")
      ("A"
@@ -3653,13 +4703,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("=" eww-next-bookmark "Next Bookmark")
        ("-" eww-previous-bookmark "Previous Bookmark")
        ("O" jao-eww-to-org "Make Org Version")
-       ("<SPC>" nil "Quit" :color pink)))))
+       ("<SPC>" nil "Quit" :color pink))))
 #+end_src
 
 *** Markdown Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define markdown-mode
      (:quit-key "q")
      ("Format"
@@ -3670,13 +4720,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("w" markdown-insert-wiki-link "wiki")
        ("r" markdown-insert-reference-link-dwim "r-link")
        ("n" markdown-cleanup-list-numbers "clean-lists")
-       ("c" markdown-complete-buffer "complete")))))
+       ("c" markdown-complete-buffer "complete"))))
 #+end_src
 
 *** LaTeX Mode
 
 #+begin_src emacs-lisp :tangle no
-    (with-after-elpaca-init
+
      (major-mode-hydra-define LaTeX-mode
        (:quit-key "q")
        ("Bibtex"
@@ -3692,13 +4742,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 	 ("n" latex-word-count "word count"))
   "Exams"
   (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
-	)))
+	))
 #+end_src
 
 *** Org Mode
 
 #+begin_src emacs-lisp :tangle no :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define org-mode
      (:quit-key "q")
      ("Export"
@@ -3747,13 +4797,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("bs" orgblog-serve "Serve site")
        ("bd" orgblog-push "Push to Github"))
       "Notes"
-      (("1" denote-link "link to note")))))
+      (("1" denote-link "link to note"))))
       #+end_src
 
 *** Dired Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define dired-mode
      (:quit-key "q")
      ("New"
@@ -3772,50 +4822,50 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
       (("bn" rlrt-new-post "New draft")
        ("bb" orgblog-build "Build Site")
        ("bs" orgblog-serve "Serve Site")
-       ("bd" orgblog-push "Push to Github")))))
+       ("bd" orgblog-push "Push to Github"))))
 #+end_src
 
 *** CSS Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define css-mode
      (:quit-key "q")
      ("Blog"
       (("bn" rlrt-new-post "New draft")
        ("bb" orgblog-build "Build Site")
        ("bs" orgblog-serve "Serve Site")
-       ("bd" orgblog-push "Push to Github")))))
+       ("bd" orgblog-push "Push to Github"))))
 #+end_src
 
 *** Denote Menu Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define denote-menu-mode
      (:quit-key "q")
      ("Tools"
       (("f" denote-menu-filter "Filter by regex")
        ("k" denote-menu-filter-by-keyword "Filter by keyword")
        ("c" denote-menu-clear-filters "Clear filters")
-       ("d" denote-menu-export-to-dired "Dired")))))
+       ("d" denote-menu-export-to-dired "Dired"))))
 #+end_src
 
 *** Mu4e Mode
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define mu4e-main-mode
      (:quit-key "q")
      ("Message"
       (
        ("n" mu4e-compose-mail "New")
        ("e" mu4e-view-save-attachments "Save attachments")
-       ))))
+       )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define mu4e-headers-mode
      (:quit-key "q")
      ("Message"
@@ -3823,11 +4873,11 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("n" mu4e-compose-mail "New")
        ("r" mu4e-compose-reply "Reply")
        ("a"  mu4e-compose-wide-reply "Reply All")
-       ))))
+       )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define mu4e-view-mode
      (:quit-key "q")
      ("Message"
@@ -3841,11 +4891,11 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("bd" rlr/browser-default "System default")
        ("bq" rlr/browser-qutebrowser "Qutebrowser")
        ("be" rlr/browser-eww "EWW")
-       ))))
+       )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
-  (with-after-elpaca-init
+
    (major-mode-hydra-define mu4e-compose-mode
      (:quit-key "q")
      ("Compose with Org"
@@ -3859,7 +4909,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
        ("h" home-signature "Home")
        ("p" informal-signature "Personal")
        )
-      )))
+      ))
 #+end_src
 
 ** Prefix Keybindings

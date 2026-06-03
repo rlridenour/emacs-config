@@ -1,0 +1,3 @@
+;;; Elfeed Database Index (version 4)
+
+(:version 4 :feeds #s(hash-table test equal) :entries #s(hash-table test equal) :index #s(avl-tree- [nil nil nil 0] elfeed-db-compare))

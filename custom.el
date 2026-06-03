@@ -6,17 +6,23 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    '(ace-window auctex citar citar-denote consult consult-denote
-	      consult-notes crux denote denote-menu denote-org
-	      denote-search dired doom-modeline ebib
-	      evil-nerd-commenter exec-path-from-shell fish-mode
-	      grove htmlize jinx link-hint magit major-mode-hydra
-	      marginalia modus-themes orderless org-appear
+	      consult-mu consult-notes crux deadgrep denote
+	      denote-menu denote-org denote-search dired dired+
+	      diredfl doom-modeline eat ebib elfeed elfeed-org
+	      elfeed-webkit evil-nerd-commenter exec-path-from-shell
+	      fish-mode fzf grove helpful htmlize jinx link-hint
+	      magit major-mode-hydra marginalia modus-themes
+	      mu4e-alert olivetti orderless org-appear
 	      org-auto-tangle org-autolist org-bulletproof
 	      org-contrib org-mac-link org-modern org-people
-	      org-upcoming-modeline org-web-tools orgonomic vertico
-	      website2org yasnippet))
+	      org-upcoming-modeline org-web-tools orgonomic
+	      persistent-scratch pulsar reveal-in-osx-finder rg
+	      spacious-padding term-toggle terminal-here tldr
+	      ultra-scroll vertico website2org yasnippet))
  '(package-vc-selected-packages
-   '((website2org :url "https://github.com/rtrppl/website2org")
+   '((term-toggle :url "https://github.com/amno1/emacs-term-toggle")
+     (dired+ :url "https://github.com/emacsmirror/dired-plus")
+     (website2org :url "https://github.com/rtrppl/website2org")
      (orgonomic :url "https://github.com/aaronjensen/emacs-orgonomic"
 	      :branch "master"))))
 (custom-set-faces
