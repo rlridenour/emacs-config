@@ -1770,6 +1770,564 @@ and convert it to Org using the pandoc utility."
 	(kill-region start end)))
   (org-list-repair))
 
+(use-package citar
+  :bind
+  (("C-c C-b" . #'citar-insert-citation)
+  :map minibuffer-local-map
+	  ("M-b" . #'citar-insert-preset))
+  :custom
+  (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
+  (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
+  (org-cite-csl-styles-dir "/usr/local/texlive/2025/texmf-dist/tex/latex/citation-style-language/styles")
+  (org-cite-export-processors
+   '((md . (csl "chicago-author-date.csl"))
+     (latex biblatex)
+     (odt . (csl "chicago-author-date.csl"))
+     (t . (csl "chicago-author-date.csl")))))
+
+(use-package ebib
+  :commands (ebib)
+  :config
+  (setq ebib-bibtex-dialect 'biblatex)
+  ;;(evil-set-initial-state 'ebib-index-mode 'emacs)
+  ;;(evil-set-initial-state 'ebib-entry-mode 'emacs)
+  ;;(evil-set-initial-state 'ebib-log-mode 'emacs)
+  :custom
+  (ebib-preload-bib-files '("~/Dropbox/bibtex/rlr.bib")))
+
+(use-package denote
+    :config
+    (setq denote-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/denote/")
+    (setq denote-infer-keywords t)
+    (setq denote-sort-keywords t)
+    (setq denote-prompts '(title keywords))
+    (setq denote-date-format nil)
+:commands denote)
+
+(use-package consult-denote
+  :bind
+  ("C-c n f" . #'consult-denote-find)
+  ("C-c n g" . #'consult-denote-grep)
+  :config
+  (consult-denote-mode 1))
+
+(use-package denote-org
+  :commands
+  ;; I list the commands here so that you can discover them more
+  ;; easily.  You might want to bind the most frequently used ones to the `org-mode-map'.
+  ( denote-org-link-to-heading
+    denote-org-backlinks-for-heading
+
+    denote-org-extract-org-subtree
+
+    denote-org-convert-links-to-file-type
+    denote-org-convert-links-to-denote-type
+
+    denote-org-dblock-insert-files
+    denote-org-dblock-insert-links
+    denote-org-dblock-insert-backlinks
+    denote-org-dblock-insert-missing-links
+    denote-org-dblock-insert-files-as-headings))
+
+(use-package consult-notes
+  :after (consult denote)
+  :config
+  (consult-notes-denote-mode))
+
+(use-package citar-denote
+  :after (citar denote)
+  :config
+  (citar-denote-mode)
+  (setq citar-open-always-create-notes t))
+
+(use-package denote-menu
+  :after denote)
+
+(use-package denote-search
+  :custom
+  ;; Disable help string (set it once you learn the commands)
+  ;; (denote-search-help-string "")
+  ;; Display keywords in results buffer
+  (denote-search-format-heading-function #'denote-search-format-heading-with-keywords)
+  :commands (denote-search))
+
+(use-package grove
+  :bind-keymap ("C-c v" . grove-command-map)
+  :custom
+  (grove-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/grove/")
+  :config
+  (global-grove-mode 1))
+
+(defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
+(defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
+(defvar orgblog-posts-directory "~/sites/orgblog/posts/" "Path to the blog public directory.")
+(defvar orgblog-drafts-directory "~/sites/orgblog/drafts/" "Path to the blog public directory.")
+
+(defun rlrt-new-post (rlrt-title)
+  (interactive "sTitle: ")
+  ;; Make filename
+  (setq rlrt-filename (rlrt-make-filename rlrt-title))
+  (find-file (s-concat orgblog-drafts-directory (format-time-string "%Y-%m-%d-") rlrt-filename ".org"))
+  (insert (s-concat "#+TITLE: " rlrt-title) ?\n)
+  (yas-expand-snippet (yas-lookup-snippet "orgblogt")))
+
+(defun orgblog-insert-image ()
+  (interactive)
+  (insert "#+begin_center
+#+ATTR_HTML: :width 100% :height
+")
+  (insert "[[" (file-relative-name (read-file-name "Insert file name: " "~/sites/orgblog/images/posts/")) "]]
+#+end_center
+
+")
+  )
+
+(defun orgblog-publish-draft ()
+  (interactive)
+  (save-buffer)
+  (copy-file (buffer-file-name) "~/sites/orgblog/posts/")
+  (delete-file (buffer-file-name) t)
+  (kill-buffer)
+  (dired "~/sites/orgblog/posts"))
+
+(defun orgblog-build ()
+  (interactive)
+  (progn
+    (find-file "~/sites/orgblog/publish.el")
+    (eval-buffer)
+    (org-publish-all)
+    (webfeeder-build "atom.xml"
+		       "./docs"
+		       "https://randyridenour.net/"
+		       (let ((default-directory (expand-file-name "./docs")))
+			 (remove "posts/index.html"
+				 (directory-files-recursively "posts"
+							      ".*\\.html$")))
+		       :title "Randy Ridenour"
+		       :description "Blog posts by Randy Ridenour")
+    (kill-buffer))
+  (message "Build complete!"))
+
+(defun orgblog-serve ()
+  (interactive)
+  (progn
+    (async-shell-command "orgblog-serve")
+    (sleep-for 2)
+    (async-shell-command "open http://localhost:3000")))
+
+(defun orgblog-push ()
+  (interactive)
+  (async-shell-command "orgblog-push"))
+
+(setq org-html-footnotes-section "<div id=\"footnotes\">
+<h2 class=\"footnotes\">%s</h2>
+<div id=\"text-footnotes\">
+%s
+</div>
+</div>")
+
+(defvar yt-iframe-format
+  ;; You may want to change your width and height.
+  (concat "<iframe width=\"440\""
+	    " height=\"335\""
+	    " src=\"https://www.youtube.com/embed/%s\""
+	    " frameborder=\"0\""
+	    " allowfullscreen>%s</iframe>"))
+
+(org-add-link-type
+ "yt"
+ (lambda (handle)
+   (browse-url
+    (concat "https://www.youtube.com/embed/"
+	      handle)))
+ (lambda (path desc backend)
+   (cl-case backend
+     (html (format yt-iframe-format
+		     path (or desc "")))
+     (latex (format "\href{%s}{%s}"
+		      path (or desc "video"))))))
+
+(use-package website2org
+:vc (:url "https://github.com/rtrppl/website2org")
+  :config
+  (setq website2org-directory "~/icloud/web-saves/website2org/") ;; if needed, see below
+  (setq website2org-additional-meta nil)
+  :bind
+  ("C-M-s-<down>" . #'website2org)
+   ("C-M-s-<up>" . #'website2org-temp))
+
+(use-package htmlize
+  :commands (htmlize-file))
+
+(use-package eww
+  :config
+  (defun rlr/open-eww-link-new-buffer ()
+    (interactive)
+    (link-hint-copy-link)
+    (tab-new)
+    (setq new-buffer-url (current-kill 0 t))
+    (switch-to-buffer (generate-new-buffer "*eww*"))
+    (eww-mode)
+    (eww new-buffer-url))
+  (defun rlr/eww-toggle-images ()
+    "Toggle whether images are loaded and reload the current page from cache."
+    (interactive)
+    (setq-local shr-inhibit-images (not shr-inhibit-images))
+    (eww-reload t)
+    (message "Images are now %s"
+	       (if shr-inhibit-images "off" "on")))
+  ;; (define-key eww-mode-map (kbd "I") #'rlr/eww-toggle-images)
+  ;; (define-key eww-link-keymap (kbd "I") #'rlr/eww-toggle-images)
+  ;; minimal rendering by default
+  (setq-default shr-inhibit-images t)   ; toggle with `I`
+  (setq-default shr-use-fonts t)      ; toggle with `F`
+  (defun rrnet ()
+    (interactive)
+    (eww-browse-url "randyridenour.net")
+    )
+  (defun sep ()
+    (interactive)
+    (eww-browse-url "plato.stanford.edu")
+    )
+  :bind
+  (nil
+  :map eww-mode-map
+	      ("I" . #'rlr/eww-toggle-images)
+	      ("f" . #'link-hint-open-link)
+	      ("F" . #'rlr/open-eww-link-new-buffer)
+	      ("T" . #'eww-toggle-fonts)))
+
+(defun jao-eww-to-org (&optional dest)
+  "Render the current eww buffer using org markup.
+ If DEST, a buffer, is provided, insert the markup there."
+  (interactive)
+  (unless (org-region-active-p)
+    (let ((shr-width 80)) (eww-readable)))
+  (let* ((start (if (org-region-active-p) (region-beginning) (point-min)))
+	    (end (if (org-region-active-p) (region-end) (point-max)))
+	    (buff (or dest (generate-new-buffer "*eww-to-org*")))
+	    (link (eww-current-url))
+	    (title (or (plist-get eww-data :title) "")))
+    (with-current-buffer buff
+	 (insert "#+title: " title "\n#+link: " link "\n\n")
+	 (org-mode))
+    (save-excursion
+	 (goto-char start)
+	 (while (< (point) end)
+	   (let* ((p (point))
+		  (props (text-properties-at p))
+		  (k (seq-find (lambda (x) (plist-get props x))
+			       '(shr-url image-url outline-level face)))
+		  (prop (and k (list k (plist-get props k))))
+		  (next (if prop
+			    (next-single-property-change p (car prop) nil end)
+			  (next-property-change p nil end)))
+		  (txt (buffer-substring (point) next))
+		  (txt (replace-regexp-in-string "\\*" "·" txt)))
+	     (with-current-buffer buff
+	       (insert
+		(pcase prop
+		  ((and (or `(shr-url ,url) `(image-url ,url))
+			(guard (string-match-p "^http" url)))
+		   (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
+		     (org-link-make-string url tt)))
+		  (`(outline-level ,n)
+		   (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
+		  ('(face italic) (format "/%s/ " (string-trim txt)))
+		  ('(face bold) (format "*%s* " (string-trim txt)))
+		  (_ txt))))
+	     (goto-char next))))
+    (pop-to-buffer buff)
+    (goto-char (point-min))))
+
+(defun rlr/open-safari-page-in-eww ()
+  (interactive)
+  (org-mac-link-safari-get-frontmost-url)
+  (setq rlr-org-link (current-kill 0 t))
+  (setq rlr-org-link (s-chop-left 2 rlr-org-link))
+  (setq rlr-org-link (s-chop-right 2 rlr-org-link))
+  (setq rlr-org-link (s-split "\\]\\[" rlr-org-link))
+  (setq rlr-org-url (pop rlr-org-link))
+  (eww rlr-org-url))
+
+(defun nrsv-open-eww ()
+  (interactive)
+  (setq nrsv-passage (read-string "Passage: "))
+  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
+  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
+  (eww-browse-url oremus-link))
+
+(defun nrsv-open-default-browser ()
+  (interactive)
+  (setq nrsv-passage (read-string "Passage: "))
+  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
+  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
+  (browse-url oremus-link))
+
+(defun oremus-eww-cleanup ()
+  (interactive)
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "\""))
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "\""))
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "\'"))
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "\'"))
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "\'"))
+  (beginning-of-buffer)
+  (while (re-search-forward "" nil t)
+    (replace-match "—"))
+  )
+
+(defun nrsv-insert-passage ()
+  (interactive)
+  (setq oremus-passage (read-string "Passage: "))
+  (setq oremus-passage (s-replace " " "%20" oremus-passage))
+  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
+  (switch-to-buffer (url-retrieve-synchronously oremus-link))
+  (beginning-of-buffer)
+  (search-forward "passageref\">")
+  (kill-region (point) 1)
+  (search-forward "</div><!-- class=\"bibletext\" -->")
+  (beginning-of-line)
+  (kill-region (point) (point-max))
+  (beginning-of-buffer)
+  (while (re-search-forward "<p>" nil t)
+    (replace-match "\n"))
+  (beginning-of-buffer)
+  (while (re-search-forward "<!.+?->" nil t)
+    (replace-match ""))
+  (beginning-of-buffer)
+  (while (re-search-forward "<.+?>" nil t)
+    (replace-match ""))
+  (beginning-of-buffer)
+  (while (re-search-forward "&nbsp;" nil t)
+    (replace-match " "))
+  (beginning-of-buffer)
+  (while (re-search-forward "&#147;" nil t)
+    (replace-match "\""))
+  (beginning-of-buffer)
+  (while (re-search-forward "&#148;" nil t)
+    (replace-match "\""))
+  (beginning-of-buffer)
+  (while (re-search-forward "&#145;" nil t)
+    (replace-match "\'"))
+  (beginning-of-buffer)
+  (while (re-search-forward "&#146;" nil t)
+    (replace-match "\'"))
+  (beginning-of-buffer)
+  (while (re-search-forward "&#151;" nil t)
+    (replace-match "---"))
+  (delete-extra-blank-lines)
+  (clipboard-kill-ring-save (point-min) (point-max))
+  (kill-buffer)
+  (yank))
+
+(use-package link-hint
+  :bind
+  ("s-," . #'link-hint-open-link)
+   ("C-c l o" . #'link-hint-open-link)
+   ("C-c l c" . #'link-hint-copy-link))
+
+(defun rlr/link-hint-open-link-in-secondary-browser ()
+  (interactive)
+  (let ((browse-url-browser-function  browse-url-secondary-browser-function))
+    (link-hint-open-link)))
+
+(use-package fish-mode
+  :defer t
+  :mode "\\.fish\\'")
+
+(use-package calc
+:bind
+("C-M-S-s-c" . #'calc))
+
+(pretty-hydra-define hydra-toggle
+  (:color teal :quit-key "q" :title "Toggle")
+  (" "
+   (("a" abbrev-mode "abbrev" :toggle t)
+    ("b" toggle-debug-on-error "debug" (default value 'debug-on-error))
+    ("d" global-devil-mode "devil" :toggle t)
+    ("e" evil-mode "evil" :toggle t)
+    ("i" aggressive-indent-mode "indent" :toggle t)
+    ("f" auto-fill-mode "fill" :toggle t)
+    ("l" display-line-numbers-mode "linum" :toggle t)
+    ("m" variable-pitch-mode "variable-pitch" :toggle t)
+    ("p" smartparens-mode "smartparens" :toggle t)
+    ("P" electric-pair-mode "electric-pair" :toggle t))
+   " "
+   (("t" toggle-truncate-lines "truncate" :toggle t)
+    ("s" whitespace-mode "whitespace" :toggle t)
+    ("c" cdlatex-mode "cdlatex" :toggle t)
+    ("o" olivetti-mode "olivetti" :toggle t)
+    ("r" read-only-mode "read-only" :toggle t)
+    ("v" view-mode "view" :toggle t)
+    ("W" wc-mode "word-count" :toggle t)
+    ("S" auto-save-visited-mode "auto-save" :toggle t)
+    ("C" cua-selection-mode "rectangle" :toggle t))))
+
+(pretty-hydra-define hydra-buffer
+  (:color teal :quit-key "q" :title "Buffers and Files")
+  ("Open"
+   (("b" ibuffer "ibuffer")
+    ("m" consult-bookmark "bookmark")
+    ("w" consult-buffer-other-window "other window")
+    ("f" consult-buffer-other-frame "other frame")
+    ("d" crux-recentf-find-directory "recent directory")
+    ("a" crux-open-with "open in default app"))
+   "Actions"
+   (("D" crux-delete-file-and-buffer "delete file")
+    ("R" crux-rename-file-and-buffer "rename file")
+    ("K" rlr/kill-other-buffers "kill other buffers")
+    ("N" nuke-all-buffers "Kill all buffers")
+    ("c" crux-cleanup-buffer-or-region "fix indentation"))
+   "Misc"
+   (("t" crux-visit-term-buffer "ansi-term")
+    ("T" iterm-goto-filedir-or-home "iTerm2")
+    ("i" crux-find-user-init-file "init.el")
+    ("s" crux-find-shell-init-file "fish config"))
+   ))
+
+(pretty-hydra-define hydra-locate
+  (:color teal :quit-key "q" title: "Search")
+  ("Buffer"
+   (("c" pulsar-highlight-pulse "find cursor")
+    ("h" consult-org-heading "org heading")
+    ("l" consult-goto-line "goto-line")
+    ("i" consult-imenu "imenu")
+    ("m" consult-mark "mark")
+    ("o" consult-outline "outline"))
+   "Global"
+   (("M" consult-global-mark "global-mark")
+    ("n" consult-notes "notes")
+    ("r" consult-ripgrep "ripgrep")
+    ("d" rlr/consult-rg "rg from dir")
+    ("f" rlr/consult-fd "find from dir"))
+   "Files"
+   (("e" rr/open-init-file "Emacs init")
+    ("s" goto-shell-init "Fish functions"))
+   ))
+
+(pretty-hydra-define hydra-window
+  (:color teal :quit-key "q" title: "Windows")
+  ("Windows"
+   (("w m" minimize-window "minimize window")
+    ("w s" crux-transpose-windows "swap windows")
+    ("w S" shrink-window-if-larger-than-buffer "shrink to fit")
+    ("w b" balance-windows "balance windows")
+    ("w t" toggle-window-split "toggle split")
+    ("w v" enlarge-window" grow taller" :exit nil)
+    ("w h" enlarge-window-horizontally "grow wider" :exit nil))
+   "Frames"
+   (("f m" iconify-frame "minimize frame")
+    ("f d" delete-other-frames "delete other frames"))
+   "Tabs"
+   (("t c" tab-close-other "close other tabs")
+    ("t m" tab-move "move tab right")
+    ("t b" tab-bar-history-back "restore previous windows")
+    ("t f" tab-bar-history-forward "undo restore windows"))
+   "Writeroom"
+   (("W" writeroom-mode "toggle writeroom")
+    ("M" writeroom-toggle-mode-line "toggle modeline"))))
+
+(pretty-hydra-define hydra-new
+  (:color teal :quit-key "q" title: "New")
+  ("Frame"
+   (("f" make-frame-command "new frame"))
+   "Denote"
+   (("c" org-capture "capture")
+    ("n" denote "note")
+    ("v" denote-menu-list-notes "view notes")
+    ("j" denote-journal-extras-new-or-existing-entry "journal"))
+   "Writing"
+   (("b" rlrt-new-post "blog post")
+    ("a" rlrt-new-article "article"))
+   "Teaching"
+   (("l" rlrt-new-lecture "lecture")
+    ("h" rlrt-new-handout "handout")
+    ("s" rlrt-new-syllabus "syllabus"))
+   ))
+
+(pretty-hydra-define hydra-logic
+  (:color pink :quit-key "0" :title "Logic")
+  ("Operators"
+   (
+    ;; ("1" (rr/insert-unicode "NOT SIGN") "¬")
+    ("1" (rr/insert-unicode "TILDE OPERATOR") "∼")
+    ;; ("2" (rr/insert-unicode "AMPERSAND") "&")
+    ("2" (rr/insert-unicode "BULLET") "•")
+    ("3" (rr/insert-unicode "LOGICAL OR") "v")
+    ("4" (rr/insert-unicode "SUPERSET OF") "⊃")
+    ;; ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
+    ("5" (rr/insert-unicode "IDENTICAL TO") "≡")
+    ;; ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
+    ("6" (rr/insert-unicode "THERE EXISTS") "∃")
+    ("7" (rr/insert-unicode "FOR ALL") "∀")
+    ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
+    ("9" (rr/insert-unicode "LOZENGE") "◊")
+    ("`" (rr/insert-unicode "NOT EQUAL TO") "≠"))
+   "Space"
+   (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
+   "Quit"
+   (("0" quit-window "quit" :color blue))
+   ))
+
+(pretty-hydra-define hydra-math
+  (:color pink :quit-key "?" :title "Math")
+  ("Operators"
+   (("1" (rr/insert-unicode "NOT SIGN") "¬")
+    ("2" (rr/insert-unicode "AMPERSAND") "&")
+    ("3" (rr/insert-unicode "LOGICAL OR") "v")
+    ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
+    ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
+    ("6" (rr/insert-unicode "THERE EXISTS") "∃")
+    ("7" (rr/insert-unicode "FOR ALL") "∀")
+    ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
+    ("9" (rr/insert-unicode "LOZENGE") "◊"))
+   "Sets"
+   (("R" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL R") "ℝ real")
+    ("N" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL N") "ℕ natural")
+    ("Z" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Z") "ℤ integer")
+    ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+    ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+    ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+    )
+   "Space"
+   (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
+   "Quit"
+   (("?" quit-window "quit" :color blue))
+   ))
+
+(pretty-hydra-define hydra-hydras
+  (:color teal :quit-key "q" :title "Hydras")
+  ("System"
+   (("t" hydra-toggle/body)
+    ("b" hydra-buffer/body)
+    ("h" hydra-hugo/body)
+    ("p" powerthesaurus-hydra/body))
+   "Unicode"
+   (("l" hydra-logic/body "logic")
+    ("m" hydra-math/body))))
+
+(pretty-hydra-define hydra-surround
+  (:color teal :quit-key "q" :title "Surround")
+  ("Surround"
+   (("s" surround-insert "surround insert")
+    ("c" surround-change "surround change")
+    ("k" surround-kill "kill inner")
+    ("K" surround-kill-outer "kill outer")
+    ("M" surround-mark-outer "mark outer")
+    ("m" surround-mark "mark inner")
+    ("d" surround-delete "surround delete")
+    )))
+
 (defun reload-user-init-file()
   (interactive)
   (load-file user-init-file))
