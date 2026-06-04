@@ -5,7 +5,6 @@
 #+PROPERTY: header-args :tangle init.el
 #+auto_tangle: t
 
-
 * Early Init File
 :PROPERTIES:
 :header-args: :tangle early-init.el
@@ -416,7 +415,8 @@ Enrich existing commands with completion annotations
     (("C-x b" . consult-buffer)
      ("s-f" . consult-line)
      ("s-r" . consult-buffer)
-     ("M-y" . consult-yank-pop)))
+     ("M-y" . consult-yank-pop)
+     ("C-c b" . consult-bookmark)))
 #+end_src
 
 Some functions to use with Consult.
@@ -682,7 +682,7 @@ These are from [[https://emacsredux.com/blog/2026/04/07/stealing-from-the-best-e
 
 Disable Bidirectional Text Scanning
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (setq-default bidi-display-reordering 'left-to-right
 	      bidi-paragraph-direction 'left-to-right)
 (setq bidi-inhibit-bpa t)
@@ -879,7 +879,6 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
   (add-hook 'server-after-make-frame-hook #'spacious-padding-mode)
 #+end_src
 
-
 *** Tab Bar
 
 #+begin_src emacs-lisp
@@ -888,8 +887,6 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
 	tab-bar-new-button-show nil)
   (setq tab-bar-format '(tab-bar-format-tabs tab-bar-separator))
 #+end_src
-
-
 
 I can't imagine wanting the same buffer in two tabs, so this calls consult-buffer when opening a new tab.
 
@@ -949,8 +946,6 @@ Indent wrapped lines in bulleted lists.
 #+begin_src emacs-lisp
   (global-visual-wrap-prefix-mode 1)
 #+end_src
-
-
 
 ** Files and Buffers
 
@@ -1137,12 +1132,14 @@ Add automatic time stamps to files, from [[https://olddeuteronomy.github.io/post
 Keybindings for files and buffers.
 
 #+begin_src emacs-lisp
-(bind-keys
-  ( "C-x C-b" . ibuffer)
-  ( "s-o" . find-file)
-  ( "s-k" . kill-current-buffer)
-  ( "M-s-k" . kill-buffer-and-window)
-  ( "s-K".  #'nuke-all-buffers))
+  (bind-keys
+    ("C-x C-b" . ibuffer)
+    ("s-o" . find-file)
+    ("s-k" . kill-current-buffer)
+    ("M-s-k" . kill-buffer-and-window)
+    ("C-c w" . kill-buffer-and-window)
+    ("s-K".  nuke-all-buffers)
+    ("C-c k" . rlr/kill-other-buffers))
 #+end_src
 
 ** Scratch
@@ -1196,7 +1193,9 @@ Use ~persistent-scratch~ to save scratch file between sessions.
     :ensure nil
     :init
     (setq project-vc-ignores '("*.aux" "*.bbl" "*.bcf" "*.blg" "*.fdb_latexmk" "*.fls" "*.log" "*.out" "*.run.xml" "*.run.xml" "*.synctex.gz" "auto/" "*.pdf"))
-    (setq project-vc-extra-root-markers '(".proj")))
+    (setq project-vc-extra-root-markers '(".proj"))
+    :bind
+    ("C-c p d" . project-find-dired))
 #+end_src
 
 ** Windows
@@ -1361,7 +1360,6 @@ Reversible C-x 1
   (bind-key "C-x 1" 'toggle-delete-other-windows)
 #+end_src
 
-
 *** Window and Tab Keybindings
 
 #+begin_src emacs-lisp
@@ -1417,7 +1415,6 @@ Find non-ascii characters in buffer.
     (occur "[^[:ascii:]]"))
 #+end_src
 
-
 *** Avy
 
 #+begin_src emacs-lisp
@@ -1426,9 +1423,13 @@ Find non-ascii characters in buffer.
     (avy-setup-default)
     :bind
     ("s-/" . avy-goto-char-timer)
-    ("C-c C-j" . avy-resume))
+    ("C-c C-j" . avy-resume)
+    ("C-c g l" . avy-goto-line)
+    ("C-c g w" . avy-goto-word-1)
+    ("C-c m" . consult-mark)
+    ("C-c o" . consult-outline)
+    ("C-c p f" . consult-project-buffer))
 #+end_src
-
 
 *** FZF
 
@@ -1448,11 +1449,14 @@ Find non-ascii characters in buffer.
 	  fzf/window-height 15))
 #+end_src
 
+*** RG
+
 #+begin_src emacs-lisp
   (use-package rg
     :commands rg
     :config
-    (rg-enable-default-bindings))
+    :bind
+    ("C-c s m" . rg-menu))
 #+end_src
 
 *** Wgrep
@@ -1486,24 +1490,58 @@ Hide file details and absolute path by default, from [[https://lmno.lol/alvaro/h
     :vc (:url "https://github.com/emacsmirror/dired-plus"))
 #+end_src
 
+Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
+
+#+begin_src emacs-lisp
+  (defun rlr/dired-search-and-enter ()
+    "Search file or directory with `consult-line' and then visit it."
+    (interactive)
+    (consult-line)
+    (dired-find-file))
+#+end_src
+
+Replace spaces in file names with hyphens using "%s" in dired.
+
+#+begin_src emacs-lisp
+  (defun my-substspaces (str)
+    (subst-char-in-string ?\s ?- str))
+
+  (defun my-dired-substspaces (&optional arg)
+    "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+    (interactive "P")
+    (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
+#+end_src
+
 #+begin_src emacs-lisp
   (defun hide-dired-details-include-all-subdir-paths ()
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward dired-subdir-regexp nil t)
-  	(let* ((match-bounds (cons (match-beginning 1) (match-end 1)))
-  	       (path (file-name-directory (buffer-substring (car match-bounds)
-  							    (cdr match-bounds))))
-  	       (path-start (car match-bounds))
-  	       (path-end (+ (car match-bounds) (length path)))
-  	       (inhibit-read-only t))
-  	  (put-text-property path-start path-end
-  			     'invisible 'dired-hide-details-information)))))
+	(let* ((match-bounds (cons (match-beginning 1) (match-end 1)))
+	       (path (file-name-directory (buffer-substring (car match-bounds)
+							    (cdr match-bounds))))
+	       (path-start (car match-bounds))
+	       (path-end (+ (car match-bounds) (length path)))
+	       (inhibit-read-only t))
+	  (put-text-property path-start path-end
+			     'invisible 'dired-hide-details-information)))))
+#+end_src
 
+#+begin_src emacs-lisp
   (use-package dired
     :ensure nil
+    :bind
+    (:map dired-mode-map
+	      ("M-<RET>" . crux-open-with)
+	      ("j" . rlr/dired-search-and-enter)
+	      ("J" . dired-goto-file)
+	      ("%s" . my-dired-substspaces))
+    :config
+    (setq dired-clean-confirm-killing-deleted-buffers nil)
+    (setq dired-dwim-target t) ;; Make copying and moving files easier.
+    (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
     :hook ((dired-mode . dired-hide-details-mode)
-  	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 Add some color with diredfl.
@@ -1533,48 +1571,6 @@ For some reason, adding the dired-omit-mode hook in the use-package declaration 
    (add-hook 'dired-mode-hook #'dired-omit-mode)
 #+end_src
 
-Make copying and moving files easier.
-
-#+begin_src emacs-lisp
-  (setq dired-dwim-target t)
-#+end_src
-
-Use "R" to mark renamed files to avoid moving accidental subsequent moves.
-
-#+begin_src emacs-lisp
-  (setopt dired-keep-marker-rename 82)
-#+end_src
-
-Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
-
-#+begin_src emacs-lisp
-  (defun rlr/dired-search-and-enter ()
-    "Search file or directory with `consult-line' and then visit it."
-    (interactive)
-    (consult-line)
-    (dired-find-file))
-#+end_src
-
-Replace spaces in file names with hyphens using "%s" in dired.
-
-#+begin_src emacs-lisp
-  (defun my-substspaces (str)
-    (subst-char-in-string ?\s ?- str))
-
-  (defun my-dired-substspaces (&optional arg)
-    "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
-    (interactive "P")
-    (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
-#+end_src
-
-#+begin_src emacs-lisp
-  (bind-keys
-   :map dired-mode-map
-   ("j" rlr/dired-search-and-enter)
-   ("J" dired-goto-file)
-   ("%s" . my-dired-substspaces))
-#+end_src
-
 *** Reveal in Finder
 
 #+begin_src emacs-lisp
@@ -1591,8 +1587,8 @@ Replace spaces in file names with hyphens using "%s" in dired.
   (use-package eat
     :config
     (when (eq system-type 'darwin)
-    (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
-    (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
+      (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
+      (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
 #+end_src
 
 *** Ghost.el
@@ -1609,7 +1605,7 @@ https://github.com/amno1/emacs-term-toggle
 
 #+begin_src emacs-lisp
   (use-package term-toggle
-:vc (:url "https://github.com/amno1/emacs-term-toggle")
+    :vc (:url "https://github.com/amno1/emacs-term-toggle")
     :config
     (setq term-toggle-no-confirm-exit t)
     (defun term-toggle-eat ()
@@ -1620,7 +1616,7 @@ https://github.com/amno1/emacs-term-toggle
     ;;   (interactive) (term-toggle 'ghostel))
     :bind
     ("<f2>" . term-toggle-eat)
-     ("<S-f2>" . term-toggle-eshell))
+    ("<S-f2>" . term-toggle-eshell))
 #+end_src
 
 *** Async Shell Command Buffers
@@ -1683,6 +1679,11 @@ Make help buffers active when created, so pressing "q" will immediately close th
   (setq Man-notify-method 'aggressive)
 #+end_src
 
+Use which-key-mode for hints.
+
+#+begin_src emacs-lisp
+  (which-key-mode 1)
+#+end_src
 
 *** Helpful
 
@@ -1692,11 +1693,15 @@ Helpful gives better contextual information in help buffers.
   (use-package helpful
     :bind
     ("C-h v" . helpful-variable)
-     ("C-h k" . helpful-key)
-     ("C-h x" . helpful-command))
+    ("C-h k" . helpful-key)
+    ("C-h x" . helpful-command)
+    ("C-c H c" . helpful-command)
+    ("C-c H F" . helpful-callable)
+    ("C-c H h" . helpful-at-point)
+    ("C-c H f" . helpful-function)
+    ("C-c H v" . helpful-variable)
+    ("C-c H k" . helpful-key))
 #+end_src
-
-
 
 * Editing
 
@@ -1718,6 +1723,12 @@ Use ~C-c d d~ to insert Month, Day Year and ~C-c d s~ to insert YYYYMMDD date st
   (defun insert-blog-date ()
     (interactive)
     (insert (format-time-string "%Y-%m-%d-")))
+
+  (bind-keys
+   ("C-c d s" . insert-date-string)
+   ("C-c d d" . insert-standard-date)
+   ("C-c d b" . insert-blog-date))
+
 #+end_src
 
 Convert paragraph to single sentence per line.
@@ -1824,18 +1835,35 @@ Insert unicode symbols, used in hydras for writing short logic and math formulas
     (insert-char (gethash unicode-name (ucs-names))))
 #+end_src
 
+Make open-line behave like Vim, from [[https://www.reddit.com/r/emacs/comments/1l21cgo/fortnightly_tips_tricks_and_questions_20250603/][Fortnightly Tips, Tricks, and Questions — 2025-06-03 / week 22 : r/emacs]]
+#+begin_src emacs-lisp
+  (defun open-line (n)
+    "Replacing builtin function"
+    (interactive "*p")
+    (end-of-line)
+    (newline n))
+
+  (defun open-line-above (n)
+    (interactive "*p")
+    (beginning-of-line)
+    (newline n)
+    (previous-line n))
+
+  (bind-key "C-S-o" 'open-line-above)
+#+end_src
+
 Set the mark at a location without highlighting anything with =C-`=. This is useful for marking locations for easy return. From [[https://www.masteringemacs.org/article/fixing-mark-commands-transient-mark-mode][Fixing the mark commands in transient mark mode - Mastering Emacs]]. Use =M-`= to bring up the list of marks with =consult-mark=.
 
 #+begin_src emacs-lisp
   (defun push-mark-no-activate ()
     "Pushes `point' to `mark-ring' and does not activate the region
-     Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
+       Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
     (interactive)
     (push-mark (point) t nil)
     (message "Pushed mark to ring"))
 
-;;  (general-define-key "C-`" #'push-mark-no-activate) ;
-;;  (general-define-key "M-`" #'consult-mark)
+  ;;  (general-define-key "C-`" #'push-mark-no-activate) ;
+  ;;  (general-define-key "M-`" #'consult-mark)
 #+end_src
 
 Ediff settings.
@@ -1848,26 +1876,20 @@ Ediff settings.
   (setq ediff-split-window-function 'split-window-horizontally)
 #+end_src
 
+** Surround
 
-
-** Crux
+From [[https://github.com/mkleehammer/surround][Michael Kleehammer]]. [[https://emacsredux.com/blog/2026/03/17/surround-el-vim-style-pair-editing-comes-to-emacs/][Bozhidar Batsov]] has an excellent usage guide.
 
 #+begin_src emacs-lisp
-  (use-package crux
-    :bind
-    (("s-p" . crux-create-scratch-buffer)
-     ("s-j" . crux-top-join-line)
-     ("<S-return>" . crux-smart-open-line)
-     ("<C-S-return>" . crux-smart-open-line-above)
-     ("<escape>" . crux-keyboard-quit-dwim)))
+  (use-package surround
+    :ensure t
+    :bind-keymap ("H-'" . surround-keymap))
+#+end_src
 
-  (use-package dired
-    :ensure nil
-    :bind
-    (:map dired-mode-map
-	  ("M-<RET>" . crux-open-with)))
+** DWIM Shell Command
 
-  (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+#+begin_src emacs-lisp
+  (use-package dwim-shell-command)
 #+end_src
 
 ** Evil Nerd Commenter
@@ -1876,6 +1898,185 @@ Ediff settings.
   (use-package evil-nerd-commenter
     :bind
     ("M-;" . evilnc-comment-or-uncomment-lines))
+#+end_src
+
+** Accent
+
+Accent allows easy insertion of accented characters. Place the mark on the character to be accented and press =C-x C-a=.
+
+#+begin_src emacs-lisp
+  (use-package accent
+    :config
+    (setq accent-position 'after)
+    :bind
+    ("C-x C-a" . accent-menu))
+#+end_src
+
+** Aggressive Indent
+
+[[https://github.com/Malabarba/aggressive-indent-mode][Aggressive-Indent-Mode]] can be toggled on and off using the toggle Hydra.
+
+#+begin_src emacs-lisp
+  (use-package aggressive-indent
+    :config
+    (global-aggressive-indent-mode 1))
+#+end_src
+
+** Crux
+
+#+begin_src emacs-lisp
+  (use-package crux
+    :bind
+    (("s-p" . crux-create-scratch-buffer)
+     ("s-j" . crux-top-join-line)
+     ("C-c S" . crux-cleanup-buffer-or-region)
+     ("C-c D" . crux-delete-file-and-buffer)
+     ("C-c f R" . crux-rename-file-and-buffer)
+     ("C-c r" . crux-rename-file-and-buffer)
+     ("<S-return>" . crux-smart-open-line)
+     ("<C-S-return>" . crux-smart-open-line-above)
+     ("<escape>" . crux-keyboard-quit-dwim)))
+
+  (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+#+end_src
+
+** Hungry Delete
+
+#+begin_src emacs-lisp
+  (use-package hungry-delete
+    :config
+    (setq hungry-delete-join-reluctantly t)
+    (global-hungry-delete-mode))
+#+end_src
+
+** OSX Dictionary
+
+#+begin_src emacs-lisp
+  (use-package osx-dictionary
+    :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
+
+#+end_src
+
+** Selected
+
+#+begin_src emacs-lisp :tangle no
+  (use-package selected
+    :ensure
+    :commands (selected-minor-mode)
+    :config
+    (selected-global-mode)
+    :general
+    (:keymaps 'selected-keymap
+	  "j" #'next-line
+	  "k" #'previous-line
+	  "l" #'forward-char
+	  "h" #'backward-char
+	  "d" #'downcase-dwim
+	  "f" #'forward-word
+	  "b" #'backward-word
+	  "e" #'forward-sentence
+	  "a" #'backward-sentence
+	  "}" #'forward-paragraph
+	  "{" #'backward-paragraph
+	  "u" #'upcase-dwim
+	  "c" #'capitalize-dwim
+	  "C" #'count-words-region
+	  "m" #'apply-macro-to-region-lines))
+#+end_src
+
+** Shrink Whitespace
+
+#+begin_src emacs-lisp
+  (use-package shrink-whitespace
+    :bind
+    ("M-=" . shrink-whitespace))
+#+end_src
+
+** Visual-Regexp
+
+#+begin_src emacs-lisp
+  (use-package visual-regexp
+    :bind
+    ("C-c r" . vr/replace)
+    ("C-c q" . vr/query-replace))
+#+end_src
+
+** Smartparens
+
+#+begin_src emacs-lisp :tangle no
+  (use-package smartparens
+    :hook (prog-mode text-mode markdown-mode) ;; add `smartparens-mode` to these hooks
+    :config
+    ;; load default config
+    (require 'smartparens-config))
+#+end_src
+
+** Paredit
+
+#+begin_src emacs-lisp
+  (use-package paredit
+    :hook (emacs-lisp-mode . paredit-mode))
+#+end_src
+
+** Rainbow Delimiters
+
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :hook
+    (prog-mode . rainbow-delimiters-mode))
+#+end_src
+
+** Speedrect
+
+#+begin_src emacs-lisp
+  (use-package speedrect
+    :config
+    (speedrect-mode))
+#+end_src
+
+** Titlecase
+
+#+begin_src emacs-lisp
+  (use-package titlecase
+    :config
+    (setq titlecase-style "chicago")
+    :commands titlecase-dwim)
+#+end_src
+
+** Vundo
+
+#+begin_src emacs-lisp
+  (use-package vundo
+    :custom
+    (vundo-glyph-alist vundo-unicode-symbols)
+    :bind
+    ("C-x u" . vundo))
+#+end_src
+
+Raise the undo limits.
+
+#+begin_src emacs-lisp
+  (setq undo-limit 67108864) ; 64mb.
+  (setq undo-strong-limit 100663296) ; 96mb.
+  (setq undo-outer-limit 1006632960) ; 960mb.
+#+end_src
+
+** Unfill
+
+#+begin_src emacs-lisp
+  (use-package unfill
+    :commands unfill-paragraph
+    :bind
+    ("M-q" . unfill-toggle)
+    ("C-c u" . unfill-paragraph))
+#+end_src
+
+** WS-Butler
+
+Strips trailing whitespace when saving the file.
+
+#+begin_src emacs-lisp
+  (use-package ws-butler)
 #+end_src
 
 ** Magit
@@ -1918,22 +2119,23 @@ For spell-checking
 ** Editing Keybindings
 
 #+begin_src emacs-lisp
-(bind-keys
-  ("<s-up>" . beginning-of-buffer)
-  ("<s-down>" .  end-of-buffer)
-  ("<s-right>" . end-of-visual-line)
-  ("<s-left>" . beginning-of-visual-line)
-  ("<M-down>" . forward-paragraph)
-  ("<M-up>" . backward-paragraph)
-  ("M-u" . upcase-dwim)
-  ("M-l" . downcase-dwim)
-  ("M-c" . capitalize-dwim)
-  ("RET" . newline-and-indent)
-  ("M-/" . hippie-expand)
-  ("<s-backspace>" . kill-whole-line)
-  ("<C-d d>" . insert-standard-date)
-  ("M-q" . reformat-paragraph)
-  ("M-#" . dictionary-lookup-definition))
+  (bind-keys
+   ("<s-up>" . beginning-of-buffer)
+   ("<s-down>" .  end-of-buffer)
+   ("<s-right>" . end-of-visual-line)
+   ("<s-left>" . beginning-of-visual-line)
+   ("<M-down>" . forward-paragraph)
+   ("<M-up>" . backward-paragraph)
+   ("M-u" . upcase-dwim)
+   ("M-l" . downcase-dwim)
+   ("M-c" . capitalize-dwim)
+   ("RET" . newline-and-indent)
+   ("M-/" . hippie-expand)
+   ("<s-backspace>" . kill-whole-line)
+   ("<C-d d>" . insert-standard-date)
+   ("M-q" . reformat-paragraph)
+   ("M-#" . dictionary-lookup-definition)
+   ("C-c d l" . dictionary-search))
 #+end_src
 
 * Org Mode
@@ -1941,63 +2143,67 @@ For spell-checking
 ** Org Settings
 
 #+begin_src emacs-lisp
-  (use-package org
-    :ensure nil
-    :init
-    ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-    (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-    :config
-    (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
-    (setq org-list-allow-alphabetical t)
-    (setq org-highlight-latex-and-related '(latex script entities))
-    (setq org-startup-indented nil)
-    (setq org-adapt-indentation nil)
-    (setq org-hide-leading-stars nil)
-    (setq org-hide-emphasis-markers t)
-    (setq org-list-indent-offset 2)
-    (setq org-use-speed-commands t)
+    (use-package org
+      :ensure nil
+      :init
+      ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+      (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+      :config
+      (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
+      (setq org-list-allow-alphabetical t)
+      (setq org-highlight-latex-and-related '(latex script entities))
+      (setq org-startup-indented nil)
+      (setq org-adapt-indentation nil)
+      (setq org-hide-leading-stars nil)
+      (setq org-hide-emphasis-markers t)
+      (setq org-list-indent-offset 2)
+      (setq org-use-speed-commands t)
 
-    (setq org-deadline-warning-days 1)
+      (setq org-deadline-warning-days 1)
 
-    ;; Hide drawers
-    (setopt org-cycle-hide-drawer-startup t)
-    (setopt org-startup-folded 'nofold)
+      ;; Hide drawers
+      (setopt org-cycle-hide-drawer-startup t)
+      (setopt org-startup-folded 'nofold)
 
-    (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-    (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
 
-    ;; Make the document title a bit bigger
-    (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
+      ;; Make the document title a bit bigger
+      (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
 
-    ;; Make LaTeX previews larger.
-    (plist-put org-format-latex-options :scale 1.5)
+      ;; Make LaTeX previews larger.
+      (plist-put org-format-latex-options :scale 1.5)
 
-    ;; (setq org-support-shift-select t)
-    (setq org-special-ctrl-a/e t)
-    ;; (setq org-footnote-section nil)
-    (setq org-html-validation-link nil)
-    (setq org-time-stamp-rounding-minutes '(0 15))
-    (setq org-log-done t)
-    (setq org-todo-keyword-faces
+      ;; (setq org-support-shift-select t)
+      (setq org-special-ctrl-a/e t)
+      ;; (setq org-footnote-section nil)
+      (setq org-html-validation-link nil)
+      (setq org-time-stamp-rounding-minutes '(0 15))
+      (setq org-log-done t)
+      (setq org-todo-keyword-faces
 	  '(("DONE" . "green4") ("TODO" . org-warning)))
-    (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-    (setq org-agenda-start-on-weekday nil)
-    (setq org-agenda-window-setup 'current-window)
-    (setq org-link-frame-setup
+      (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+      (setq org-agenda-start-on-weekday nil)
+      (setq org-agenda-window-setup 'current-window)
+      (setq org-link-frame-setup
 	  '((vm . vm-visit-folder-other-frame)
 	(vm-imap . vm-visit-imap-folder-other-frame)
 	(gnus . org-gnus-no-new-news)
 	(file . find-file)
 	(wl . wl-other-frame)))
-    (require 'org-tempo)
-    ;; Open directory links in Dired.
-    (add-to-list 'org-file-apps '(directory . emacs)))
+      (require 'org-tempo)
+      ;; Open directory links in Dired.
+      (add-to-list 'org-file-apps '(directory . emacs))
+      :bind
+  ("C-c a" . org-agenda)
+  ("C-c c" . org-capture)
+      )
 #+end_src
 
 Add markdown export
@@ -2114,70 +2320,70 @@ Convert Org mode to Markdown
 		   "\\documentclass{article}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
     (add-to-list 'org-latex-classes
-	     '("org-handout"
-	       "\\documentclass{pdfhandout}
+		 '("org-handout"
+		   "\\documentclass{pdfhandout}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
     (add-to-list 'org-latex-classes
-	     '("org-obu-letter"
-	       "\\documentclass{obuletter}
+		 '("org-obu-letter"
+		   "\\documentclass{obuletter}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
     (add-to-list 'org-latex-classes
-	     '("org-my-letter"
-	       "\\documentclass{myletter}
+		 '("org-my-letter"
+		   "\\documentclass{myletter}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
     (add-to-list 'org-latex-classes
-	     '("org-beamer"
-	       "\\documentclass{beamer}
+		 '("org-beamer"
+		   "\\documentclass{beamer}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
     (add-to-list 'org-latex-classes
-	     '("org-ltx-talk"
-	       "\\documentclass{ltx-talk}
+		 '("org-ltx-talk"
+		   "\\documentclass{ltx-talk}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
   (setq org-export-with-smart-quotes t)
   (with-eval-after-load 'ox-latex
     (add-to-list 'org-export-smart-quotes-alist
-	     '("en-us"
-	       (primary-opening   :utf-8 "“" :html "&ldquo;" :latex "\\enquote{"  :texinfo "``")
-	       (primary-closing   :utf-8 "”" :html "&rdquo;" :latex "}"           :texinfo "''")
-	       (secondary-opening :utf-8 "‘" :html "&lsquo;" :latex "\\enquote*{" :texinfo "`")
-	       (secondary-closing :utf-8 "’" :html "&rsquo;" :latex "}"           :texinfo "'")
-	       (apostrophe        :utf-8 "’" :html "&rsquo;"))))
+		 '("en-us"
+		   (primary-opening   :utf-8 "“" :html "&ldquo;" :latex "\\enquote{"  :texinfo "``")
+		   (primary-closing   :utf-8 "”" :html "&rdquo;" :latex "}"           :texinfo "''")
+		   (secondary-opening :utf-8 "‘" :html "&lsquo;" :latex "\\enquote*{" :texinfo "`")
+		   (secondary-closing :utf-8 "’" :html "&rsquo;" :latex "}"           :texinfo "'")
+		   (apostrophe        :utf-8 "’" :html "&rsquo;"))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2240,7 +2446,6 @@ Use ~org-auto-tangle~ to generate ~early-init.el~ and ~init.el~ whenever ~README
     :hook (org-mode . org-auto-tangle-mode))
 #+end_src
 
-
 ** Org Capture
 
 #+begin_src emacs-lisp
@@ -2290,13 +2495,13 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
 
 ** Org Agenda
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package org-super-agenda
     :after org
     :config
     (setq org-agenda-skip-scheduled-if-done t
 	  org-agenda-skip-deadline-if-done t
-	  setq org-agenda-skip-scheduled-if-deadline-is-shown t
+	  org-agenda-skip-scheduled-if-deadline-is-shown t
 	  org-agenda-skip-deadline-prewarning-if-scheduled t
 	  org-agenda-include-deadlines t
 	  org-deadline-warning-days 1
@@ -2403,14 +2608,14 @@ Refresh the agenda, but suppress the error message when the agenda is not visibl
 Shorten the current time string.
 
 #+begin_src emacs-lisp
-(setq org-agenda-current-time-string "now - - - - - - -")
+  (setq org-agenda-current-time-string "now - - - - - - -")
 #+end_src
 
 Make the current time more visible.
 
 #+begin_src emacs-lisp
-(custom-set-faces
- '(org-agenda-current-time ((t (:foreground "red3")))))
+  (custom-set-faces
+   '(org-agenda-current-time ((t (:foreground "red3")))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2465,26 +2670,26 @@ Use Emacs appointment system for notifications.
 
 #+begin_src emacs-lisp
   (use-package org-contrib
-:after org
+    :after org
     :config
     (require 'ox-extra)
     (ox-extras-activate '(ignore-headlines))
     (require 'org-tempo)
     ;; (require 'ox-rss)
-)
+    )
 #+end_src
 
 ** Org Autolist
 
 #+begin_src emacs-lisp
-(use-package org-autolist
-  :hook (org-mode . org-autolist-mode))
+  (use-package org-autolist
+    :hook (org-mode . org-autolist-mode))
 #+end_src
 
 ** Org Bulletproof
 
 #+begin_src emacs-lisp
-(use-package org-bulletproof)
+  (use-package org-bulletproof)
 #+end_src
 
 ** Org Toggle Emphasis
@@ -2539,16 +2744,16 @@ Use Emacs appointment system for notifications.
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
-  (general-define-key
-   :keymaps 'org-mode-map
-   "s-<right>" #'org-end-of-line
-   "s-<left>" #'org-beginning-of-line
-   "s-i" (lambda () (interactive) (my/org-toggle-emphasis ?/))
-   "s-b" (lambda () (interactive) (my/org-toggle-emphasis ?*))
-   "C-c e e" (lambda () (interactive) (my/org-toggle-emphasis ?~))
-   "C-c e =" (lambda () (interactive) (my/org-toggle-emphasis ?=))
-   "C-c e _" (lambda () (interactive) (my/org-toggle-emphasis ?_))
-   "C-c e +" (lambda () (interactive) (my/org-toggle-emphasis ?+)))
+  (bind-keys
+   :map org-mode-map
+   ("s-<right>" . org-end-of-line)
+   ("s-<left>" . org-beginning-of-line)
+   ("s-i" . (lambda () (interactive) (my/org-toggle-emphasis ?/)))
+   ("s-b" . (lambda () (interactive) (my/org-toggle-emphasis ?*)))
+   ("C-c e e" . (lambda () (interactive) (my/org-toggle-emphasis ?~)))
+   ("C-c e =" . (lambda () (interactive) (my/org-toggle-emphasis ?=)))
+   ("C-c e _" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
+   ("C-c e +" . (lambda () (interactive) (my/org-toggle-emphasis ?+))))
 #+end_src
 
 ** Org Upcoming Modeline
@@ -2556,32 +2761,32 @@ Use Emacs appointment system for notifications.
 [[https://github.com/unhammer/org-upcoming-modeline][unhammer/org-upcoming-modeline: 📅 Show upcoming org event in modeline]]
 
 #+begin_src emacs-lisp
-(use-package org-upcoming-modeline
-  :after org                               ; if you don't want it to start until org has been loaded
-  :config
-  (org-upcoming-modeline-mode))
+  (use-package org-upcoming-modeline
+    :after org                               ; if you don't want it to start until org has been loaded
+    :config
+    (org-upcoming-modeline-mode))
 #+end_src
 
 ** Org People
 
 #+begin_src emacs-lisp
-(use-package org-people
-  :after org)
+  (use-package org-people
+    :after org)
 #+end_src
 
 ** Org Mac Link
 
 #+begin_src emacs-lisp
   (use-package org-mac-link
-:defer 1)
+    :commands org-mac-link-safari-insert-frontmost-url)
 #+end_src
 
 ** Org Web Tools
 
 #+begin_src emacs-lisp
   (use-package org-web-tools
-    :defer 10)
-  #+end_src
+    :commands org-web-tools-read-url-as-org)
+#+end_src
 
 #+begin_src emacs-lisp
   (defun rlr/save-web-page-as-org-file ()
@@ -3003,37 +3208,37 @@ Function for converting Org mode files to QTI file for importing into Canvas usi
 Create attendance sheet.
 
 #+begin_src emacs-lisp
-(defun create-roll-sheet ()
-  (interactive)
-  ;; Append signature cells to each line.
-  (goto-char (point-min))
-  (replace-regexp "$" " |  | ")
-  ;; kill bottom half of buffer and move to top
-  (setq lines (count-lines (point-min) (point-max)))
-  (setq lines (+ lines (% lines 2) ))
-  (setq midpoint (+ (/ lines 2) 1))
-  (goto-line midpoint)
-  (kill-region (point) (point-max))
-  (beginning-of-buffer)
-  ;; Append each line from kill-ring to remaining lines.
-  (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
-    (if (eobp)
-	(newline)
-      (move-end-of-line nil))
-    (insert cur-line-to-insert)
-    (forward-line))
-  ;; Prepend pipe character to each line and kill last line.
-  (goto-char (point-min))
-  (replace-regexp "^" "| ")
-  (kill-whole-line)
-  ;; insert LaTeX table format and header lines
-  (goto-char (point-min))
-  (insert "#+ATTR_LATEX: :environment tblr :align hline{3-Z}={solid},row{2-Z}={f,10mm},colspec={XXXX}\n| *Name*              | *Signature* | *Name*              | *Signature* | \n")
-  ;; Clean up table.
-  (org-ctrl-c-ctrl-c)
-  ;; Insert LaTeX header.
-  (goto-char (point-min))
-  (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
+  (defun create-roll-sheet ()
+    (interactive)
+    ;; Append signature cells to each line.
+    (goto-char (point-min))
+    (replace-regexp "$" " |  | ")
+    ;; kill bottom half of buffer and move to top
+    (setq lines (count-lines (point-min) (point-max)))
+    (setq lines (+ lines (% lines 2) ))
+    (setq midpoint (+ (/ lines 2) 1))
+    (goto-line midpoint)
+    (kill-region (point) (point-max))
+    (beginning-of-buffer)
+    ;; Append each line from kill-ring to remaining lines.
+    (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
+      (if (eobp)
+	  (newline)
+	(move-end-of-line nil))
+      (insert cur-line-to-insert)
+      (forward-line))
+    ;; Prepend pipe character to each line and kill last line.
+    (goto-char (point-min))
+    (replace-regexp "^" "| ")
+    (kill-whole-line)
+    ;; insert LaTeX table format and header lines
+    (goto-char (point-min))
+    (insert "#+ATTR_LATEX: :environment tblr :align hline{3-Z}={solid},row{2-Z}={f,10mm},colspec={XXXX}\n| *Name*              | *Signature* | *Name*              | *Signature* | \n")
+    ;; Clean up table.
+    (org-ctrl-c-ctrl-c)
+    ;; Insert LaTeX header.
+    (goto-char (point-min))
+    (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
 #+end_src
 
 ** Copy Org Rich Text
@@ -3060,57 +3265,56 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 ** Org Mode Hydra
 
 #+begin_src emacs-lisp
-   (major-mode-hydra-define org-mode
-     (:quit-key "q")
-     ("Export"
-      (
-       ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
-       ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-       ("o" rlr/org-open-pdf "View PDF")
-       ("h" make-html "HTML")
-       ("el" org-latex-export-to-latex "Org to LaTeX")
-       ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
-       ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
-       ("s" lecture-slides "Lecture slides")
-       ("n" lecture-notes "Lecture notes")
-       ("ep" present "Present slides")
-       ("ec" canvas-copy "Copy HTML for Canvas")
-       ("es" canvas-notes "HTML Canvas notes")
-       ("eS" make-syllabus "Syllabus")
-       ("eh" make-handout "Handout")
-       ("c" tex-clean "clean aux")
-       ("C" tex-clean-all "clean all"))
-      "Edit"
-      (("dd" org-deadline "deadline")
-       ("ds" org-schedule "schedule")
-       ("r" org-refile "refile")
-       ("du" rlr/org-date "update date stamp")
-       ;; ("fn" org-footnote-new "insert footnote")
-       ("ff" org-footnote-action "edit footnote")
-       ("fc" citar-insert-citation "citation")
-       ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-       ("s" org-insert-structure-template "insert structure block")
-       ("w" csm/org-word-count "word count")
-       ("y" yankpad-set-category "set yankpad"))
-      "View"
-      (("va" org-appear-mode :toggle t)
-       ("vl" org-toggle-link-display :toggle t)
-       ("vv" visible-mode :toggle t)
-       ("vi" consult-org-heading "iMenu")
-       ("vu" org-toggle-pretty-entities "org-pretty")
-       ("vI" org-toggle-inline-images "Inline images"))
-      "Blog"
-      (("bn" rlrt-new-post "New draft")
-       ("bt" orgblog-add-tag "Add tag")
-       ("bi" orgblog-insert-image "Insert image")
-       ("bp" orgblog-publish-draft "Publish draft")
-       ("bb" orgblog-build "Build site")
-       ("bs" orgblog-serve "Serve site")
-       ("bd" orgblog-push "Push to Github"))
-      "Notes"
-      (("1" denote-link "link to note"))))
-      #+end_src
-
+  (major-mode-hydra-define org-mode
+    (:quit-key "q")
+    ("Export"
+     (
+      ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("o" rlr/org-open-pdf "View PDF")
+      ("h" make-html "HTML")
+      ("el" org-latex-export-to-latex "Org to LaTeX")
+      ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
+      ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
+      ("s" lecture-slides "Lecture slides")
+      ("n" lecture-notes "Lecture notes")
+      ("ep" present "Present slides")
+      ("ec" canvas-copy "Copy HTML for Canvas")
+      ("es" canvas-notes "HTML Canvas notes")
+      ("eS" make-syllabus "Syllabus")
+      ("eh" make-handout "Handout")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all"))
+     "Edit"
+     (("dd" org-deadline "deadline")
+      ("ds" org-schedule "schedule")
+      ("r" org-refile "refile")
+      ("du" rlr/org-date "update date stamp")
+      ;; ("fn" org-footnote-new "insert footnote")
+      ("ff" org-footnote-action "edit footnote")
+      ("fc" citar-insert-citation "citation")
+      ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+      ("s" org-insert-structure-template "insert structure block")
+      ("w" csm/org-word-count "word count")
+      ("y" yankpad-set-category "set yankpad"))
+     "View"
+     (("va" org-appear-mode :toggle t)
+      ("vl" org-toggle-link-display :toggle t)
+      ("vv" visible-mode :toggle t)
+      ("vi" consult-org-heading "iMenu")
+      ("vu" org-toggle-pretty-entities "org-pretty")
+      ("vI" org-toggle-inline-images "Inline images"))
+     "Blog"
+     (("bn" rlrt-new-post "New draft")
+      ("bt" orgblog-add-tag "Add tag")
+      ("bi" orgblog-insert-image "Insert image")
+      ("bp" orgblog-publish-draft "Publish draft")
+      ("bb" orgblog-build "Build site")
+      ("bs" orgblog-serve "Serve site")
+      ("bd" orgblog-push "Push to Github"))
+     "Notes"
+     (("1" denote-link "link to note"))))
+#+end_src
 
 * LaTeX
 
@@ -3119,18 +3323,20 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
     :ensure auctex
     :init
     (setq TeX-parse-self t
-	  TeX-auto-save t
-	  TeX-electric-math nil
-	  LaTeX-electric-left-right-brace nil
-	  TeX-electric-sub-and-superscript nil
-	  LaTeX-item-indent 0
-	  TeX-quote-after-quote nil
-	  TeX-clean-confirm nil
-	  TeX-source-correlate-mode t
-	  TeX-source-correlate-method 'synctex
-	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
-	  TeX-view-program-list
-	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
+  	  TeX-auto-save t
+  	  TeX-electric-math nil
+  	  LaTeX-electric-left-right-brace nil
+  	  TeX-electric-sub-and-superscript nil
+  	  LaTeX-item-indent 0
+  	  TeX-quote-after-quote nil
+  	  TeX-clean-confirm nil
+  	  TeX-source-correlate-mode t
+  	  TeX-source-correlate-method 'synctex
+  	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
+  	  TeX-view-program-list
+  	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+    :bind
+    ("C-c g p" . pdf-sync-forward-search))
 #+end_src
 
 ** LaTeX Build Functions
@@ -3186,15 +3392,33 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
       (message (replace-match "" nil nil word-count))))
 #+end_src
 
+** Math Delimiters
 
+#+begin_src emacs-lisp
+  (use-package math-delimiters
+    :vc (:url "https://github.com/oantolin/math-delimiters")
+    :after (:any org latex)
+    :commands (math-delimiters-no-dollars math-delimiters-mode)
+    :hook ((LaTeX-mode . math-delimiters-mode)
+	   (org-mode . math-delimiters-mode))
+    :config (progn
+	  (setq math-delimiters-compressed-display-math nil)
+	  (define-minor-mode math-delimiters-mode
+		"Math Delimeters"
+		:init-value nil
+		:lighter " MD"
+		:keymap (let ((map (make-sparse-keymap)))
+		    (define-key map (kbd "$")  #'math-delimiters-insert)
+		    map))))
+#+end_src
 
 ** Exams
 
 Wrap current line in
 
 #+begin_src emacs-lisp
-(defalias 'mcq-item
-   (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
+  (defalias 'mcq-item
+    (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3209,51 +3433,51 @@ Wrap current line in
 #+end_src
 
 #+begin_src emacs-lisp
-(defun mcq-wrap-selection ()
-  "Wrap the selected text in \choice{}"
-  (interactive)
-  (if (use-region-p)
-      (let ((begin (region-beginning))
-	    (end (region-end)))
-	(save-excursion
-	  (goto-char end)
-	  (insert "}")
-	  (goto-char begin)
-	  (insert "\\choice{")))
-    (insert "\\choice{}")
-    (backward-char)))
+  (defun mcq-wrap-selection ()
+    "Wrap the selected text in \choice{}"
+    (interactive)
+    (if (use-region-p)
+	(let ((begin (region-beginning))
+	      (end (region-end)))
+	  (save-excursion
+	    (goto-char end)
+	    (insert "}")
+	    (goto-char begin)
+	    (insert "\\choice{")))
+      (insert "\\choice{}")
+      (backward-char)))
 #+end_src
 
 Convert Claude multiple choice quizzes to Org mode.
 
 #+begin_src emacs-lisp
-(defun convert-quiz-claude-to-org ()
-"Convert markdown-style quiz questions from Claude to Org mode format. Operates on the current buffer or active region."
-  (interactive)
-  (let ((start (if (use-region-p) (region-beginning) (point-min)))
-	(end   (if (use-region-p) (region-end)       (point-max)))
-	(question-num 0))
-    (save-excursion
-      ;; Remove '---' separator lines
-      (goto-char start)
-      (while (re-search-forward "^---\n?" end t)
-	(replace-match ""))
+  (defun convert-quiz-claude-to-org ()
+    "Convert markdown-style quiz questions from Claude to Org mode format. Operates on the current buffer or active region."
+    (interactive)
+    (let ((start (if (use-region-p) (region-beginning) (point-min)))
+	  (end   (if (use-region-p) (region-end)       (point-max)))
+	  (question-num 0))
+      (save-excursion
+	;; Remove '---' separator lines
+	(goto-char start)
+	(while (re-search-forward "^---\n?" end t)
+	  (replace-match ""))
 
-      ;; Convert **Question N:** to "N."
-      (goto-char start)
-      (while (re-search-forward "^\\*\\*Question [0-9]+:\\*\\* " end t)
-	(setq question-num (1+ question-num))
-	(replace-match (format "%d. " question-num)))
+	;; Convert **Question N:** to "N."
+	(goto-char start)
+	(while (re-search-forward "^\\*\\*Question [0-9]+:\\*\\* " end t)
+	  (setq question-num (1+ question-num))
+	  (replace-match (format "%d. " question-num)))
 
-      ;; Convert "- A)" "- B)" etc. to "     a)" "     b)" etc.
-      (goto-char start)
-      (while (re-search-forward "^- \\([A-D]\\))" end t)
-	(replace-match (format "     %s)" (downcase (match-string 1)))))
+	;; Convert "- A)" "- B)" etc. to "     a)" "     b)" etc.
+	(goto-char start)
+	(while (re-search-forward "^- \\([A-D]\\))" end t)
+	  (replace-match (format "     %s)" (downcase (match-string 1)))))
 
-      ;; Remove blank lines
-      (goto-char start)
-      (while (re-search-forward "^[[:blank:]]*\n" end t)
-	(replace-match "")))))
+	;; Remove blank lines
+	(goto-char start)
+	(while (re-search-forward "^[[:blank:]]*\n" end t)
+	  (replace-match "")))))
 #+end_src
 
 Convert Org mode quiz questions to exam-design latex format.
@@ -3293,27 +3517,27 @@ Convert Org mode quiz questions to exam-design latex format.
 Copy multiple choice questions to the scratch buffer.
 
 #+begin_src emacs-lisp
-(defun rlr/copy-mcq-to-scratch ()
-  "Copy the multiple choice question at point to the *scratch* buffer."
-  (interactive)
-  (save-excursion
-    (let* ((question-start
-	    (progn
-	      (end-of-line)
-	      (if (re-search-backward "^[0-9]+\\." nil t)
-		  (point)
-		(error "No question found at point"))))
-	   (question-end
-	    (progn
-	      (goto-char question-start)
-	      (forward-line 1)
-	      (if (re-search-forward "^[0-9]+\\." nil t)
-		  (match-beginning 0)
-		(point-max))))
-	   (text (buffer-substring-no-properties question-start question-end)))
-      (with-current-buffer (get-buffer-create "*scratch*")
-	(goto-char (point-max))
-	(insert text)))))
+  (defun rlr/copy-mcq-to-scratch ()
+    "Copy the multiple choice question at point to the *scratch* buffer."
+    (interactive)
+    (save-excursion
+      (let* ((question-start
+	      (progn
+		(end-of-line)
+		(if (re-search-backward "^[0-9]+\\." nil t)
+		    (point)
+		  (error "No question found at point"))))
+	     (question-end
+	      (progn
+		(goto-char question-start)
+		(forward-line 1)
+		(if (re-search-forward "^[0-9]+\\." nil t)
+		    (match-beginning 0)
+		  (point-max))))
+	     (text (buffer-substring-no-properties question-start question-end)))
+	(with-current-buffer (get-buffer-create "*scratch*")
+	  (goto-char (point-max))
+	  (insert text)))))
 #+end_src
 
 Remove multiple choice questions and save them to the kill ring.
@@ -3337,7 +3561,6 @@ Remove multiple choice questions and save them to the kill ring.
     (org-list-repair))
 #+end_src
 
-
 * Citations
 
 ** Citar
@@ -3346,8 +3569,8 @@ Remove multiple choice questions and save them to the kill ring.
   (use-package citar
     :bind
     (("C-c C-b" . citar-insert-citation)
-    :map minibuffer-local-map
-	  ("M-b" . citar-insert-preset))
+     :map minibuffer-local-map
+     ("M-b" . citar-insert-preset))
     :custom
     (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
     (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
@@ -3373,7 +3596,6 @@ Remove multiple choice questions and save them to the kill ring.
     (ebib-preload-bib-files '("~/Dropbox/bibtex/rlr.bib")))
 #+end_src
 
-
 * Notes
 
 ** Denote
@@ -3386,7 +3608,7 @@ Remove multiple choice questions and save them to the kill ring.
     (setq denote-sort-keywords t)
     (setq denote-prompts '(title keywords))
     (setq denote-date-format nil)
-:commands denote)
+    :commands denote)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3418,7 +3640,6 @@ Remove multiple choice questions and save them to the kill ring.
       denote-org-dblock-insert-files-as-headings))
 #+end_src
 
-
 #+begin_src emacs-lisp
   (use-package consult-notes
     :after (consult denote)
@@ -3448,7 +3669,11 @@ Remove multiple choice questions and save them to the kill ring.
     ;; (denote-search-help-string "")
     ;; Display keywords in results buffer
     (denote-search-format-heading-function #'denote-search-format-heading-with-keywords)
-    :commands (denote-search))
+    :commands (denote-search)
+    :bind
+    ("C-c s s" . denote-search)
+    ("C-c s d" . denote-search-marked-dired-files)
+    ("C-c s r" . denote-search-files-referenced-in-region))
 #+end_src
 
 ** Grove
@@ -3472,12 +3697,12 @@ Define initial mode to use for notepad buffers. This is so I can use "C-c C-c" t
   (general-define-key
    :bind
    (:map notepad-mode-map
-   ("C-c C-c" #'copy-kill-buffer)))
+	 ("C-c C-c" #'copy-kill-buffer)))
 
   (define-derived-mode notepad-mode
     org-mode "Notepad"
     "Major mode for scratch buffers.")
-    #+end_src
+#+end_src
 
 Create notepad buffer
 
@@ -3512,156 +3737,156 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
 ** Mu4e
 
 #+begin_src emacs-lisp
-    (use-package mu4e
-      :ensure nil
-      :commands (mu4e mu4e-update-mail-and-index)
-      :bind
-      (:map mu4e-headers-mode-map
-	          ("q"  . kill-current-buffer)
-	          ("C-<tab>" . tab-next)
-	          ("g" . my-mu4e-mark-add-tag)
-      :map mu4e-thread-mode-map
-	          ("C-<tab>" . tab-next)
-      :map mu4e-main-mode-map
-	          ("q"  . rlr/quit-mu4e)
-	          ("u" . mu4e-update-mail-and-index)
-      :map mu4e-view-mode-map
-	          ("," . link-hint-open-link)
-	          ("." . rlr/link-hint-open-link-in-secondary-browser)
-	          ("C-," . mu4e-sexp-at-point))
-      :after org
-      :init
-      (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
-      :config
-      (setq mail-user-agent 'mu4e-user-agent)
-      (setq mu4e-maildir "~/.maildir/")
-      (setq mu4e-get-mail-command "mbsync -a")
-      (setq mu4e-update-interval 300) ;; update every 5 minutes
-      (setq mu4e-read-option-use-builtin nil
-	          mu4e-completing-read-function 'completing-read)
-      (setq mu4e-split-view 'horizontal)
-      (setq mu4e-index-update-error-warning nil)
-      (setq mu4e-headers-skip-duplicates  t)
-      (setq mu4e-view-show-images t)
-      (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
-      (setq mu4e-view-show-addresses t)
-      (setq mu4e-use-fancy-chars t)
-      (setq mu4e-compose-format-flowed t)
-      (setq mu4e-date-format "%y/%m/%d")
-      (setq mu4e-headers-date-format "%Y/%m/%d")
-      (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
-      (setq mu4e-change-filenames-when-moving t)
-      ;; customize the reply-quote-string
-      (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
-      ;; choose to use the formatted string
-      (setq message-citation-line-function 'message-insert-formatted-citation-line)
-      (setq mu4e-attachment-dir "~/Downloads")
-      (setq mu4e-context-policy 'pick-first)
-      (setq  mu4e-contexts (list
-				  (make-mu4e-context
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@fastmail.com")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/fastmail/Drafts")
-					     (mu4e-sent-folder  . "/fastmail/Sent")
-					     (mu4e-trash-folder  . "/fastmail/Trash")
-					     (mu4e-refile-folder  . "/fastmail/Archive")
-					     (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
-					     (smtpmail-smtp-server  . "smtp.fastmail.com")
-					     ))
-				  (make-mu4e-context
-				   :name "obu"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/obu/Drafts")
-					     (mu4e-sent-folder  . "/obu/Sent")
-					     (mu4e-trash-folder . "/obu/Trash")
-					     (mu4e-refile-folder  . "/obu/Archive")
-					     ;; (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-smtp-server  . "localhost")
-					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
-					     (smtpmail-stream-type . plain)
-					     (smtpmail-smtp-service . 1025)
-					     ))
-				  (make-mu4e-context
-				   :name "gmail"
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@gmail.com")
-					     (user-full-name . "Randy Ridenour")
-					     (mu4e-drafts-folder . "/gmail/Drafts")
-					     (mu4e-refile-folder . "/gmail/Archive")
-					     (mu4e-sent-folder . "/gmail/Sent")
-					     (mu4e-trash-folder . "/gmail/Trash")))
-				  ))
+  (use-package mu4e
+    :ensure nil
+    :commands (mu4e mu4e-update-mail-and-index)
+    :bind
+    (:map mu4e-headers-mode-map
+	  ("q"  . kill-current-buffer)
+	  ("C-<tab>" . tab-next)
+	  ("g" . my-mu4e-mark-add-tag)
+	  :map mu4e-thread-mode-map
+	  ("C-<tab>" . tab-next)
+	  :map mu4e-main-mode-map
+	  ("q"  . rlr/quit-mu4e)
+	  ("u" . mu4e-update-mail-and-index)
+	  :map mu4e-view-mode-map
+	  ("," . link-hint-open-link)
+	  ("." . rlr/link-hint-open-link-in-secondary-browser)
+	  ("C-," . mu4e-sexp-at-point))
+    :after org
+    :init
+    (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
+    :config
+    (setq mail-user-agent 'mu4e-user-agent)
+    (setq mu4e-maildir "~/.maildir/")
+    (setq mu4e-get-mail-command "mbsync -a")
+    (setq mu4e-update-interval 300) ;; update every 5 minutes
+    (setq mu4e-read-option-use-builtin nil
+	  mu4e-completing-read-function 'completing-read)
+    (setq mu4e-split-view 'horizontal)
+    (setq mu4e-index-update-error-warning nil)
+    (setq mu4e-headers-skip-duplicates  t)
+    (setq mu4e-view-show-images t)
+    (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
+    (setq mu4e-view-show-addresses t)
+    (setq mu4e-use-fancy-chars t)
+    (setq mu4e-compose-format-flowed t)
+    (setq mu4e-date-format "%y/%m/%d")
+    (setq mu4e-headers-date-format "%Y/%m/%d")
+    (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
+    (setq mu4e-change-filenames-when-moving t)
+    ;; customize the reply-quote-string
+    (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
+    ;; choose to use the formatted string
+    (setq message-citation-line-function 'message-insert-formatted-citation-line)
+    (setq mu4e-attachment-dir "~/Downloads")
+    (setq mu4e-context-policy 'pick-first)
+    (setq  mu4e-contexts (list
+			  (make-mu4e-context
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@fastmail.com")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/fastmail/Drafts")
+				   (mu4e-sent-folder  . "/fastmail/Sent")
+				   (mu4e-trash-folder  . "/fastmail/Trash")
+				   (mu4e-refile-folder  . "/fastmail/Archive")
+				   (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
+				   (smtpmail-smtp-server  . "smtp.fastmail.com")
+				   ))
+			  (make-mu4e-context
+			   :name "obu"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/obu/Drafts")
+				   (mu4e-sent-folder  . "/obu/Sent")
+				   (mu4e-trash-folder . "/obu/Trash")
+				   (mu4e-refile-folder  . "/obu/Archive")
+				   ;; (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-smtp-server  . "localhost")
+				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+				   (smtpmail-stream-type . plain)
+				   (smtpmail-smtp-service . 1025)
+				   ))
+			  (make-mu4e-context
+			   :name "gmail"
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@gmail.com")
+				   (user-full-name . "Randy Ridenour")
+				   (mu4e-drafts-folder . "/gmail/Drafts")
+				   (mu4e-refile-folder . "/gmail/Archive")
+				   (mu4e-sent-folder . "/gmail/Sent")
+				   (mu4e-trash-folder . "/gmail/Trash")))
+			  ))
 
-      (setq mu4e-bookmarks
-	          '((:name "Unread messages"
-		         :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
-		         :key ?b)
-	        (:name "Flagged messages"
-		         :query "flag:flagged"
-		         :key ?f)
-	        ( :name "All inboxes"
-	          :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
-	          :key ?A)
-	        ( :name "Today's messages"
-	          :query "date:today..now"
-	          :key ?t)
-	        ( :name "Last 7 days"
-	          :query "date:7d..now"
-	          :hide-unread t
-	          :key ?w)
-	        ( :name "Messages with images"
-	          :query "mime:image/*"
-	          :key ?p)))
-      (setq mu4e-maildir-shortcuts
-	          '((:maildir "/obu/INBOX" :key ?u)
-	        (:maildir "/fastmail/INBOX" :key ?f)
-	        (:maildir "/gmail/INBOX" :key ?g)))
-      (require 'mu4e-transient))
+    (setq mu4e-bookmarks
+	  '((:name "Unread messages"
+		   :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
+		   :key ?b)
+	    (:name "Flagged messages"
+		   :query "flag:flagged"
+		   :key ?f)
+	    ( :name "All inboxes"
+	      :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
+	      :key ?A)
+	    ( :name "Today's messages"
+	      :query "date:today..now"
+	      :key ?t)
+	    ( :name "Last 7 days"
+	      :query "date:7d..now"
+	      :hide-unread t
+	      :key ?w)
+	    ( :name "Messages with images"
+	      :query "mime:image/*"
+	      :key ?p)))
+    (setq mu4e-maildir-shortcuts
+	  '((:maildir "/obu/INBOX" :key ?u)
+	    (:maildir "/fastmail/INBOX" :key ?f)
+	    (:maildir "/gmail/INBOX" :key ?g)))
+    (require 'mu4e-transient))
 #+end_src
 
 This asks before sending messages without subjects. From [[https://emacs.stackexchange.com/questions/41175/how-to-warn-before-sending-email-if-subject-is-empty][message mode - How to warn before sending email if Subject: is empty - Emacs Stack Exchange]]
 
 #+begin_src emacs-lisp
-(defun my-confirm-empty-subject ()
-  "Allow user to quit when current message subject is empty."
-  (or (message-field-value "Subject")
-      (yes-or-no-p "Really send without Subject? ")
-      (keyboard-quit)))
+  (defun my-confirm-empty-subject ()
+    "Allow user to quit when current message subject is empty."
+    (or (message-field-value "Subject")
+	(yes-or-no-p "Really send without Subject? ")
+	(keyboard-quit)))
 
-(add-hook 'message-send-hook #'my-confirm-empty-subject)
+  (add-hook 'message-send-hook #'my-confirm-empty-subject)
 #+end_src
 
 Show images from Woot.
 
 #+begin_src emacs-lisp  :tangle no
-    (setq gnus-blocked-images
-	  (lambda(&optional _ignore)
-	(if (mu4e-message-contact-field-matches
-	     (mu4e-message-at-point) :from "store-news@woot.com")
-	    nil ".")))
+  (setq gnus-blocked-images
+	(lambda(&optional _ignore)
+	  (if (mu4e-message-contact-field-matches
+	   (mu4e-message-at-point) :from "store-news@woot.com")
+	  nil ".")))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
@@ -3739,47 +3964,47 @@ Open mu4e in new tab.
 *** Consult MU
 
 #+begin_src emacs-lisp :tangle no
-    (use-package consult-mu
-      :vc (:url "https://github.com/armindarvish/consult-mu")
-      :after (consult mu4e)
-      :commands (consult-mu)
-  :bind
-  (:map mu4e-headers-mode-map
+  (use-package consult-mu
+    :vc (:url "https://github.com/armindarvish/consult-mu")
+    :after (consult mu4e)
+    :commands (consult-mu)
+    :bind
+    (:map mu4e-headers-mode-map
 	  ("s-f" . consult-mu))
-      :custom
-      ;;maximum number of results shown in minibuffer
-      (consult-mu-maxnum 200)
-      ;;show preview when pressing any keys
-      (consult-mu-preview-key 'any)
-      ;;do not mark email as read when previewed. If you turn this to t, be aware that the auto-loaded preview if the preview-key above is 'any would also get marked as read!
-      (consult-mu-mark-previewed-as-read nil)
-      ;;mark email as read when selected.
-      (consult-mu-mark-viewed-as-read t)
-      ;;use reply to all when composing reply emails
-      (consult-mu-use-wide-reply nil)
-      ;; define a template for headers view in minibuffer. The example below adjusts the width based on the width of the screen.
-      (consult-mu-headers-template (lambda () (concat "%f" (number-to-string (floor (* (frame-width) 0.15))) "%s" (number-to-string (floor (* (frame-width) 0.5))) "%d13" "%g" "%x")))
-      :config
-      ;;create a list of saved searches for quick access using `histroy-next-element' with `M-n' in minibuffer. Note the "#" character at the beginning of each query! Change these according to
-      (setq consult-mu-saved-searches-dynamics '("#flag:unread"))
-      (setq consult-mu-saved-searches-async '("#flag:unread"))
-      ;; require embark actions for marking, replying, forwarding, etc. directly from minibuffer
-      (require 'consult-mu-embark)
-      ;; require extra module for composing (e.g. for interactive attachment) as well as embark actions
-      (require 'consult-mu-compose)
-      (require 'consult-mu-compose-embark)
-      ;; require extra module for searching contacts and runing embark actions on contacts
-      (require 'consult-mu-contacts)
-      (require 'consult-mu-contacts-embark)
-      ;; change the prefiew key for compose so you don't open a preview of every file when selecting files to attach
-      (setq consult-mu-compose-preview-key "M-o")
-      ;; pick a key to bind to consult-mu-compose-attach in embark-file-map
-      (setq consult-mu-embark-attach-file-key "C-a")
-      (setq consult-mu-contacts-ignore-list '("^.*no.*reply.*"))
-      (setq consult-mu-contacts-ignore-case-fold-search t)
-      (consult-mu-compose-embark-bind-attach-file-key)
-      ;; choose if you want to use dired for attaching files (choice of 'always, 'in-dired, or nil)
-      (setq consult-mu-compose-use-dired-attachment 'in-dired))
+    :custom
+    ;;maximum number of results shown in minibuffer
+    (consult-mu-maxnum 200)
+    ;;show preview when pressing any keys
+    (consult-mu-preview-key 'any)
+    ;;do not mark email as read when previewed. If you turn this to t, be aware that the auto-loaded preview if the preview-key above is 'any would also get marked as read!
+    (consult-mu-mark-previewed-as-read nil)
+    ;;mark email as read when selected.
+    (consult-mu-mark-viewed-as-read t)
+    ;;use reply to all when composing reply emails
+    (consult-mu-use-wide-reply nil)
+    ;; define a template for headers view in minibuffer. The example below adjusts the width based on the width of the screen.
+    (consult-mu-headers-template (lambda () (concat "%f" (number-to-string (floor (* (frame-width) 0.15))) "%s" (number-to-string (floor (* (frame-width) 0.5))) "%d13" "%g" "%x")))
+    :config
+    ;;create a list of saved searches for quick access using `histroy-next-element' with `M-n' in minibuffer. Note the "#" character at the beginning of each query! Change these according to
+    (setq consult-mu-saved-searches-dynamics '("#flag:unread"))
+    (setq consult-mu-saved-searches-async '("#flag:unread"))
+    ;; require embark actions for marking, replying, forwarding, etc. directly from minibuffer
+    (require 'consult-mu-embark)
+    ;; require extra module for composing (e.g. for interactive attachment) as well as embark actions
+    (require 'consult-mu-compose)
+    (require 'consult-mu-compose-embark)
+    ;; require extra module for searching contacts and runing embark actions on contacts
+    (require 'consult-mu-contacts)
+    (require 'consult-mu-contacts-embark)
+    ;; change the prefiew key for compose so you don't open a preview of every file when selecting files to attach
+    (setq consult-mu-compose-preview-key "M-o")
+    ;; pick a key to bind to consult-mu-compose-attach in embark-file-map
+    (setq consult-mu-embark-attach-file-key "C-a")
+    (setq consult-mu-contacts-ignore-list '("^.*no.*reply.*"))
+    (setq consult-mu-contacts-ignore-case-fold-search t)
+    (consult-mu-compose-embark-bind-attach-file-key)
+    ;; choose if you want to use dired for attaching files (choice of 'always, 'in-dired, or nil)
+    (setq consult-mu-compose-use-dired-attachment 'in-dired))
 #+end_src
 
 *** Browser
@@ -3822,12 +4047,12 @@ Functions for setting default browser,
     :config
     :bind
     (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
-    :map elfeed-search-mode-map
-	      ("q" . rlr/elfeed-save-db-and-quit)
-    :map elfeed-show-mode-map
-	      ("S-<SPC>" . scroll-down)
-	      ("," . link-hint-open-link)
-	      ("." . rlr/link-hint-open-link-in-secondary-browser))
+     :map elfeed-search-mode-map
+     ("q" . rlr/elfeed-save-db-and-quit)
+     :map elfeed-show-mode-map
+     ("S-<SPC>" . scroll-down)
+     ("," . link-hint-open-link)
+     ("." . rlr/link-hint-open-link-in-secondary-browser))
     :commands elfeed)
 #+end_src
 
@@ -3861,7 +4086,7 @@ Save elfeed-db to Codeberg. From [[https://punchagan.muse-amuse.in/blog/elfeed-d
 
   ;; Save and backup when new entries are added
   (add-hook 'elfeed-db-update-hook #'rlr/elfeed-db-save-soon)
-  #+end_src
+#+end_src
 
 Functions for syncing the database between machines.
 
@@ -3972,15 +4197,12 @@ These functions are for toggling tags when viewing single Elfeed entries. From [
 
 This uses webkit to display HTML in Elfeed.
 
-
 #+begin_src emacs-lisp
-(use-package elfeed-webkit
-  :ensure
-  :bind (:map elfeed-show-mode-map
-	      ("%" . elfeed-webkit-toggle)))
+  (use-package elfeed-webkit
+    :ensure
+    :bind (:map elfeed-show-mode-map
+		("%" . elfeed-webkit-toggle)))
 #+end_src
-
-
 
 Open Elfeed entry in EWW
 
@@ -3997,15 +4219,11 @@ Open Elfeed entry in EWW
 	(eww url))))
 
   (bind-keys
-       :map elfeed-show-mode-map
-       ("e" . rlr/elfeed-open-in-eww)
-     :map elfeed-search-mode-map
-     ("e" . rlr/elfeed-open-in-eww))
+   :map elfeed-show-mode-map
+   ("e" . rlr/elfeed-open-in-eww)
+   :map elfeed-search-mode-map
+   ("e" . rlr/elfeed-open-in-eww))
 #+end_src
-
-
-
-
 
 * HTML and Web
 
@@ -4137,19 +4355,85 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
 		      path (or desc "video"))))))
 #+end_src
 
+*** Blog Tags
 
+Select tag from list.
+
+#+begin_src emacs-lisp
+  (defun orgblog-all-tag-lines ()
+    "Get filetag lines from all posts."
+    (let ((post-dir orgblog-posts-directory)
+	  (regex "^#\\+filetags:\\s([a-zA-Z]+)"))
+      (shell-command-to-string
+       (concat "rg --context 0 --no-filename --no-heading --replace \"\\$1\" -- " (shell-quote-argument regex) " " post-dir))))
+
+  (defun orgblog-all-tags ()
+    "Return a list of unique tags from all posts."
+    (delete-dups
+     (split-string (orgblog-all-tag-lines) nil t)))
+
+  (defun orgblog-select-tag ()
+    "Select and insert a tag from tags in the blog."
+    (defvar newtag)
+    (setq newtag (completing-read "Tag: " (orgblog-all-tags))))
+#+end_src
+
+Insert tag to heading and tag line.
+
+#+begin_src emacs-lisp
+  (defun insert-post-tag ()
+    (orgblog-select-tag)
+    (beginning-of-buffer)
+    (search-forward "#+filetags" nil 1)
+    (end-of-line)
+    (insert (concat " " newtag))
+    (beginning-of-buffer)
+    (search-forward "Tagged:")
+    (end-of-line)
+    (insert (concat " [[file:../tags/" newtag ".org][" (s-titleized-words newtag) "]]")))
+#+end_src
+
+Add tagged post to tag page.
+
+#+begin_src emacs-lisp
+  (defun add-post-to-tagfile ()
+    (defvar tagfile)
+    (defvar post-filename)
+    (defvar post-title)
+    (setq tagfile (concat "../tags/" newtag ".org"))
+    (setq post-filename (f-filename (f-this-file)))
+    (progn
+      (beginning-of-buffer)
+      (search-forward "#+title: " nil 1)
+      (setq post-title (buffer-substring (point) (line-end-position))))
+    (when
+	(not (file-exists-p tagfile))
+      (f-append-text (concat "#+title: Tagged: " (s-titleized-words newtag) "\n#+setupfile: ../org-templates/post.org\n") 'utf-8 tagfile))
+    (f-append-text (concat "\n- [[file:../posts/" post-filename "][" post-title "]]") 'utf-8 tagfile))
+#+end_src
+
+Select tag, add tag to to post, then add post to tag page.
+
+#+begin_src emacs-lisp
+  (defun orgblog-add-tag ()
+    (interactive)
+    (orgblog-select-tag)
+    (insert-post-tag)
+    (add-post-to-tagfile)
+    (save-buffer))
+#+end_src
 
 ** Website2org
 
 #+begin_src emacs-lisp
   (use-package website2org
-  :vc (:url "https://github.com/rtrppl/website2org")
+    :vc (:url "https://github.com/rtrppl/website2org")
     :config
     (setq website2org-directory "~/icloud/web-saves/website2org/") ;; if needed, see below
     (setq website2org-additional-meta nil)
     :bind
     ("C-M-s-<down>" . website2org)
-     ("C-M-s-<up>" . website2org-temp))
+    ("C-M-s-<up>" . website2org-temp))
 #+end_src
 
 ** Htmlize
@@ -4194,56 +4478,56 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
       )
     :bind
     (nil
-    :map eww-mode-map
-	      ("I" . rlr/eww-toggle-images)
-	      ("f" . link-hint-open-link)
-	      ("F" . rlr/open-eww-link-new-buffer)
-	      ("T" . eww-toggle-fonts)))
+     :map eww-mode-map
+     ("I" . rlr/eww-toggle-images)
+     ("f" . link-hint-open-link)
+     ("F" . rlr/open-eww-link-new-buffer)
+     ("T" . eww-toggle-fonts)))
 #+end_src
 
 #+begin_src emacs-lisp
-   (defun jao-eww-to-org (&optional dest)
-     "Render the current eww buffer using org markup.
-    If DEST, a buffer, is provided, insert the markup there."
-     (interactive)
-     (unless (org-region-active-p)
-       (let ((shr-width 80)) (eww-readable)))
-     (let* ((start (if (org-region-active-p) (region-beginning) (point-min)))
-	    (end (if (org-region-active-p) (region-end) (point-max)))
-	    (buff (or dest (generate-new-buffer "*eww-to-org*")))
-	    (link (eww-current-url))
-	    (title (or (plist-get eww-data :title) "")))
-       (with-current-buffer buff
-	 (insert "#+title: " title "\n#+link: " link "\n\n")
-	 (org-mode))
-       (save-excursion
-	 (goto-char start)
-	 (while (< (point) end)
-	   (let* ((p (point))
-		  (props (text-properties-at p))
-		  (k (seq-find (lambda (x) (plist-get props x))
-			       '(shr-url image-url outline-level face)))
-		  (prop (and k (list k (plist-get props k))))
-		  (next (if prop
-			    (next-single-property-change p (car prop) nil end)
-			  (next-property-change p nil end)))
-		  (txt (buffer-substring (point) next))
-		  (txt (replace-regexp-in-string "\\*" "·" txt)))
-	     (with-current-buffer buff
-	       (insert
-		(pcase prop
-		  ((and (or `(shr-url ,url) `(image-url ,url))
-			(guard (string-match-p "^http" url)))
-		   (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
-		     (org-link-make-string url tt)))
-		  (`(outline-level ,n)
-		   (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
-		  ('(face italic) (format "/%s/ " (string-trim txt)))
-		  ('(face bold) (format "*%s* " (string-trim txt)))
-		  (_ txt))))
-	     (goto-char next))))
-       (pop-to-buffer buff)
-       (goto-char (point-min))))
+  (defun jao-eww-to-org (&optional dest)
+    "Render the current eww buffer using org markup.
+   If DEST, a buffer, is provided, insert the markup there."
+    (interactive)
+    (unless (org-region-active-p)
+      (let ((shr-width 80)) (eww-readable)))
+    (let* ((start (if (org-region-active-p) (region-beginning) (point-min)))
+	   (end (if (org-region-active-p) (region-end) (point-max)))
+	   (buff (or dest (generate-new-buffer "*eww-to-org*")))
+	   (link (eww-current-url))
+	   (title (or (plist-get eww-data :title) "")))
+      (with-current-buffer buff
+	(insert "#+title: " title "\n#+link: " link "\n\n")
+	(org-mode))
+      (save-excursion
+	(goto-char start)
+	(while (< (point) end)
+	  (let* ((p (point))
+		 (props (text-properties-at p))
+		 (k (seq-find (lambda (x) (plist-get props x))
+			      '(shr-url image-url outline-level face)))
+		 (prop (and k (list k (plist-get props k))))
+		 (next (if prop
+			   (next-single-property-change p (car prop) nil end)
+			 (next-property-change p nil end)))
+		 (txt (buffer-substring (point) next))
+		 (txt (replace-regexp-in-string "\\*" "·" txt)))
+	    (with-current-buffer buff
+	      (insert
+	       (pcase prop
+		 ((and (or `(shr-url ,url) `(image-url ,url))
+		       (guard (string-match-p "^http" url)))
+		  (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
+		    (org-link-make-string url tt)))
+		 (`(outline-level ,n)
+		  (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
+		 ('(face italic) (format "/%s/ " (string-trim txt)))
+		 ('(face bold) (format "*%s* " (string-trim txt)))
+		 (_ txt))))
+	    (goto-char next))))
+      (pop-to-buffer buff)
+      (goto-char (point-min))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4261,45 +4545,45 @@ Embed YouTube videos, from [[https://endlessparentheses.com/embedding-youtube-vi
 Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 
 #+begin_src emacs-lisp
-(defun nrsv-open-eww ()
-  (interactive)
-  (setq nrsv-passage (read-string "Passage: "))
-  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
-  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
-  (eww-browse-url oremus-link))
+  (defun nrsv-open-eww ()
+    (interactive)
+    (setq nrsv-passage (read-string "Passage: "))
+    (setq nrsv-passage (s-replace " " "%20" oremus-passage))
+    (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
+    (eww-browse-url oremus-link))
 #+end_src
 
 #+begin_src emacs-lisp
-(defun nrsv-open-default-browser ()
-  (interactive)
-  (setq nrsv-passage (read-string "Passage: "))
-  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
-  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
-  (browse-url oremus-link))
+  (defun nrsv-open-default-browser ()
+    (interactive)
+    (setq nrsv-passage (read-string "Passage: "))
+    (setq nrsv-passage (s-replace " " "%20" oremus-passage))
+    (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
+    (browse-url oremus-link))
 #+end_src
 
 #+begin_src emacs-lisp
-(defun oremus-eww-cleanup ()
-  (interactive)
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "—"))
-  )
+  (defun oremus-eww-cleanup ()
+    (interactive)
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "\""))
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "\""))
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "\'"))
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "\'"))
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "\'"))
+    (beginning-of-buffer)
+    (while (re-search-forward "" nil t)
+      (replace-match "—"))
+    )
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4354,15 +4638,15 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (use-package link-hint
     :bind
     ("s-," . link-hint-open-link)
-     ("C-c l o" . link-hint-open-link)
-     ("C-c l c" . link-hint-copy-link))
+    ("C-c l o" . link-hint-open-link)
+    ("C-c l c" . link-hint-copy-link))
 #+end_src
 
 #+begin_src emacs-lisp
-(defun rlr/link-hint-open-link-in-secondary-browser ()
-  (interactive)
-  (let ((browse-url-browser-function  browse-url-secondary-browser-function))
-    (link-hint-open-link)))
+  (defun rlr/link-hint-open-link-in-secondary-browser ()
+    (interactive)
+    (let ((browse-url-browser-function  browse-url-secondary-browser-function))
+      (link-hint-open-link)))
 #+end_src
 
 * Coding
@@ -4375,14 +4659,54 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     :mode "\\.fish\\'")
 #+end_src
 
+* PDF Readers
+
+* PDF-Tools
+
+#+begin_src emacs-lisp
+  (use-package pdf-tools
+    :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
+    :init
+    (pdf-loader-install)
+    :config
+    (setq-default pdf-view-display-size 'fit-width)
+    :bind
+    (:map pdf-view-mode-map
+	  ("C-s" . isearch-forward)))
+#+end_src
+
+* Emacs-Reader
+
+#+begin_src emacs-lisp :tangle no
+  (use-package reader
+    :ensure (:type git :host codeberg :repo "divyaranjan/emacs-reader"
+		   :files ("*.el" "render-core.dylib")
+		   :pre-build ("make" "all")))
+#+end_src
+
+* Appine
+
+[[https://github.com/chaoswork/appine][Appine]] for native MacOS webkit, PDFkit, etc.
+
+#+begin_src emacs-lisp
+  (use-package appine
+    :vc (:url "https://github.com/chaoswork/appine")
+    :custom
+    ;; enables opening URLs and files with Appine, default is nil
+    (appine-use-for-org-links nil)
+    ;; bind any prefix you like
+    :bind (("C-x a a" . appine)
+	   ("C-x a u" . appine-open-url)
+	   ("C-x a o" . appine-open-file)))
+#+end_src
+
 * Calc
 
 #+begin_src emacs-lisp
-(use-package calc
-:bind
-("C-M-S-s-c" . calc))
+  (use-package calc
+    :bind
+    ("C-M-S-s-c" . calc))
 #+end_src
-
 
 * Keybindings
 
@@ -4391,216 +4715,215 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 *** Hydra Toggle
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-toggle
-     (:color teal :quit-key "q" :title "Toggle")
-     (" "
-      (("a" abbrev-mode "abbrev" :toggle t)
-       ("b" toggle-debug-on-error "debug" (default value 'debug-on-error))
-       ("d" global-devil-mode "devil" :toggle t)
-       ("e" evil-mode "evil" :toggle t)
-       ("i" aggressive-indent-mode "indent" :toggle t)
-       ("f" auto-fill-mode "fill" :toggle t)
-       ("l" display-line-numbers-mode "linum" :toggle t)
-       ("m" variable-pitch-mode "variable-pitch" :toggle t)
-       ("p" smartparens-mode "smartparens" :toggle t)
-       ("P" electric-pair-mode "electric-pair" :toggle t))
-      " "
-      (("t" toggle-truncate-lines "truncate" :toggle t)
-       ("s" whitespace-mode "whitespace" :toggle t)
-       ("c" cdlatex-mode "cdlatex" :toggle t)
-       ("o" olivetti-mode "olivetti" :toggle t)
-       ("r" read-only-mode "read-only" :toggle t)
-       ("v" view-mode "view" :toggle t)
-       ("W" wc-mode "word-count" :toggle t)
-       ("S" auto-save-visited-mode "auto-save" :toggle t)
-       ("C" cua-selection-mode "rectangle" :toggle t))))
-       #+end_src
+  (pretty-hydra-define hydra-toggle
+    (:color teal :quit-key "q" :title "Toggle")
+    (" "
+     (("a" abbrev-mode "abbrev" :toggle t)
+      ("b" toggle-debug-on-error "debug" (default value 'debug-on-error))
+      ("d" global-devil-mode "devil" :toggle t)
+      ("e" evil-mode "evil" :toggle t)
+      ("i" aggressive-indent-mode "indent" :toggle t)
+      ("f" auto-fill-mode "fill" :toggle t)
+      ("l" display-line-numbers-mode "linum" :toggle t)
+      ("m" variable-pitch-mode "variable-pitch" :toggle t)
+      ("p" smartparens-mode "smartparens" :toggle t)
+      ("P" electric-pair-mode "electric-pair" :toggle t))
+     " "
+     (("t" toggle-truncate-lines "truncate" :toggle t)
+      ("s" whitespace-mode "whitespace" :toggle t)
+      ("c" cdlatex-mode "cdlatex" :toggle t)
+      ("o" olivetti-mode "olivetti" :toggle t)
+      ("r" read-only-mode "read-only" :toggle t)
+      ("v" view-mode "view" :toggle t)
+      ("W" wc-mode "word-count" :toggle t)
+      ("S" auto-save-visited-mode "auto-save" :toggle t)
+      ("C" cua-selection-mode "rectangle" :toggle t))))
+#+end_src
 
 *** Hydra Buffer
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-buffer
-     (:color teal :quit-key "q" :title "Buffers and Files")
-     ("Open"
-      (("b" ibuffer "ibuffer")
-       ("m" consult-bookmark "bookmark")
-       ("w" consult-buffer-other-window "other window")
-       ("f" consult-buffer-other-frame "other frame")
-       ("d" crux-recentf-find-directory "recent directory")
-       ("a" crux-open-with "open in default app"))
-      "Actions"
-      (("D" crux-delete-file-and-buffer "delete file")
-       ("R" crux-rename-file-and-buffer "rename file")
-       ("K" rlr/kill-other-buffers "kill other buffers")
-       ("N" nuke-all-buffers "Kill all buffers")
-       ("c" crux-cleanup-buffer-or-region "fix indentation"))
-      "Misc"
-      (("t" crux-visit-term-buffer "ansi-term")
-       ("T" iterm-goto-filedir-or-home "iTerm2")
-       ("i" crux-find-user-init-file "init.el")
-       ("s" crux-find-shell-init-file "fish config"))
-      ))
+  (pretty-hydra-define hydra-buffer
+    (:color teal :quit-key "q" :title "Buffers and Files")
+    ("Open"
+     (("b" ibuffer "ibuffer")
+      ("m" consult-bookmark "bookmark")
+      ("w" consult-buffer-other-window "other window")
+      ("f" consult-buffer-other-frame "other frame")
+      ("d" crux-recentf-find-directory "recent directory")
+      ("a" crux-open-with "open in default app"))
+     "Actions"
+     (("D" crux-delete-file-and-buffer "delete file")
+      ("R" crux-rename-file-and-buffer "rename file")
+      ("K" rlr/kill-other-buffers "kill other buffers")
+      ("N" nuke-all-buffers "Kill all buffers")
+      ("c" crux-cleanup-buffer-or-region "fix indentation"))
+     "Misc"
+     (("t" crux-visit-term-buffer "ansi-term")
+      ("T" iterm-goto-filedir-or-home "iTerm2")
+      ("i" crux-find-user-init-file "init.el")
+      ("s" crux-find-shell-init-file "fish config"))
+     ))
 #+end_src
 
 *** Hydra Locate
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-locate
-     (:color teal :quit-key "q" title: "Search")
-     ("Buffer"
-      (("c" pulsar-highlight-pulse "find cursor")
-       ("h" consult-org-heading "org heading")
-       ("l" consult-goto-line "goto-line")
-       ("i" consult-imenu "imenu")
-       ("m" consult-mark "mark")
-       ("o" consult-outline "outline"))
-      "Global"
-      (("M" consult-global-mark "global-mark")
-       ("n" consult-notes "notes")
-       ("r" consult-ripgrep "ripgrep")
-       ("d" rlr/consult-rg "rg from dir")
-       ("f" rlr/consult-fd "find from dir"))
-      "Files"
-      (("e" rr/open-init-file "Emacs init")
-       ("s" goto-shell-init "Fish functions"))
-      ))
+  (pretty-hydra-define hydra-locate
+    (:color teal :quit-key "q" title: "Search")
+    ("Buffer"
+     (("c" pulsar-highlight-pulse "find cursor")
+      ("h" consult-org-heading "org heading")
+      ("l" consult-goto-line "goto-line")
+      ("i" consult-imenu "imenu")
+      ("m" consult-mark "mark")
+      ("o" consult-outline "outline"))
+     "Global"
+     (("M" consult-global-mark "global-mark")
+      ("n" consult-notes "notes")
+      ("r" consult-ripgrep "ripgrep")
+      ("d" rlr/consult-rg "rg from dir")
+      ("f" rlr/consult-fd "find from dir"))
+     "Files"
+     (("e" rr/open-init-file "Emacs init")
+      ("s" goto-shell-init "Fish functions"))
+     ))
 #+end_src
 
 *** Hydra Window
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-window
-     (:color teal :quit-key "q" title: "Windows")
-     ("Windows"
-      (("w m" minimize-window "minimize window")
-       ("w s" crux-transpose-windows "swap windows")
-       ("w S" shrink-window-if-larger-than-buffer "shrink to fit")
-       ("w b" balance-windows "balance windows")
-       ("w t" toggle-window-split "toggle split")
-       ("w v" enlarge-window" grow taller" :exit nil)
-       ("w h" enlarge-window-horizontally "grow wider" :exit nil))
-      "Frames"
-      (("f m" iconify-frame "minimize frame")
-       ("f d" delete-other-frames "delete other frames"))
-      "Tabs"
-      (("t c" tab-close-other "close other tabs")
-       ("t m" tab-move "move tab right")
-       ("t b" tab-bar-history-back "restore previous windows")
-       ("t f" tab-bar-history-forward "undo restore windows"))
-      "Writeroom"
-      (("W" writeroom-mode "toggle writeroom")
-       ("M" writeroom-toggle-mode-line "toggle modeline"))))
+  (pretty-hydra-define hydra-window
+    (:color teal :quit-key "q" title: "Windows")
+    ("Windows"
+     (("w m" minimize-window "minimize window")
+      ("w s" crux-transpose-windows "swap windows")
+      ("w S" shrink-window-if-larger-than-buffer "shrink to fit")
+      ("w b" balance-windows "balance windows")
+      ("w t" toggle-window-split "toggle split")
+      ("w v" enlarge-window" grow taller" :exit nil)
+      ("w h" enlarge-window-horizontally "grow wider" :exit nil))
+     "Frames"
+     (("f m" iconify-frame "minimize frame")
+      ("f d" delete-other-frames "delete other frames"))
+     "Tabs"
+     (("t c" tab-close-other "close other tabs")
+      ("t m" tab-move "move tab right")
+      ("t b" tab-bar-history-back "restore previous windows")
+      ("t f" tab-bar-history-forward "undo restore windows"))
+     "Writeroom"
+     (("W" writeroom-mode "toggle writeroom")
+      ("M" writeroom-toggle-mode-line "toggle modeline"))))
 #+end_src
 
 *** Hydra New
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-new
-     (:color teal :quit-key "q" title: "New")
-     ("Frame"
-      (("f" make-frame-command "new frame"))
-      "Denote"
-      (("c" org-capture "capture")
-       ("n" denote "note")
-       ("v" denote-menu-list-notes "view notes")
-       ("j" denote-journal-extras-new-or-existing-entry "journal"))
-      "Writing"
-      (("b" rlrt-new-post "blog post")
-       ("a" rlrt-new-article "article"))
-      "Teaching"
-      (("l" rlrt-new-lecture "lecture")
-       ("h" rlrt-new-handout "handout")
-       ("s" rlrt-new-syllabus "syllabus"))
-      ))
+  (pretty-hydra-define hydra-new
+    (:color teal :quit-key "q" title: "New")
+    ("Frame"
+     (("f" make-frame-command "new frame"))
+     "Denote"
+     (("c" org-capture "capture")
+      ("n" denote "note")
+      ("v" denote-menu-list-notes "view notes")
+      ("j" denote-journal-extras-new-or-existing-entry "journal"))
+     "Writing"
+     (("b" rlrt-new-post "blog post")
+      ("a" rlrt-new-article "article"))
+     "Teaching"
+     (("l" rlrt-new-lecture "lecture")
+      ("h" rlrt-new-handout "handout")
+      ("s" rlrt-new-syllabus "syllabus"))
+     ))
 #+end_src
 
 *** Hydra Logic
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-logic
-     (:color pink :quit-key "0" :title "Logic")
-     ("Operators"
-      (
-       ;; ("1" (rr/insert-unicode "NOT SIGN") "¬")
-       ("1" (rr/insert-unicode "TILDE OPERATOR") "∼")
-       ;; ("2" (rr/insert-unicode "AMPERSAND") "&")
-       ("2" (rr/insert-unicode "BULLET") "•")
-       ("3" (rr/insert-unicode "LOGICAL OR") "v")
-       ("4" (rr/insert-unicode "SUPERSET OF") "⊃")
-       ;; ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
-       ("5" (rr/insert-unicode "IDENTICAL TO") "≡")
-       ;; ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
-       ("6" (rr/insert-unicode "THERE EXISTS") "∃")
-       ("7" (rr/insert-unicode "FOR ALL") "∀")
-       ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
-       ("9" (rr/insert-unicode "LOZENGE") "◊")
-       ("`" (rr/insert-unicode "NOT EQUAL TO") "≠"))
-      "Space"
-      (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
-      "Quit"
-      (("0" quit-window "quit" :color blue))
-      ))
+  (pretty-hydra-define hydra-logic
+    (:color pink :quit-key "0" :title "Logic")
+    ("Operators"
+     (
+      ;; ("1" (rr/insert-unicode "NOT SIGN") "¬")
+      ("1" (rr/insert-unicode "TILDE OPERATOR") "∼")
+      ;; ("2" (rr/insert-unicode "AMPERSAND") "&")
+      ("2" (rr/insert-unicode "BULLET") "•")
+      ("3" (rr/insert-unicode "LOGICAL OR") "v")
+      ("4" (rr/insert-unicode "SUPERSET OF") "⊃")
+      ;; ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
+      ("5" (rr/insert-unicode "IDENTICAL TO") "≡")
+      ;; ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
+      ("6" (rr/insert-unicode "THERE EXISTS") "∃")
+      ("7" (rr/insert-unicode "FOR ALL") "∀")
+      ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
+      ("9" (rr/insert-unicode "LOZENGE") "◊")
+      ("`" (rr/insert-unicode "NOT EQUAL TO") "≠"))
+     "Space"
+     (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
+     "Quit"
+     (("0" quit-window "quit" :color blue))
+     ))
 #+end_src
 
 *** Hydra Math
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-math
-     (:color pink :quit-key "?" :title "Math")
-     ("Operators"
-      (("1" (rr/insert-unicode "NOT SIGN") "¬")
-       ("2" (rr/insert-unicode "AMPERSAND") "&")
-       ("3" (rr/insert-unicode "LOGICAL OR") "v")
-       ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
-       ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
-       ("6" (rr/insert-unicode "THERE EXISTS") "∃")
-       ("7" (rr/insert-unicode "FOR ALL") "∀")
-       ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
-       ("9" (rr/insert-unicode "LOZENGE") "◊"))
-      "Sets"
-      (("R" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL R") "ℝ real")
-       ("N" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL N") "ℕ natural")
-       ("Z" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Z") "ℤ integer")
-       ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
-       ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
-       ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
-       )
-      "Space"
-      (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
-      "Quit"
-      (("?" quit-window "quit" :color blue))
-      ))
+  (pretty-hydra-define hydra-math
+    (:color pink :quit-key "?" :title "Math")
+    ("Operators"
+     (("1" (rr/insert-unicode "NOT SIGN") "¬")
+      ("2" (rr/insert-unicode "AMPERSAND") "&")
+      ("3" (rr/insert-unicode "LOGICAL OR") "v")
+      ("4" (rr/insert-unicode "RIGHTWARDS ARROW") "→")
+      ("5" (rr/insert-unicode "LEFT RIGHT ARROW") "↔")
+      ("6" (rr/insert-unicode "THERE EXISTS") "∃")
+      ("7" (rr/insert-unicode "FOR ALL") "∀")
+      ("8" (rr/insert-unicode "WHITE MEDIUM SQUARE") "□")
+      ("9" (rr/insert-unicode "LOZENGE") "◊"))
+     "Sets"
+     (("R" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL R") "ℝ real")
+      ("N" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL N") "ℕ natural")
+      ("Z" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Z") "ℤ integer")
+      ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+      ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+      ("Q" (rr/insert-unicode "DOUBLE-STRUCK CAPITAL Q") "ℚ rational")
+      )
+     "Space"
+     (("?" (rr/insert-unicode "MEDIUM MATHEMATICAL SPACE") "Narrow space"))
+     "Quit"
+     (("?" quit-window "quit" :color blue))
+     ))
 #+end_src
 
 *** Hydra Hydras
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-hydras
-     (:color teal :quit-key "q" :title "Hydras")
-     ("System"
-      (("t" hydra-toggle/body)
-       ("b" hydra-buffer/body)
-       ("h" hydra-hugo/body)
-       ("p" powerthesaurus-hydra/body))
-      "Unicode"
-      (("l" hydra-logic/body "logic")
-       ("m" hydra-math/body))))
+  (pretty-hydra-define hydra-hydras
+    (:color teal :quit-key "q" :title "Hydras")
+    ("System"
+     (("t" hydra-toggle/body)
+      ("b" hydra-buffer/body)
+      ("h" hydra-hugo/body)
+      ("p" powerthesaurus-hydra/body))
+     "Unicode"
+     (("l" hydra-logic/body "logic")
+      ("m" hydra-math/body))))
 #+end_src
 
 #+begin_src emacs-lisp
-   (pretty-hydra-define hydra-surround
-     (:color teal :quit-key "q" :title "Surround")
-     ("Surround"
-      (("s" surround-insert "surround insert")
-       ("c" surround-change "surround change")
-       ("k" surround-kill "kill inner")
-       ("K" surround-kill-outer "kill outer")
-       ("M" surround-mark-outer "mark outer")
-       ("m" surround-mark "mark inner")
-       ("d" surround-delete "surround delete")
-       )))
+  (pretty-hydra-define hydra-surround
+    (:color teal :quit-key "q" :title "Surround")
+    ("Surround"
+     (("s" surround-insert "surround insert")
+      ("c" surround-change "surround change")
+      ("k" surround-kill "kill inner")
+      ("K" surround-kill-outer "kill outer")
+      ("M" surround-mark-outer "mark outer")
+      ("m" surround-mark "mark inner")
+      ("d" surround-delete "surround delete")
+      )))
 #+end_src
-
 
 #+begin_src emacs-lisp
   (bind-keys
@@ -4614,369 +4937,300 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
    ("C-x 9" . hydra-logic/body))
 #+end_src
 
-
-
-
 ** Major-Mode Hydras
 
 *** Dashboard Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define dashboard-mode
-     (:quit-key "q")
-     ("Open"
-      (("m" consult-bookmark "bookmarks")
-       ("a" consult-org-agenda "consult-agenda")
-       ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
-       ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))))
+  (major-mode-hydra-define dashboard-mode
+    (:quit-key "q")
+    ("Open"
+     (("m" consult-bookmark "bookmarks")
+      ("a" consult-org-agenda "consult-agenda")
+      ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
+      ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))))
 #+end_src
 
 *** Org Agenda Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define org-agenda-mode
-     (:quit-key "q")
-     ("Open"
-      (
-       ("a" consult-org-agenda "consult-agenda")
-       ("b" consult-bookmark "bookmarks")
-       ("m" mu4e "rlr/read-mail-news")
-       ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
-       ("w" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))
-      "Classes"
-      (("1" (dired "~/icloud/teaching/intro/lectures") "Intro")
-       ("2" (dired "~/icloud/teaching/medieval/lectures") "Medieval")
-       ("3" (dired "~/icloud/teaching/logic/lectures") "Logic")
-       ("4" (dired "~/icloud/teaching/language/lectures") "Language")
-       )
-      "Actions"
-      (("s" rlr/save-web-page-as-org-file "Save Safari page as Org")
-       ("e" rlr/open-safari-page-in-eww "Open Safari page in EWW"))))
+  (major-mode-hydra-define org-agenda-mode
+    (:quit-key "q")
+    ("Open"
+     (
+      ("a" consult-org-agenda "consult-agenda")
+      ("b" consult-bookmark "bookmarks")
+      ("m" mu4e "rlr/read-mail-news")
+      ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
+      ("w" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))
+     "Classes"
+     (("1" (dired "~/icloud/teaching/intro/lectures") "Intro")
+      ("2" (dired "~/icloud/teaching/medieval/lectures") "Medieval")
+      ("3" (dired "~/icloud/teaching/logic/lectures") "Logic")
+      ("4" (dired "~/icloud/teaching/language/lectures") "Language")
+      )
+     "Actions"
+     (("s" rlr/save-web-page-as-org-file "Save Safari page as Org")
+      ("e" rlr/open-safari-page-in-eww "Open Safari page in EWW"))))
 #+end_src
 
 *** EWW Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define eww-mode
-     (:quit-key "q")
-     ("A"
-      (
-       ;; ("G" eww "Eww Open Browser")
-       ("g" eww-reload "Eww Reload")
-       ("6" eww-open-in-new-buffer "Open in new buffer")
-       ("l" eww-back-url "Back Url")
-       ("r" eww-forward-url "Forward Url")
-       ("N" eww-next-url "Next Url")
-       ("P" eww-previous-url "Previous Url")
-       ("u" eww-up-url "Up Url")
-       ("&" eww-browse-with-external-browser "Open in External Browser")
-       ("d" eww-download "Download")
-       ("w" eww-copy-page-url "Copy Url Page")
-       );end theme
-      "B"
-      (
-       ("T" rlr/eww-toggle-images "Toggle Image Display")
-       (">" shr-next-link "Shr Next Link")
-       ("<" shr-previous-link "Shr Previous Link")
-       ("n" scroll-down-command "Scroll Down")
-       ("C" url-cookie-list "Url Cookie List")
-       ("v" eww-view-source "View Source")
-       ("R" eww-readable "Make Readable")
-       ("H" eww-list-histories "List History")
-       ("E" eww-set-character-encoding "Character Encoding")
-       ("s" eww-switch-to-buffer "Switch to Buffer")
-       ("S" eww-list-buffers "List Buffers")
-       );end highlighting
+  (major-mode-hydra-define eww-mode
+    (:quit-key "q")
+    ("A"
+     (
+      ;; ("G" eww "Eww Open Browser")
+      ("g" eww-reload "Eww Reload")
+      ("6" eww-open-in-new-buffer "Open in new buffer")
+      ("l" eww-back-url "Back Url")
+      ("r" eww-forward-url "Forward Url")
+      ("N" eww-next-url "Next Url")
+      ("P" eww-previous-url "Previous Url")
+      ("u" eww-up-url "Up Url")
+      ("&" eww-browse-with-external-browser "Open in External Browser")
+      ("d" eww-download "Download")
+      ("w" eww-copy-page-url "Copy Url Page")
+      );end theme
+     "B"
+     (
+      ("T" rlr/eww-toggle-images "Toggle Image Display")
+      (">" shr-next-link "Shr Next Link")
+      ("<" shr-previous-link "Shr Previous Link")
+      ("n" scroll-down-command "Scroll Down")
+      ("C" url-cookie-list "Url Cookie List")
+      ("v" eww-view-source "View Source")
+      ("R" eww-readable "Make Readable")
+      ("H" eww-list-histories "List History")
+      ("E" eww-set-character-encoding "Character Encoding")
+      ("s" eww-switch-to-buffer "Switch to Buffer")
+      ("S" eww-list-buffers "List Buffers")
+      );end highlighting
 
-      "C"
-      (
-       ("1" rrnet "randyridenour.net")
-       ("2" sep "SEP")
-       ("F" eww-toggle-fonts "Toggle Fonts")
-       ("D" eww-toggle-paragraph-direction "Toggle Paragraph Direction")
-       ("c" eww-toggle-colors "Toggle Colors")
-       ("b" eww-add-bookmark "Add Bookmark")
-       ("B" eww-list-bookmarks "List Bookmarks")
-       ("=" eww-next-bookmark "Next Bookmark")
-       ("-" eww-previous-bookmark "Previous Bookmark")
-       ("O" jao-eww-to-org "Make Org Version")
-       ("<SPC>" nil "Quit" :color pink))))
+     "C"
+     (
+      ("1" rrnet "randyridenour.net")
+      ("2" sep "SEP")
+      ("F" eww-toggle-fonts "Toggle Fonts")
+      ("D" eww-toggle-paragraph-direction "Toggle Paragraph Direction")
+      ("c" eww-toggle-colors "Toggle Colors")
+      ("b" eww-add-bookmark "Add Bookmark")
+      ("B" eww-list-bookmarks "List Bookmarks")
+      ("=" eww-next-bookmark "Next Bookmark")
+      ("-" eww-previous-bookmark "Previous Bookmark")
+      ("O" jao-eww-to-org "Make Org Version")
+      ("<SPC>" nil "Quit" :color pink))))
 #+end_src
 
 *** Markdown Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define markdown-mode
-     (:quit-key "q")
-     ("Format"
-      (("h" markdown-insert-header-dwim "header")
-       ("l" markdown-insert-link "link")
-       ("u" markdown-insert-uri "url")
-       ("f" markdown-insert-footnote "footnote")
-       ("w" markdown-insert-wiki-link "wiki")
-       ("r" markdown-insert-reference-link-dwim "r-link")
-       ("n" markdown-cleanup-list-numbers "clean-lists")
-       ("c" markdown-complete-buffer "complete"))))
+  (major-mode-hydra-define markdown-mode
+    (:quit-key "q")
+    ("Format"
+     (("h" markdown-insert-header-dwim "header")
+      ("l" markdown-insert-link "link")
+      ("u" markdown-insert-uri "url")
+      ("f" markdown-insert-footnote "footnote")
+      ("w" markdown-insert-wiki-link "wiki")
+      ("r" markdown-insert-reference-link-dwim "r-link")
+      ("n" markdown-cleanup-list-numbers "clean-lists")
+      ("c" markdown-complete-buffer "complete"))))
 #+end_src
 
 *** LaTeX Mode
 
 #+begin_src emacs-lisp :tangle no
 
-     (major-mode-hydra-define LaTeX-mode
-       (:quit-key "q")
-       ("Bibtex"
-	(("r" citar-insert-citation "citation"))
-	"LaTeXmk"
-	(
-	 ("m" rlr/tex-mklua "LuaLaTeX")
-	 ("p" rlr/tex-mkpdf "PDFLaTeX")
-	 ("w" rlr/tex-mktc "watch PDFLaTeX")
-	 ("L" rlr/tex-mklua "watch LuaLaTeX")
-	 ("c" tex-clean "clean aux")
-	 ("C" tex-clean-all "clean all")
-	 ("n" latex-word-count "word count"))
-  "Exams"
-  (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
-	))
+  (major-mode-hydra-define LaTeX-mode
+    (:quit-key "q")
+    ("Bibtex"
+     (("r" citar-insert-citation "citation"))
+     "LaTeXmk"
+     (
+      ("m" rlr/tex-mklua "LuaLaTeX")
+      ("p" rlr/tex-mkpdf "PDFLaTeX")
+      ("w" rlr/tex-mktc "watch PDFLaTeX")
+      ("L" rlr/tex-mklua "watch LuaLaTeX")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all")
+      ("n" latex-word-count "word count"))
+     "Exams"
+     (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
+     ))
 #+end_src
 
 *** Org Mode
 
 #+begin_src emacs-lisp :tangle no :tangle no
 
-   (major-mode-hydra-define org-mode
-     (:quit-key "q")
-     ("Export"
-      (
-       ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
-       ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-       ("o" rlr/org-open-pdf "View PDF")
-       ("h" make-html "HTML")
-       ("el" org-latex-export-to-latex "Org to LaTeX")
-       ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
-       ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
-       ("s" lecture-slides "Lecture slides")
-       ("n" lecture-notes "Lecture notes")
-       ("ep" present "Present slides")
-       ("ec" canvas-copy "Copy HTML for Canvas")
-       ("es" canvas-notes "HTML Canvas notes")
-       ("eS" make-syllabus "Syllabus")
-       ("eh" make-handout "Handout")
-       ("c" tex-clean "clean aux")
-       ("C" tex-clean-all "clean all"))
-      "Edit"
-      (("dd" org-deadline "deadline")
-       ("ds" org-schedule "schedule")
-       ("r" org-refile "refile")
-       ("du" rlr/org-date "update date stamp")
-       ;; ("fn" org-footnote-new "insert footnote")
-       ("ff" org-footnote-action "edit footnote")
-       ("fc" citar-insert-citation "citation")
-       ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-       ("s" org-insert-structure-template "insert structure block")
-       ("w" csm/org-word-count "word count")
-       ("y" yankpad-set-category "set yankpad"))
-      "View"
-      (("va" org-appear-mode :toggle t)
-       ("vl" org-toggle-link-display :toggle t)
-       ("vv" visible-mode :toggle t)
-       ("vi" consult-org-heading "iMenu")
-       ("vu" org-toggle-pretty-entities "org-pretty")
-       ("vI" org-toggle-inline-images "Inline images"))
-      "Blog"
-      (("bn" rlrt-new-post "New draft")
-       ("bt" orgblog-add-tag "Add tag")
-       ("bi" orgblog-insert-image "Insert image")
-       ("bp" orgblog-publish-draft "Publish draft")
-       ("bb" orgblog-build "Build site")
-       ("bs" orgblog-serve "Serve site")
-       ("bd" orgblog-push "Push to Github"))
-      "Notes"
-      (("1" denote-link "link to note"))))
-      #+end_src
+  (major-mode-hydra-define org-mode
+    (:quit-key "q")
+    ("Export"
+     (
+      ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("o" rlr/org-open-pdf "View PDF")
+      ("h" make-html "HTML")
+      ("el" org-latex-export-to-latex "Org to LaTeX")
+      ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
+      ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
+      ("s" lecture-slides "Lecture slides")
+      ("n" lecture-notes "Lecture notes")
+      ("ep" present "Present slides")
+      ("ec" canvas-copy "Copy HTML for Canvas")
+      ("es" canvas-notes "HTML Canvas notes")
+      ("eS" make-syllabus "Syllabus")
+      ("eh" make-handout "Handout")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all"))
+     "Edit"
+     (("dd" org-deadline "deadline")
+      ("ds" org-schedule "schedule")
+      ("r" org-refile "refile")
+      ("du" rlr/org-date "update date stamp")
+      ;; ("fn" org-footnote-new "insert footnote")
+      ("ff" org-footnote-action "edit footnote")
+      ("fc" citar-insert-citation "citation")
+      ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+      ("s" org-insert-structure-template "insert structure block")
+      ("w" csm/org-word-count "word count")
+      ("y" yankpad-set-category "set yankpad"))
+     "View"
+     (("va" org-appear-mode :toggle t)
+      ("vl" org-toggle-link-display :toggle t)
+      ("vv" visible-mode :toggle t)
+      ("vi" consult-org-heading "iMenu")
+      ("vu" org-toggle-pretty-entities "org-pretty")
+      ("vI" org-toggle-inline-images "Inline images"))
+     "Blog"
+     (("bn" rlrt-new-post "New draft")
+      ("bt" orgblog-add-tag "Add tag")
+      ("bi" orgblog-insert-image "Insert image")
+      ("bp" orgblog-publish-draft "Publish draft")
+      ("bb" orgblog-build "Build site")
+      ("bs" orgblog-serve "Serve site")
+      ("bd" orgblog-push "Push to Github"))
+     "Notes"
+     (("1" denote-link "link to note"))))
+#+end_src
 
 *** Dired Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define dired-mode
-     (:quit-key "q")
-     ("New"
-      (("a" rlrt-new-article "article")
-       ("l" rlrt-new-lecture "lecture")
-       ("h" rlrt-new-handout "handout")
-       ("s" rlrt-new-syllabus "syllabus"))
-      "Tools"
-      (("d" crux-open-with "Open in default program")
-       ("." dired-omit-mode "Show hidden files")
-       ("p" diredp-copy-abs-filenames-as-kill "Copy filename and path")
-       ("n" dired-toggle-read-only "edit Filenames")
-       ("c" tex-clean "clean aux")
-       ("C" tex-clean-all "clean all"))
-      "Blog"
-      (("bn" rlrt-new-post "New draft")
-       ("bb" orgblog-build "Build Site")
-       ("bs" orgblog-serve "Serve Site")
-       ("bd" orgblog-push "Push to Github"))))
+  (major-mode-hydra-define dired-mode
+    (:quit-key "q")
+    ("New"
+     (("a" rlrt-new-article "article")
+      ("l" rlrt-new-lecture "lecture")
+      ("h" rlrt-new-handout "handout")
+      ("s" rlrt-new-syllabus "syllabus"))
+     "Tools"
+     (("d" crux-open-with "Open in default program")
+      ("." dired-omit-mode "Show hidden files")
+      ("p" diredp-copy-abs-filenames-as-kill "Copy filename and path")
+      ("n" dired-toggle-read-only "edit Filenames")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all"))
+     "Blog"
+     (("bn" rlrt-new-post "New draft")
+      ("bb" orgblog-build "Build Site")
+      ("bs" orgblog-serve "Serve Site")
+      ("bd" orgblog-push "Push to Github"))))
 #+end_src
 
 *** CSS Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define css-mode
-     (:quit-key "q")
-     ("Blog"
-      (("bn" rlrt-new-post "New draft")
-       ("bb" orgblog-build "Build Site")
-       ("bs" orgblog-serve "Serve Site")
-       ("bd" orgblog-push "Push to Github"))))
+  (major-mode-hydra-define css-mode
+    (:quit-key "q")
+    ("Blog"
+     (("bn" rlrt-new-post "New draft")
+      ("bb" orgblog-build "Build Site")
+      ("bs" orgblog-serve "Serve Site")
+      ("bd" orgblog-push "Push to Github"))))
 #+end_src
 
 *** Denote Menu Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define denote-menu-mode
-     (:quit-key "q")
-     ("Tools"
-      (("f" denote-menu-filter "Filter by regex")
-       ("k" denote-menu-filter-by-keyword "Filter by keyword")
-       ("c" denote-menu-clear-filters "Clear filters")
-       ("d" denote-menu-export-to-dired "Dired"))))
+  (major-mode-hydra-define denote-menu-mode
+    (:quit-key "q")
+    ("Tools"
+     (("f" denote-menu-filter "Filter by regex")
+      ("k" denote-menu-filter-by-keyword "Filter by keyword")
+      ("c" denote-menu-clear-filters "Clear filters")
+      ("d" denote-menu-export-to-dired "Dired"))))
 #+end_src
 
 *** Mu4e Mode
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define mu4e-main-mode
-     (:quit-key "q")
-     ("Message"
-      (
-       ("n" mu4e-compose-mail "New")
-       ("e" mu4e-view-save-attachments "Save attachments")
-       )))
+  (major-mode-hydra-define mu4e-main-mode
+    (:quit-key "q")
+    ("Message"
+     (
+      ("n" mu4e-compose-mail "New")
+      ("e" mu4e-view-save-attachments "Save attachments")
+      )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define mu4e-headers-mode
-     (:quit-key "q")
-     ("Message"
-      (
-       ("n" mu4e-compose-mail "New")
-       ("r" mu4e-compose-reply "Reply")
-       ("a"  mu4e-compose-wide-reply "Reply All")
-       )))
+  (major-mode-hydra-define mu4e-headers-mode
+    (:quit-key "q")
+    ("Message"
+     (
+      ("n" mu4e-compose-mail "New")
+      ("r" mu4e-compose-reply "Reply")
+      ("a"  mu4e-compose-wide-reply "Reply All")
+      )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define mu4e-view-mode
-     (:quit-key "q")
-     ("Message"
-      (
-       ("n" mu4e-compose-mail "New")
-       ("r" mu4e-compose-reply "Reply")
-       ("a"  mu4e-compose-wide-reply "Reply All")
-       )
-      "Browser"
-      (
-       ("bd" rlr/browser-default "System default")
-       ("bq" rlr/browser-qutebrowser "Qutebrowser")
-       ("be" rlr/browser-eww "EWW")
-       )))
+  (major-mode-hydra-define mu4e-view-mode
+    (:quit-key "q")
+    ("Message"
+     (
+      ("n" mu4e-compose-mail "New")
+      ("r" mu4e-compose-reply "Reply")
+      ("a"  mu4e-compose-wide-reply "Reply All")
+      )
+     "Browser"
+     (
+      ("bd" rlr/browser-default "System default")
+      ("bq" rlr/browser-qutebrowser "Qutebrowser")
+      ("be" rlr/browser-eww "EWW")
+      )))
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
 
-   (major-mode-hydra-define mu4e-compose-mode
-     (:quit-key "q")
-     ("Compose with Org"
-      (
-       ("o" org-mime-edit-mail-in-org-mode "Edit in org")
-       ("r" org-mime-htmlize "Org to HTML")
-       )
-      "Signatures"
-      (
-       ("u" obu-signature "OBU")
-       ("h" home-signature "Home")
-       ("p" informal-signature "Personal")
-       )
-      ))
+  (major-mode-hydra-define mu4e-compose-mode
+    (:quit-key "q")
+    ("Compose with Org"
+     (
+      ("o" org-mime-edit-mail-in-org-mode "Edit in org")
+      ("r" org-mime-htmlize "Org to HTML")
+      )
+     "Signatures"
+     (
+      ("u" obu-signature "OBU")
+      ("h" home-signature "Home")
+      ("p" informal-signature "Personal")
+      )
+     ))
 #+end_src
-
-** Prefix Keybindings
-
-#+begin_src emacs-lisp :tangle no
-  (general-define-key
-   :prefix "C-c"
-   ;; bind "C-c a" to #'org-agenda
-
-   "a" #'org-agenda
-   "b" #'consult-bookmark
-   "c" #'org-capture
-
-   "d s" #'insert-date-string
-   "d d" #'insert-standard-date
-   "d b" #'insert-blog-date
-   "d l" #'dictionary-search
-   "D" #'crux-delete-file-and-buffer
-
-   "f f" #'find-file
-   "f k" #'rlr/kill-other-buffers
-   "f r" #'consult-buffer
-   "f R" #'crux-rename-file-and-buffer
-   "f P" #'open-emacs-config
-   "f S" #'open-fish-functions
-
-   "g l" #'avy-goto-line
-   "g w" #'avy-goto-word-1
-   "g p" #'pdf-sync-forward-search
-
-   ;; "h" #'consult-history
-
-   ;; Helpful
-   "H c" #'helpful-command
-   "H F" #'helpful-callable
-   "H h" #'helpful-at-point
-   "H f" #'helpful-function
-   "H v" #'helpful-variable
-   "H k" #'helpful-key
-
-   "k" #'rlr/kill-other-buffers
-
-   "l l" #'org-store-link
-
-   "m" #'consult-mark
-   "n b" #'hugo-draft-post
-   "o" #'consult-outline
-
-   ;; Projects
-   "p f" #'consult-project-buffer
-   "p d" #'project-find-dired
-
-   "r" #'crux-rename-file-and-buffer
-   ;; "s" #'rg-menu
-   "S" #'crux-cleanup-buffer-or-region
-   "t" #'terminal-here-launch
-   "u" #'unfill-paragraph
-   "w" #'kill-buffer-and-window
-   "z" #'reveal-in-osx-finder
-
-   ;; Search
-   "s s" #'denote-search
-   "s d" #'denote-search-marked-dired-files
-   "s r" #'denote-search-files-referenced-in-region
-   )
-#+end_src
-
 
 * Finish
 

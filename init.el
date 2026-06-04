@@ -129,7 +129,8 @@
   (("C-x b" . consult-buffer)
    ("s-f" . consult-line)
    ("s-r" . consult-buffer)
-   ("M-y" . consult-yank-pop)))
+   ("M-y" . consult-yank-pop)
+   ("C-c b" . consult-bookmark)))
 
 (defun rlr/consult-rg ()
   "Function for consult-ripgrep with the universal-argument."
@@ -215,10 +216,6 @@
 
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
-
-(setq-default bidi-display-reordering 'left-to-right
-	      bidi-paragraph-direction 'left-to-right)
-(setq bidi-inhibit-bpa t)
 
 (setq redisplay-skip-fontification-on-input t)
 
@@ -467,11 +464,13 @@
 (add-hook 'write-file-hooks 'time-stamp) ; Update when saving.
 
 (bind-keys
-  ( "C-x C-b" . ibuffer)
-  ( "s-o" . find-file)
-  ( "s-k" . kill-current-buffer)
-  ( "M-s-k" . kill-buffer-and-window)
-  ( "s-K".  #'nuke-all-buffers))
+  ("C-x C-b" . ibuffer)
+  ("s-o" . find-file)
+  ("s-k" . kill-current-buffer)
+  ("M-s-k" . kill-buffer-and-window)
+  ("C-c w" . kill-buffer-and-window)
+  ("s-K".  nuke-all-buffers)
+  ("C-c k" . rlr/kill-other-buffers))
 
 (setq initial-major-mode 'org-mode)
 
@@ -501,7 +500,9 @@
   :ensure nil
   :init
   (setq project-vc-ignores '("*.aux" "*.bbl" "*.bcf" "*.blg" "*.fdb_latexmk" "*.fls" "*.log" "*.out" "*.run.xml" "*.run.xml" "*.synctex.gz" "auto/" "*.pdf"))
-  (setq project-vc-extra-root-markers '(".proj")))
+  (setq project-vc-extra-root-markers '(".proj"))
+  :bind
+  ("C-c p d" . project-find-dired))
 
 (use-package ace-window
   :ensure
@@ -669,7 +670,12 @@
   (avy-setup-default)
   :bind
   ("s-/" . avy-goto-char-timer)
-  ("C-c C-j" . avy-resume))
+  ("C-c C-j" . avy-resume)
+  ("C-c g l" . avy-goto-line)
+  ("C-c g w" . avy-goto-word-1)
+  ("C-c m" . consult-mark)
+  ("C-c o" . consult-outline)
+  ("C-c p f" . consult-project-buffer))
 
 (use-package fzf
   :commands (fzf fzf-directory)
@@ -688,7 +694,8 @@
 (use-package rg
   :commands rg
   :config
-  (rg-enable-default-bindings))
+  :bind
+  ("C-c s m" . rg-menu))
 
 (use-package wgrep
   :vc (:url https://github.com/mhayashi1120/Emacs-wgrep)
@@ -700,6 +707,20 @@
 
 (use-package dired+
   :vc (:url "https://github.com/emacsmirror/dired-plus"))
+
+(defun rlr/dired-search-and-enter ()
+  "Search file or directory with `consult-line' and then visit it."
+  (interactive)
+  (consult-line)
+  (dired-find-file))
+
+(defun my-substspaces (str)
+  (subst-char-in-string ?\s ?- str))
+
+(defun my-dired-substspaces (&optional arg)
+  "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+  (interactive "P")
+  (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
 
 (defun hide-dired-details-include-all-subdir-paths ()
   (save-excursion
@@ -716,8 +737,18 @@
 
 (use-package dired
   :ensure nil
+  :bind
+  (:map dired-mode-map
+	      ("M-<RET>" . crux-open-with)
+	      ("j" . rlr/dired-search-and-enter)
+	      ("J" . dired-goto-file)
+	      ("%s" . my-dired-substspaces))
+  :config
+  (setq dired-clean-confirm-killing-deleted-buffers nil)
+  (setq dired-dwim-target t) ;; Make copying and moving files easier.
+  (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
   :hook ((dired-mode . dired-hide-details-mode)
-	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 
 (use-package diredfl
   :defer
@@ -736,30 +767,6 @@
 
 (add-hook 'dired-mode-hook #'dired-omit-mode)
 
-(setq dired-dwim-target t)
-
-(setopt dired-keep-marker-rename 82)
-
-(defun rlr/dired-search-and-enter ()
-  "Search file or directory with `consult-line' and then visit it."
-  (interactive)
-  (consult-line)
-  (dired-find-file))
-
-(defun my-substspaces (str)
-  (subst-char-in-string ?\s ?- str))
-
-(defun my-dired-substspaces (&optional arg)
-  "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
-  (interactive "P")
-  (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
-
-(bind-keys
- :map dired-mode-map
- ("j" rlr/dired-search-and-enter)
- ("J" dired-goto-file)
- ("%s" . my-dired-substspaces))
-
 (use-package reveal-in-osx-finder
   :bind
   ("C-c z" . 'reveal-in-osx-finder))
@@ -767,22 +774,22 @@
 (use-package eat
   :config
   (when (eq system-type 'darwin)
-  (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
-  (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
+    (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
+    (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
 
 (use-package term-toggle
-:vc (:url "https://github.com/amno1/emacs-term-toggle")
-    :config
-    (setq term-toggle-no-confirm-exit t)
-    (defun term-toggle-eat ()
-      "Toggle `term'."
-      (interactive) (term-toggle 'eat))
-    ;; (defun term-toggle-ghostel ()
-    ;;   "Toggle `term'."
-    ;;   (interactive) (term-toggle 'ghostel))
-    :bind
-    ("<f2>" . term-toggle-eat)
-     ("<S-f2>" . term-toggle-eshell))
+  :vc (:url "https://github.com/amno1/emacs-term-toggle")
+  :config
+  (setq term-toggle-no-confirm-exit t)
+  (defun term-toggle-eat ()
+    "Toggle `term'."
+    (interactive) (term-toggle 'eat))
+  ;; (defun term-toggle-ghostel ()
+  ;;   "Toggle `term'."
+  ;;   (interactive) (term-toggle 'ghostel))
+  :bind
+  ("<f2>" . term-toggle-eat)
+  ("<S-f2>" . term-toggle-eshell))
 
 (setq async-shell-command-buffer "new-buffer")
 
@@ -812,11 +819,19 @@
 (setq help-window-select t)
 (setq Man-notify-method 'aggressive)
 
+(which-key-mode 1)
+
 (use-package helpful
   :bind
   ("C-h v" . helpful-variable)
-   ("C-h k" . helpful-key)
-   ("C-h x" . helpful-command))
+  ("C-h k" . helpful-key)
+  ("C-h x" . helpful-command)
+  ("C-c H c" . helpful-command)
+  ("C-c H F" . helpful-callable)
+  ("C-c H h" . helpful-at-point)
+  ("C-c H f" . helpful-function)
+  ("C-c H v" . helpful-variable)
+  ("C-c H k" . helpful-key))
 
 (defun insert-date-string ()
   "Insert current date yyyymmdd."
@@ -831,6 +846,11 @@
 (defun insert-blog-date ()
   (interactive)
   (insert (format-time-string "%Y-%m-%d-")))
+
+(bind-keys
+ ("C-c d s" . insert-date-string)
+ ("C-c d d" . insert-standard-date)
+ ("C-c d b" . insert-blog-date))
 
 (defun rr/wrap-at-sentences ()
   "Fills the current paragraph, but starts each sentence on a new line."
@@ -916,12 +936,26 @@
   "Same as C-x 8 enter UNICODE-NAME."
   (insert-char (gethash unicode-name (ucs-names))))
 
+(defun open-line (n)
+  "Replacing builtin function"
+  (interactive "*p")
+  (end-of-line)
+  (newline n))
+
+(defun open-line-above (n)
+  (interactive "*p")
+  (beginning-of-line)
+  (newline n)
+  (previous-line n))
+
+(bind-key "C-S-o" 'open-line-above)
+
 (defun push-mark-no-activate ()
-    "Pushes `point' to `mark-ring' and does not activate the region
+  "Pushes `point' to `mark-ring' and does not activate the region
      Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
-    (interactive)
-    (push-mark (point) t nil)
-    (message "Pushed mark to ring"))
+  (interactive)
+  (push-mark (point) t nil)
+  (message "Pushed mark to ring"))
 
 ;;  (general-define-key "C-`" #'push-mark-no-activate) ;
 ;;  (general-define-key "M-`" #'consult-mark)
@@ -932,25 +966,90 @@
 				; Horizontal splitting really ought to be the default, honestly.
 (setq ediff-split-window-function 'split-window-horizontally)
 
-(use-package crux
-  :bind
-  (("s-p" . crux-create-scratch-buffer)
-   ("s-j" . crux-top-join-line)
-   ("<S-return>" . crux-smart-open-line)
-   ("<C-S-return>" . crux-smart-open-line-above)
-   ("<escape>" . crux-keyboard-quit-dwim)))
+(use-package surround
+  :ensure t
+  :bind-keymap ("H-'" . surround-keymap))
 
-(use-package dired
-  :ensure nil
-  :bind
-  (:map dired-mode-map
-	  ("M-<RET>" . crux-open-with)))
-
-(define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+(use-package dwim-shell-command)
 
 (use-package evil-nerd-commenter
   :bind
   ("M-;" . evilnc-comment-or-uncomment-lines))
+
+(use-package accent
+  :config
+  (setq accent-position 'after)
+  :bind
+  ("C-x C-a" . accent-menu))
+
+(use-package aggressive-indent
+  :config
+  (global-aggressive-indent-mode 1))
+
+(use-package crux
+  :bind
+  (("s-p" . crux-create-scratch-buffer)
+   ("s-j" . crux-top-join-line)
+   ("C-c S" . crux-cleanup-buffer-or-region)
+   ("C-c D" . crux-delete-file-and-buffer)
+   ("C-c f R" . crux-rename-file-and-buffer)
+   ("C-c r" . crux-rename-file-and-buffer)
+   ("<S-return>" . crux-smart-open-line)
+   ("<C-S-return>" . crux-smart-open-line-above)
+   ("<escape>" . crux-keyboard-quit-dwim)))
+
+(define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+
+(use-package hungry-delete
+  :config
+  (setq hungry-delete-join-reluctantly t)
+  (global-hungry-delete-mode))
+
+(use-package osx-dictionary
+  :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
+
+(use-package shrink-whitespace
+  :bind
+  ("M-=" . shrink-whitespace))
+
+(use-package visual-regexp
+  :bind
+  ("C-c r" . vr/replace)
+  ("C-c q" . vr/query-replace))
+
+(use-package paredit
+  :hook (emacs-lisp-mode . paredit-mode))
+
+(use-package rainbow-delimiters
+  :hook
+  (prog-mode . rainbow-delimiters-mode))
+
+(use-package speedrect
+  :config
+  (speedrect-mode))
+
+(use-package titlecase
+  :config
+  (setq titlecase-style "chicago")
+  :commands titlecase-dwim)
+
+(use-package vundo
+  :custom
+  (vundo-glyph-alist vundo-unicode-symbols)
+  :bind
+  ("C-x u" . vundo))
+
+(setq undo-limit 67108864) ; 64mb.
+(setq undo-strong-limit 100663296) ; 96mb.
+(setq undo-outer-limit 1006632960) ; 960mb.
+
+(use-package unfill
+  :commands unfill-paragraph
+  :bind
+  ("M-q" . unfill-toggle)
+  ("C-c u" . unfill-paragraph))
+
+(use-package ws-butler)
 
 (use-package magit
   :after transient
@@ -975,79 +1074,84 @@
    ("S-<f7>" . jinx-correct-all)))
 
 (bind-keys
-  ("<s-up>" . beginning-of-buffer)
-  ("<s-down>" .  end-of-buffer)
-  ("<s-right>" . end-of-visual-line)
-  ("<s-left>" . beginning-of-visual-line)
-  ("<M-down>" . forward-paragraph)
-  ("<M-up>" . backward-paragraph)
-  ("M-u" . upcase-dwim)
-  ("M-l" . downcase-dwim)
-  ("M-c" . capitalize-dwim)
-  ("RET" . newline-and-indent)
-  ("M-/" . hippie-expand)
-  ("<s-backspace>" . kill-whole-line)
-  ("<C-d d>" . insert-standard-date)
-  ("M-q" . reformat-paragraph)
-  ("M-#" . dictionary-lookup-definition))
+ ("<s-up>" . beginning-of-buffer)
+ ("<s-down>" .  end-of-buffer)
+ ("<s-right>" . end-of-visual-line)
+ ("<s-left>" . beginning-of-visual-line)
+ ("<M-down>" . forward-paragraph)
+ ("<M-up>" . backward-paragraph)
+ ("M-u" . upcase-dwim)
+ ("M-l" . downcase-dwim)
+ ("M-c" . capitalize-dwim)
+ ("RET" . newline-and-indent)
+ ("M-/" . hippie-expand)
+ ("<s-backspace>" . kill-whole-line)
+ ("<C-d d>" . insert-standard-date)
+ ("M-q" . reformat-paragraph)
+ ("M-#" . dictionary-lookup-definition)
+ ("C-c d l" . dictionary-search))
 
 (use-package org
-  :ensure nil
-  :init
-  ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-  (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-  :config
-  (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
-  (setq org-list-allow-alphabetical t)
-  (setq org-highlight-latex-and-related '(latex script entities))
-  (setq org-startup-indented nil)
-  (setq org-adapt-indentation nil)
-  (setq org-hide-leading-stars nil)
-  (setq org-hide-emphasis-markers t)
-  (setq org-list-indent-offset 2)
-  (setq org-use-speed-commands t)
+    :ensure nil
+    :init
+    ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+    (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+    :config
+    (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
+    (setq org-list-allow-alphabetical t)
+    (setq org-highlight-latex-and-related '(latex script entities))
+    (setq org-startup-indented nil)
+    (setq org-adapt-indentation nil)
+    (setq org-hide-leading-stars nil)
+    (setq org-hide-emphasis-markers t)
+    (setq org-list-indent-offset 2)
+    (setq org-use-speed-commands t)
 
-  (setq org-deadline-warning-days 1)
+    (setq org-deadline-warning-days 1)
 
-  ;; Hide drawers
-  (setopt org-cycle-hide-drawer-startup t)
-  (setopt org-startup-folded 'nofold)
+    ;; Hide drawers
+    (setopt org-cycle-hide-drawer-startup t)
+    (setopt org-startup-folded 'nofold)
 
-  (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-  (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
 
-  ;; Make the document title a bit bigger
-  (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
+    ;; Make the document title a bit bigger
+    (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
 
-  ;; Make LaTeX previews larger.
-  (plist-put org-format-latex-options :scale 1.5)
+    ;; Make LaTeX previews larger.
+    (plist-put org-format-latex-options :scale 1.5)
 
-  ;; (setq org-support-shift-select t)
-  (setq org-special-ctrl-a/e t)
-  ;; (setq org-footnote-section nil)
-  (setq org-html-validation-link nil)
-  (setq org-time-stamp-rounding-minutes '(0 15))
-  (setq org-log-done t)
-  (setq org-todo-keyword-faces
+    ;; (setq org-support-shift-select t)
+    (setq org-special-ctrl-a/e t)
+    ;; (setq org-footnote-section nil)
+    (setq org-html-validation-link nil)
+    (setq org-time-stamp-rounding-minutes '(0 15))
+    (setq org-log-done t)
+    (setq org-todo-keyword-faces
 	  '(("DONE" . "green4") ("TODO" . org-warning)))
-  (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-  (setq org-agenda-start-on-weekday nil)
-  (setq org-agenda-window-setup 'current-window)
-  (setq org-link-frame-setup
+    (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+    (setq org-agenda-start-on-weekday nil)
+    (setq org-agenda-window-setup 'current-window)
+    (setq org-link-frame-setup
 	  '((vm . vm-visit-folder-other-frame)
 	(vm-imap . vm-visit-imap-folder-other-frame)
 	(gnus . org-gnus-no-new-news)
 	(file . find-file)
 	(wl . wl-other-frame)))
-  (require 'org-tempo)
-  ;; Open directory links in Dired.
-  (add-to-list 'org-file-apps '(directory . emacs)))
+    (require 'org-tempo)
+    ;; Open directory links in Dired.
+    (add-to-list 'org-file-apps '(directory . emacs))
+    :bind
+("C-c a" . org-agenda)
+("C-c c" . org-capture)
+    )
 
 (setq org-export-backends '(ascii html icalendar latex odt md))
 (require `ox-md)
@@ -1132,70 +1236,70 @@ and convert it to Org using the pandoc utility."
 		   "\\documentclass{article}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
-	     '("org-handout"
-	       "\\documentclass{pdfhandout}
+		 '("org-handout"
+		   "\\documentclass{pdfhandout}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
-	     '("org-obu-letter"
-	       "\\documentclass{obuletter}
+		 '("org-obu-letter"
+		   "\\documentclass{obuletter}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
-	     '("org-my-letter"
-	       "\\documentclass{myletter}
+		 '("org-my-letter"
+		   "\\documentclass{myletter}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
-	     '("org-beamer"
-	       "\\documentclass{beamer}
+		 '("org-beamer"
+		   "\\documentclass{beamer}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
-	     '("org-ltx-talk"
-	       "\\documentclass{ltx-talk}
+		 '("org-ltx-talk"
+		   "\\documentclass{ltx-talk}
 			      [NO-DEFAULT-PACKAGES]
 			      [NO-PACKAGES]"
-	       ("\\section{%s}" . "\\section*{%s}")
-	       ("\\subsection{%s}" . "\\subsection*{%s}")
-	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
-	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+		   ("\\section{%s}" . "\\section*{%s}")
+		   ("\\subsection{%s}" . "\\subsection*{%s}")
+		   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 (setq org-export-with-smart-quotes t)
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-export-smart-quotes-alist
-	     '("en-us"
-	       (primary-opening   :utf-8 "“" :html "&ldquo;" :latex "\\enquote{"  :texinfo "``")
-	       (primary-closing   :utf-8 "”" :html "&rdquo;" :latex "}"           :texinfo "''")
-	       (secondary-opening :utf-8 "‘" :html "&lsquo;" :latex "\\enquote*{" :texinfo "`")
-	       (secondary-closing :utf-8 "’" :html "&rsquo;" :latex "}"           :texinfo "'")
-	       (apostrophe        :utf-8 "’" :html "&rsquo;"))))
+		 '("en-us"
+		   (primary-opening   :utf-8 "“" :html "&ldquo;" :latex "\\enquote{"  :texinfo "``")
+		   (primary-closing   :utf-8 "”" :html "&rdquo;" :latex "}"           :texinfo "''")
+		   (secondary-opening :utf-8 "‘" :html "&lsquo;" :latex "\\enquote*{" :texinfo "`")
+		   (secondary-closing :utf-8 "’" :html "&rsquo;" :latex "}"           :texinfo "'")
+		   (apostrophe        :utf-8 "’" :html "&rsquo;"))))
 
 ;; (setq org-latex-pdf-process '("arara %f"))
 (setq org-latex-pdf-process '("mkl %f"))
@@ -1281,6 +1385,29 @@ and convert it to Org using the pandoc utility."
 
 (add-to-list 'safe-local-variable-values
 	       '(before-save-hook . (rlr/org-sort)))
+
+(use-package org-super-agenda
+  :after org
+  :config
+  (setq org-agenda-skip-scheduled-if-done t
+	  org-agenda-skip-deadline-if-done t
+	  org-agenda-skip-scheduled-if-deadline-is-shown t
+	  org-agenda-skip-deadline-prewarning-if-scheduled t
+	  org-agenda-include-deadlines t
+	  org-deadline-warning-days 1
+	  org-agenda-block-separator nil
+	  org-agenda-compact-blocks t
+	  org-agenda-start-day nil ;; i.e. today
+	  org-agenda-span 1
+	  org-agenda-window-setup "current-window"
+	  org-agenda-include-diary nil
+	  org-agenda-start-on-weekday nil)
+  (setq org-agenda-time-grid
+	  '((daily today remove-match)
+	()
+	"......"
+	""))
+  (org-super-agenda-mode))
 
 (setq org-agenda-custom-commands
 	'(("d" "Agenda for today" agenda ""
@@ -1377,13 +1504,13 @@ and convert it to Org using the pandoc utility."
 (add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
 
 (use-package org-contrib
-:after org
-    :config
-    (require 'ox-extra)
-    (ox-extras-activate '(ignore-headlines))
-    (require 'org-tempo)
-    ;; (require 'ox-rss)
-)
+  :after org
+  :config
+  (require 'ox-extra)
+  (ox-extras-activate '(ignore-headlines))
+  (require 'org-tempo)
+  ;; (require 'ox-rss)
+  )
 
 (use-package org-autolist
   :hook (org-mode . org-autolist-mode))
@@ -1444,10 +1571,10 @@ and convert it to Org using the pandoc utility."
   :after org)
 
 (use-package org-mac-link
-:defer 1)
+  :commands org-mac-link-safari-insert-frontmost-url)
 
 (use-package org-web-tools
-  :defer 10)
+  :commands org-web-tools-read-url-as-org)
 
 (defun rlr/save-web-page-as-org-file ()
   (interactive)
@@ -1790,8 +1917,8 @@ and convert it to Org using the pandoc utility."
   ;; Append each line from kill-ring to remaining lines.
   (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
     (if (eobp)
-	(newline)
-      (move-end-of-line nil))
+	  (newline)
+	(move-end-of-line nil))
     (insert cur-line-to-insert)
     (forward-line))
   ;; Prepend pipe character to each line and kill last line.
@@ -1887,7 +2014,9 @@ and convert it to Org using the pandoc utility."
 	  TeX-source-correlate-method 'synctex
 	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
 	  TeX-view-program-list
-	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b"))))
+	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+  :bind
+  ("C-c g p" . pdf-sync-forward-search))
 
 (defun raise-emacs-on-aqua()
   (shell-command "osascript -e 'tell application \"Emacs\" to activate' "))
@@ -1938,8 +2067,24 @@ and convert it to Org using the pandoc utility."
     (string-match "\n$" word-count)
     (message (replace-match "" nil nil word-count))))
 
+(use-package math-delimiters
+  :vc (:url "https://github.com/oantolin/math-delimiters")
+  :after (:any org latex)
+  :commands (math-delimiters-no-dollars math-delimiters-mode)
+  :hook ((LaTeX-mode . math-delimiters-mode)
+	   (org-mode . math-delimiters-mode))
+  :config (progn
+	  (setq math-delimiters-compressed-display-math nil)
+	  (define-minor-mode math-delimiters-mode
+		"Math Delimeters"
+		:init-value nil
+		:lighter " MD"
+		:keymap (let ((map (make-sparse-keymap)))
+		    (define-key map (kbd "$")  #'math-delimiters-insert)
+		    map))))
+
 (defalias 'mcq-item
-   (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
+  (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
 
 (defun mcq-wrap-line ()
   "Wrap the current line in \choice{}"
@@ -1954,43 +2099,43 @@ and convert it to Org using the pandoc utility."
   "Wrap the selected text in \choice{}"
   (interactive)
   (if (use-region-p)
-      (let ((begin (region-beginning))
-	    (end (region-end)))
-	(save-excursion
-	  (goto-char end)
-	  (insert "}")
-	  (goto-char begin)
-	  (insert "\\choice{")))
+	(let ((begin (region-beginning))
+	      (end (region-end)))
+	  (save-excursion
+	    (goto-char end)
+	    (insert "}")
+	    (goto-char begin)
+	    (insert "\\choice{")))
     (insert "\\choice{}")
     (backward-char)))
 
 (defun convert-quiz-claude-to-org ()
-"Convert markdown-style quiz questions from Claude to Org mode format. Operates on the current buffer or active region."
+  "Convert markdown-style quiz questions from Claude to Org mode format. Operates on the current buffer or active region."
   (interactive)
   (let ((start (if (use-region-p) (region-beginning) (point-min)))
-	(end   (if (use-region-p) (region-end)       (point-max)))
-	(question-num 0))
+	  (end   (if (use-region-p) (region-end)       (point-max)))
+	  (question-num 0))
     (save-excursion
-      ;; Remove '---' separator lines
-      (goto-char start)
-      (while (re-search-forward "^---\n?" end t)
-	(replace-match ""))
+	;; Remove '---' separator lines
+	(goto-char start)
+	(while (re-search-forward "^---\n?" end t)
+	  (replace-match ""))
 
-      ;; Convert **Question N:** to "N."
-      (goto-char start)
-      (while (re-search-forward "^\\*\\*Question [0-9]+:\\*\\* " end t)
-	(setq question-num (1+ question-num))
-	(replace-match (format "%d. " question-num)))
+	;; Convert **Question N:** to "N."
+	(goto-char start)
+	(while (re-search-forward "^\\*\\*Question [0-9]+:\\*\\* " end t)
+	  (setq question-num (1+ question-num))
+	  (replace-match (format "%d. " question-num)))
 
-      ;; Convert "- A)" "- B)" etc. to "     a)" "     b)" etc.
-      (goto-char start)
-      (while (re-search-forward "^- \\([A-D]\\))" end t)
-	(replace-match (format "     %s)" (downcase (match-string 1)))))
+	;; Convert "- A)" "- B)" etc. to "     a)" "     b)" etc.
+	(goto-char start)
+	(while (re-search-forward "^- \\([A-D]\\))" end t)
+	  (replace-match (format "     %s)" (downcase (match-string 1)))))
 
-      ;; Remove blank lines
-      (goto-char start)
-      (while (re-search-forward "^[[:blank:]]*\n" end t)
-	(replace-match "")))))
+	;; Remove blank lines
+	(goto-char start)
+	(while (re-search-forward "^[[:blank:]]*\n" end t)
+	  (replace-match "")))))
 
 (defun rlr/org-mc-to-latex-questions (beg end)
   "Convert org-mode multiple choice questions in region to LaTeX format. Questions are numbered lines followed by lettered choices (a-z). Correct answers are marked with * after the choice text."
@@ -2027,22 +2172,22 @@ and convert it to Org using the pandoc utility."
   (interactive)
   (save-excursion
     (let* ((question-start
-	    (progn
-	      (end-of-line)
-	      (if (re-search-backward "^[0-9]+\\." nil t)
-		  (point)
-		(error "No question found at point"))))
-	   (question-end
-	    (progn
-	      (goto-char question-start)
-	      (forward-line 1)
-	      (if (re-search-forward "^[0-9]+\\." nil t)
-		  (match-beginning 0)
-		(point-max))))
-	   (text (buffer-substring-no-properties question-start question-end)))
-      (with-current-buffer (get-buffer-create "*scratch*")
-	(goto-char (point-max))
-	(insert text)))))
+	      (progn
+		(end-of-line)
+		(if (re-search-backward "^[0-9]+\\." nil t)
+		    (point)
+		  (error "No question found at point"))))
+	     (question-end
+	      (progn
+		(goto-char question-start)
+		(forward-line 1)
+		(if (re-search-forward "^[0-9]+\\." nil t)
+		    (match-beginning 0)
+		  (point-max))))
+	     (text (buffer-substring-no-properties question-start question-end)))
+	(with-current-buffer (get-buffer-create "*scratch*")
+	  (goto-char (point-max))
+	  (insert text)))))
 
 (defun rlr/delete-mcq-at-point ()
   "Delete the multiple choice question at point, including all its choices."
@@ -2064,8 +2209,8 @@ and convert it to Org using the pandoc utility."
 (use-package citar
   :bind
   (("C-c C-b" . citar-insert-citation)
-  :map minibuffer-local-map
-	  ("M-b" . citar-insert-preset))
+   :map minibuffer-local-map
+   ("M-b" . citar-insert-preset))
   :custom
   (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
   (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
@@ -2087,13 +2232,13 @@ and convert it to Org using the pandoc utility."
   (ebib-preload-bib-files '("~/Dropbox/bibtex/rlr.bib")))
 
 (use-package denote
-    :config
-    (setq denote-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/denote/")
-    (setq denote-infer-keywords t)
-    (setq denote-sort-keywords t)
-    (setq denote-prompts '(title keywords))
-    (setq denote-date-format nil)
-:commands denote)
+  :config
+  (setq denote-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/denote/")
+  (setq denote-infer-keywords t)
+  (setq denote-sort-keywords t)
+  (setq denote-prompts '(title keywords))
+  (setq denote-date-format nil)
+  :commands denote)
 
 (use-package consult-denote
   :bind
@@ -2140,7 +2285,11 @@ and convert it to Org using the pandoc utility."
   ;; (denote-search-help-string "")
   ;; Display keywords in results buffer
   (denote-search-format-heading-function #'denote-search-format-heading-with-keywords)
-  :commands (denote-search))
+  :commands (denote-search)
+  :bind
+  ("C-c s s" . denote-search)
+  ("C-c s d" . denote-search-marked-dired-files)
+  ("C-c s r" . denote-search-files-referenced-in-region))
 
 (use-package grove
   :bind-keymap ("C-c v" . grove-command-map)
@@ -2154,18 +2303,18 @@ and convert it to Org using the pandoc utility."
   :commands (mu4e mu4e-update-mail-and-index)
   :bind
   (:map mu4e-headers-mode-map
-	          ("q"  . kill-current-buffer)
-	          ("C-<tab>" . tab-next)
-	          ("g" . my-mu4e-mark-add-tag)
-  :map mu4e-thread-mode-map
-	          ("C-<tab>" . tab-next)
-  :map mu4e-main-mode-map
-	          ("q"  . rlr/quit-mu4e)
-	          ("u" . mu4e-update-mail-and-index)
-  :map mu4e-view-mode-map
-	          ("," . link-hint-open-link)
-	          ("." . rlr/link-hint-open-link-in-secondary-browser)
-	          ("C-," . mu4e-sexp-at-point))
+	  ("q"  . kill-current-buffer)
+	  ("C-<tab>" . tab-next)
+	  ("g" . my-mu4e-mark-add-tag)
+	  :map mu4e-thread-mode-map
+	  ("C-<tab>" . tab-next)
+	  :map mu4e-main-mode-map
+	  ("q"  . rlr/quit-mu4e)
+	  ("u" . mu4e-update-mail-and-index)
+	  :map mu4e-view-mode-map
+	  ("," . link-hint-open-link)
+	  ("." . rlr/link-hint-open-link-in-secondary-browser)
+	  ("C-," . mu4e-sexp-at-point))
   :after org
   :init
   (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
@@ -2175,7 +2324,7 @@ and convert it to Org using the pandoc utility."
   (setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-update-interval 300) ;; update every 5 minutes
   (setq mu4e-read-option-use-builtin nil
-	          mu4e-completing-read-function 'completing-read)
+	  mu4e-completing-read-function 'completing-read)
   (setq mu4e-split-view 'horizontal)
   (setq mu4e-index-update-error-warning nil)
   (setq mu4e-headers-skip-duplicates  t)
@@ -2195,94 +2344,94 @@ and convert it to Org using the pandoc utility."
   (setq mu4e-attachment-dir "~/Downloads")
   (setq mu4e-context-policy 'pick-first)
   (setq  mu4e-contexts (list
-				  (make-mu4e-context
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@fastmail.com")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/fastmail/Drafts")
-					     (mu4e-sent-folder  . "/fastmail/Sent")
-					     (mu4e-trash-folder  . "/fastmail/Trash")
-					     (mu4e-refile-folder  . "/fastmail/Archive")
-					     (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
-					     (smtpmail-smtp-server  . "smtp.fastmail.com")
-					     ))
-				  (make-mu4e-context
-				   :name "obu"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/obu/Drafts")
-					     (mu4e-sent-folder  . "/obu/Sent")
-					     (mu4e-trash-folder . "/obu/Trash")
-					     (mu4e-refile-folder  . "/obu/Archive")
-					     ;; (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-smtp-server  . "localhost")
-					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
-					     (smtpmail-stream-type . plain)
-					     (smtpmail-smtp-service . 1025)
-					     ))
-				  (make-mu4e-context
-				   :name "gmail"
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-					   (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@gmail.com")
-					     (user-full-name . "Randy Ridenour")
-					     (mu4e-drafts-folder . "/gmail/Drafts")
-					     (mu4e-refile-folder . "/gmail/Archive")
-					     (mu4e-sent-folder . "/gmail/Sent")
-					     (mu4e-trash-folder . "/gmail/Trash")))
-				  ))
+			  (make-mu4e-context
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@fastmail.com")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/fastmail/Drafts")
+				   (mu4e-sent-folder  . "/fastmail/Sent")
+				   (mu4e-trash-folder  . "/fastmail/Trash")
+				   (mu4e-refile-folder  . "/fastmail/Archive")
+				   (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
+				   (smtpmail-smtp-server  . "smtp.fastmail.com")
+				   ))
+			  (make-mu4e-context
+			   :name "obu"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/obu/Drafts")
+				   (mu4e-sent-folder  . "/obu/Sent")
+				   (mu4e-trash-folder . "/obu/Trash")
+				   (mu4e-refile-folder  . "/obu/Archive")
+				   ;; (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-smtp-server  . "localhost")
+				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+				   (smtpmail-stream-type . plain)
+				   (smtpmail-smtp-service . 1025)
+				   ))
+			  (make-mu4e-context
+			   :name "gmail"
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@gmail.com")
+				   (user-full-name . "Randy Ridenour")
+				   (mu4e-drafts-folder . "/gmail/Drafts")
+				   (mu4e-refile-folder . "/gmail/Archive")
+				   (mu4e-sent-folder . "/gmail/Sent")
+				   (mu4e-trash-folder . "/gmail/Trash")))
+			  ))
 
   (setq mu4e-bookmarks
-	          '((:name "Unread messages"
-		         :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
-		         :key ?b)
-	        (:name "Flagged messages"
-		         :query "flag:flagged"
-		         :key ?f)
-	        ( :name "All inboxes"
-	          :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
-	          :key ?A)
-	        ( :name "Today's messages"
-	          :query "date:today..now"
-	          :key ?t)
-	        ( :name "Last 7 days"
-	          :query "date:7d..now"
-	          :hide-unread t
-	          :key ?w)
-	        ( :name "Messages with images"
-	          :query "mime:image/*"
-	          :key ?p)))
+	  '((:name "Unread messages"
+		   :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
+		   :key ?b)
+	    (:name "Flagged messages"
+		   :query "flag:flagged"
+		   :key ?f)
+	    ( :name "All inboxes"
+	      :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
+	      :key ?A)
+	    ( :name "Today's messages"
+	      :query "date:today..now"
+	      :key ?t)
+	    ( :name "Last 7 days"
+	      :query "date:7d..now"
+	      :hide-unread t
+	      :key ?w)
+	    ( :name "Messages with images"
+	      :query "mime:image/*"
+	      :key ?p)))
   (setq mu4e-maildir-shortcuts
-	          '((:maildir "/obu/INBOX" :key ?u)
-	        (:maildir "/fastmail/INBOX" :key ?f)
-	        (:maildir "/gmail/INBOX" :key ?g)))
+	  '((:maildir "/obu/INBOX" :key ?u)
+	    (:maildir "/fastmail/INBOX" :key ?f)
+	    (:maildir "/gmail/INBOX" :key ?g)))
   (require 'mu4e-transient))
 
 (defun my-confirm-empty-subject ()
   "Allow user to quit when current message subject is empty."
   (or (message-field-value "Subject")
-      (yes-or-no-p "Really send without Subject? ")
-      (keyboard-quit)))
+	(yes-or-no-p "Really send without Subject? ")
+	(keyboard-quit)))
 
 (add-hook 'message-send-hook #'my-confirm-empty-subject)
 
@@ -2364,12 +2513,12 @@ and convert it to Org using the pandoc utility."
   :config
   :bind
   (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
-  :map elfeed-search-mode-map
-	      ("q" . rlr/elfeed-save-db-and-quit)
-  :map elfeed-show-mode-map
-	      ("S-<SPC>" . scroll-down)
-	      ("," . link-hint-open-link)
-	      ("." . rlr/link-hint-open-link-in-secondary-browser))
+   :map elfeed-search-mode-map
+   ("q" . rlr/elfeed-save-db-and-quit)
+   :map elfeed-show-mode-map
+   ("S-<SPC>" . scroll-down)
+   ("," . link-hint-open-link)
+   ("." . rlr/link-hint-open-link-in-secondary-browser))
   :commands elfeed)
 
 (defvar rlr/elfeed-db-save-timer nil
@@ -2494,7 +2643,7 @@ and convert it to Org using the pandoc utility."
 (use-package elfeed-webkit
   :ensure
   :bind (:map elfeed-show-mode-map
-	      ("%" . elfeed-webkit-toggle)))
+		("%" . elfeed-webkit-toggle)))
 
 (defun rlr/elfeed-open-in-eww ()
   "Open the current elfeed entry in EWW."
@@ -2508,10 +2657,10 @@ and convert it to Org using the pandoc utility."
 	(eww url))))
 
 (bind-keys
-     :map elfeed-show-mode-map
-     ("e" . rlr/elfeed-open-in-eww)
-   :map elfeed-search-mode-map
-   ("e" . rlr/elfeed-open-in-eww))
+ :map elfeed-show-mode-map
+ ("e" . rlr/elfeed-open-in-eww)
+ :map elfeed-search-mode-map
+ ("e" . rlr/elfeed-open-in-eww))
 
 (defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
 (defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
@@ -2602,14 +2751,64 @@ and convert it to Org using the pandoc utility."
      (latex (format "\href{%s}{%s}"
 		      path (or desc "video"))))))
 
+(defun orgblog-all-tag-lines ()
+  "Get filetag lines from all posts."
+  (let ((post-dir orgblog-posts-directory)
+	  (regex "^#\\+filetags:\\s([a-zA-Z]+)"))
+    (shell-command-to-string
+     (concat "rg --context 0 --no-filename --no-heading --replace \"\\$1\" -- " (shell-quote-argument regex) " " post-dir))))
+
+(defun orgblog-all-tags ()
+  "Return a list of unique tags from all posts."
+  (delete-dups
+   (split-string (orgblog-all-tag-lines) nil t)))
+
+(defun orgblog-select-tag ()
+  "Select and insert a tag from tags in the blog."
+  (defvar newtag)
+  (setq newtag (completing-read "Tag: " (orgblog-all-tags))))
+
+(defun insert-post-tag ()
+  (orgblog-select-tag)
+  (beginning-of-buffer)
+  (search-forward "#+filetags" nil 1)
+  (end-of-line)
+  (insert (concat " " newtag))
+  (beginning-of-buffer)
+  (search-forward "Tagged:")
+  (end-of-line)
+  (insert (concat " [[file:../tags/" newtag ".org][" (s-titleized-words newtag) "]]")))
+
+(defun add-post-to-tagfile ()
+  (defvar tagfile)
+  (defvar post-filename)
+  (defvar post-title)
+  (setq tagfile (concat "../tags/" newtag ".org"))
+  (setq post-filename (f-filename (f-this-file)))
+  (progn
+    (beginning-of-buffer)
+    (search-forward "#+title: " nil 1)
+    (setq post-title (buffer-substring (point) (line-end-position))))
+  (when
+	(not (file-exists-p tagfile))
+    (f-append-text (concat "#+title: Tagged: " (s-titleized-words newtag) "\n#+setupfile: ../org-templates/post.org\n") 'utf-8 tagfile))
+  (f-append-text (concat "\n- [[file:../posts/" post-filename "][" post-title "]]") 'utf-8 tagfile))
+
+(defun orgblog-add-tag ()
+  (interactive)
+  (orgblog-select-tag)
+  (insert-post-tag)
+  (add-post-to-tagfile)
+  (save-buffer))
+
 (use-package website2org
-:vc (:url "https://github.com/rtrppl/website2org")
+  :vc (:url "https://github.com/rtrppl/website2org")
   :config
   (setq website2org-directory "~/icloud/web-saves/website2org/") ;; if needed, see below
   (setq website2org-additional-meta nil)
   :bind
   ("C-M-s-<down>" . website2org)
-   ("C-M-s-<up>" . website2org-temp))
+  ("C-M-s-<up>" . website2org-temp))
 
 (use-package htmlize
   :commands (htmlize-file))
@@ -2646,11 +2845,11 @@ and convert it to Org using the pandoc utility."
     )
   :bind
   (nil
-  :map eww-mode-map
-	      ("I" . rlr/eww-toggle-images)
-	      ("f" . link-hint-open-link)
-	      ("F" . rlr/open-eww-link-new-buffer)
-	      ("T" . eww-toggle-fonts)))
+   :map eww-mode-map
+   ("I" . rlr/eww-toggle-images)
+   ("f" . link-hint-open-link)
+   ("F" . rlr/open-eww-link-new-buffer)
+   ("T" . eww-toggle-fonts)))
 
 (defun jao-eww-to-org (&optional dest)
   "Render the current eww buffer using org markup.
@@ -2659,39 +2858,39 @@ and convert it to Org using the pandoc utility."
   (unless (org-region-active-p)
     (let ((shr-width 80)) (eww-readable)))
   (let* ((start (if (org-region-active-p) (region-beginning) (point-min)))
-	    (end (if (org-region-active-p) (region-end) (point-max)))
-	    (buff (or dest (generate-new-buffer "*eww-to-org*")))
-	    (link (eww-current-url))
-	    (title (or (plist-get eww-data :title) "")))
+	   (end (if (org-region-active-p) (region-end) (point-max)))
+	   (buff (or dest (generate-new-buffer "*eww-to-org*")))
+	   (link (eww-current-url))
+	   (title (or (plist-get eww-data :title) "")))
     (with-current-buffer buff
-	 (insert "#+title: " title "\n#+link: " link "\n\n")
-	 (org-mode))
+	(insert "#+title: " title "\n#+link: " link "\n\n")
+	(org-mode))
     (save-excursion
-	 (goto-char start)
-	 (while (< (point) end)
-	   (let* ((p (point))
-		  (props (text-properties-at p))
-		  (k (seq-find (lambda (x) (plist-get props x))
-			       '(shr-url image-url outline-level face)))
-		  (prop (and k (list k (plist-get props k))))
-		  (next (if prop
-			    (next-single-property-change p (car prop) nil end)
-			  (next-property-change p nil end)))
-		  (txt (buffer-substring (point) next))
-		  (txt (replace-regexp-in-string "\\*" "·" txt)))
-	     (with-current-buffer buff
-	       (insert
-		(pcase prop
-		  ((and (or `(shr-url ,url) `(image-url ,url))
-			(guard (string-match-p "^http" url)))
-		   (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
-		     (org-link-make-string url tt)))
-		  (`(outline-level ,n)
-		   (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
-		  ('(face italic) (format "/%s/ " (string-trim txt)))
-		  ('(face bold) (format "*%s* " (string-trim txt)))
-		  (_ txt))))
-	     (goto-char next))))
+	(goto-char start)
+	(while (< (point) end)
+	  (let* ((p (point))
+		 (props (text-properties-at p))
+		 (k (seq-find (lambda (x) (plist-get props x))
+			      '(shr-url image-url outline-level face)))
+		 (prop (and k (list k (plist-get props k))))
+		 (next (if prop
+			   (next-single-property-change p (car prop) nil end)
+			 (next-property-change p nil end)))
+		 (txt (buffer-substring (point) next))
+		 (txt (replace-regexp-in-string "\\*" "·" txt)))
+	    (with-current-buffer buff
+	      (insert
+	       (pcase prop
+		 ((and (or `(shr-url ,url) `(image-url ,url))
+		       (guard (string-match-p "^http" url)))
+		  (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
+		    (org-link-make-string url tt)))
+		 (`(outline-level ,n)
+		  (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
+		 ('(face italic) (format "/%s/ " (string-trim txt)))
+		 ('(face bold) (format "*%s* " (string-trim txt)))
+		 (_ txt))))
+	    (goto-char next))))
     (pop-to-buffer buff)
     (goto-char (point-min))))
 
@@ -2788,8 +2987,8 @@ and convert it to Org using the pandoc utility."
 (use-package link-hint
   :bind
   ("s-," . link-hint-open-link)
-   ("C-c l o" . link-hint-open-link)
-   ("C-c l c" . link-hint-copy-link))
+  ("C-c l o" . link-hint-open-link)
+  ("C-c l c" . link-hint-copy-link))
 
 (defun rlr/link-hint-open-link-in-secondary-browser ()
   (interactive)
@@ -2800,9 +2999,29 @@ and convert it to Org using the pandoc utility."
   :defer t
   :mode "\\.fish\\'")
 
+(use-package pdf-tools
+  :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
+  :init
+  (pdf-loader-install)
+  :config
+  (setq-default pdf-view-display-size 'fit-width)
+  :bind
+  (:map pdf-view-mode-map
+	  ("C-s" . isearch-forward)))
+
+(use-package appine
+  :vc (:url "https://github.com/chaoswork/appine")
+  :custom
+  ;; enables opening URLs and files with Appine, default is nil
+  (appine-use-for-org-links nil)
+  ;; bind any prefix you like
+  :bind (("C-x a a" . appine)
+	   ("C-x a u" . appine-open-url)
+	   ("C-x a o" . appine-open-file)))
+
 (use-package calc
-:bind
-("C-M-S-s-c" . calc))
+  :bind
+  ("C-M-S-s-c" . calc))
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
