@@ -1288,12 +1288,6 @@ and convert it to Org using the pandoc utility."
 	  org-appear-autolinks      t   ; Show links
 	  org-appear-autosubmarkers t)) ; Show sub and superscripts
 
-(use-package org-modern
-  :after org
-  :config
-  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
-  )
-
 (require 'ox-beamer)
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-latex-classes

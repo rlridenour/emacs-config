@@ -2391,16 +2391,6 @@ Convert Org mode to Markdown
 	  org-appear-autosubmarkers t)) ; Show sub and superscripts
 #+end_src
 
-** Org Modern
-
-#+begin_src emacs-lisp
-  (use-package org-modern
-    :after org
-    :config
-    (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
-    )
-#+end_src
-
 ** Org LaTeX Export
 
 #+begin_src emacs-lisp
@@ -2735,10 +2725,10 @@ Open links with the return key.
 Use space key to show link hints.
 
 #+begin_src emacs-lisp :tangle no
-  (general-define-key
-   :keymaps 'org-agenda-mode-map
-   "<SPC>" #'link-hint-open-link
-   "," #'link-hint-open-link)
+  (bind-keys
+   :map org-agenda-mode-map
+   ("<SPC>" . link-hint-open-link)
+   ("," . link-hint-open-link))
 #+end_src
 
 Set agenda links as safe.
