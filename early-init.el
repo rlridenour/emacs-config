@@ -3,13 +3,6 @@
 ;;  (setq package-enable-at-startup nil)
   (setq inhibit-default-init nil)
 
-;; Temporarily increase GC threshold during startup
-(setq gc-cons-threshold most-positive-fixnum)
-
-;; Restore to normal value after startup (e.g. 50MB)
-(add-hook 'emacs-startup-hook
-	    (lambda () (setq gc-cons-threshold (* 50 1024 1024))))
-
 (customize-set-variable 'native-comp-speed 2)
 (customize-set-variable 'native-comp-deferred-compilation t)
 
@@ -30,13 +23,6 @@
 (setq-default initial-scratch-message nil)
 (setq use-dialog-box nil)
 
-(setq ring-bell-function 'ignore)
-
-(setq scroll-conservatively 10
-	scroll-margin 0)
-
-(setq server-client-instructions nil)
-
 (setq frame-resize-pixelwise t)
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
@@ -48,9 +34,6 @@
 		     "-e"
 		     "tell application \"Emacs\" to activate")))
 (add-hook 'server-after-make-frame-hook #'initd/bring-emacs-to-front)
-
-(setq-default cursor-in-non-selected-windows nil
-		frame-title-format '("%f [%m]"))
 
 (setq frame-title-format
 	'(buffer-file-name (:eval (abbreviate-file-name buffer-file-name))

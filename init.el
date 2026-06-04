@@ -1,9 +1,13 @@
-;;; init.el -*- lexical-binding: t; -*-
+;;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 
 (with-eval-after-load 'package
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
 
 (setq use-package-always-ensure t)
+
+(use-package gcmh
+  :config
+  (gcmh-mode 1))
 
 (setq custom-file (concat user-emacs-directory "custom.el"))
 (load custom-file)
@@ -38,11 +42,68 @@
   (unless (file-directory-p dir)
     (make-directory dir t)))
 
+(setq backup-directory-alist (list (cons "."  rr-backup-dir)))
+
+(setq backup-by-copying t)
+
+(setq delete-old-versions t)
+
+(setq kept-new-versions 5)
+
+(setq version-control t)
+
 (setq create-lockfiles nil)
+
+(use-package buffer-guardian
+  :custom
+  ;; When non-nil, include remote files in the auto-save process
+  (buffer-guardian-inhibit-saving-remote-files t)
+  ;; When non-nil, buffers visiting nonexistent files are not saved
+  (buffer-guardian-inhibit-saving-nonexistent-files nil)
+  ;; Save the buffer even if the window change results in the same buffer
+  (buffer-guardian-save-on-same-buffer-window-change t)
+  ;; Non-nil to enable verbose mode to log when a buffer is automatically saved
+  (buffer-guardian-verbose nil)
+  ;; Save all buffers after N seconds of user idle time. (Disabled by default)
+  ;; (buffer-guardian-save-all-buffers-idle 30)
+  :hook
+  (after-init . buffer-guardian-mode))
 
 (unbind-key "s-m")
 
-(use-package transient)
+(use-package transient
+  :bind
+  (:map transient-map
+	 ("<escape>" . transient-quit-one)))
+
+(use-package casual-suite
+  :bind
+  (("H-." . casual-editkit-main-tmenu)
+  ("M-g a" . casual-avy-tmenu)
+  :map reb-mode-map
+	      ("s-." . casual-re-builder-tmenu)
+  :map calc-mode-map
+	      ("s-." . casual-calc-tmenu)
+  :map dired-mode-map
+	      ("s-." . casual-dired-tmenu)
+  :map isearch-mode-map
+	      ("s-." . casual-isearch-tmenu)
+  :map ibuffer-mode-map
+	      ("s-." . casual-ibuffer-tmenu)
+	      ("F" . casual-ibuffer-filter-tmenu)
+	      ("s" . casual-ibuffer-sortby-tmenu)
+  :map bookmark-bemenu-mode-map
+	      ("s-." . casual-bookmarks-tmenu)
+  :map org-agenda-mode-map
+	      ("s-." . casual-agenda-tmenu)
+  :map Info-mode-map
+	      ("s-." . casual-info-tmenu)
+  :map calendar-mode-map
+	      ("s-." . casual-calendar-tmenu)
+  :map eww-mode-map
+	      ("s-." . casual-eww-tmenu)
+  :map org-mode-map
+	      ("s-." . casual-org-tmenu)))
 
 (use-package major-mode-hydra
   :commands (pretty-hydra-define)
@@ -67,51 +128,26 @@
   (interactive)
   (dired "~/.config/fish/functions"))
 
-;; Enable Vertico.
 (use-package vertico
-
-  :custom
-  (vertico-cycle t)
-  ;; (vertico-scroll-margin 0) ;; Different scroll margin
-  ;; (vertico-count 20) ;; Show more candidates
-  ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
-  ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
-  :init
-  (vertico-mode)
+  :demand
+  :custom (vertico-cycle t)
   :config
+  (setf (car vertico-multiline) "\n") ;; don't replace newlines
+  (vertico-mode)
   (vertico-multiform-mode 1)
   (setq vertico-multiform-categories
 	  '((file grid)
-	    ;; (jinx grid (vertico-grid-annotate . 20))
-	    ;; (citar buffer)
-	    ))
+	(jinx grid (vertico-grid-annotate . 20))
+	(citar buffer)))
+  (setq vertico-cycle t) ;; enable cycling for 'vertico-next' and 'vertico-prev'
+  (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
   :bind
-  (:map vertico-map
-	  ;; keybindings to cycle through vertico results.
-	  ("C-h" . +minibuffer-up-dir)
-	  ("<backspace>" . vertico-directory-delete-char)
-	  ("RET" . vertico-directory-enter)))
-
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
-  :init
-  (savehist-mode))
-
-;; Emacs minibuffer configurations.
-(use-package emacs
-  :custom
-  ;; Enable context menu. `vertico-multiform-mode' adds a menu in the minibuffer
-  ;; to switch display modes.
-  (context-menu-mode t)
-  ;; Support opening new minibuffers from inside existing minibuffers.
-  (enable-recursive-minibuffers t)
-  ;; Hide commands in M-x which do not work in the current mode.  Vertico
-  ;; commands are hidden in normal buffers. This setting is useful beyond
-  ;; Vertico.
-  (read-extended-command-predicate #'command-completion-default-include-p)
-  ;; Do not allow the cursor in the minibuffer prompt
-  (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt)))
+  (("C-z" . vertico-suspend)
+   :map vertico-map
+   ;; keybindings to cycle through vertico results.
+   ("C-h" . +minibuffer-up-dir)
+   ("<backspace>" . vertico-directory-delete-char)
+   ("RET" . vertico-directory-enter)))
 
 (use-package orderless
   :custom
@@ -119,28 +155,50 @@
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package marginalia
-  :ensure
   :config (marginalia-mode))
 
 (use-package consult
-  :ensure
   :demand
+  :config
+  (defun rlr/consult-rg ()
+    "Function for consult-ripgrep with the universal-argument."
+    (interactive)
+    (consult-ripgrep (list 4)))
+  (defun rlr/consult-fd ()
+    "Function for consult-find with the universal-argument."
+    (interactive)
+    (consult-find (list 4)))
   :bind
   (("C-x b" . consult-buffer)
-   ("s-f" . consult-line)
    ("s-r" . consult-buffer)
+   ("M-s-r" . consult-buffer-other-window)
+   ("s-f" . consult-line)
    ("M-y" . consult-yank-pop)
-   ("C-c b" . consult-bookmark)))
+   ("C-x 4 b" . consult-buffer-other-window)
+   ("C-x 5 b" . consult-buffer-other-frame)
+   ("C-x r x" . consult-register)
+   ("C-c m" . consult-mark)
+   ("C-c o" . consult-outline)
+   ("C-c p f" . consult-project-buffer)
+   ("M-s m" . consult-multi-occur)))
 
-(defun rlr/consult-rg ()
-  "Function for consult-ripgrep with the universal-argument."
-  (interactive)
-  (consult-ripgrep (list 4)))
+(use-package consult-dir
+:bind
+    (("C-x C-d" . consult-dir)
+    :map vertico-map
+	  ("C-x C-d" . consult-dir)
+	  ("C-x C-j" . consult-dir-jump-file)))
 
-(defun rlr/consult-fd ()
-  "Function for consult-find with the universal-argument."
-  (interactive)
-  (consult-find (list 4)))
+(use-package consult-spotlight
+  :after consult
+  :custom
+  (consult-spotlight-stderr "/dev/null"))
+
+(use-package corfu
+:custom
+(corfu-cycle t)
+:config
+(global-corfu-mode))
 
 (use-package yasnippet
   :config
@@ -205,6 +263,10 @@
 (display-time-mode)
 
 (setq ring-bell-function 'ignore)
+
+(setq server-use-tcp t)
+(server-start)
+(require 'org-protocol)
 
 (electric-pair-mode 1)
 (show-paren-mode)
@@ -441,14 +503,6 @@
   (crux-kill-other-buffers)
   (tab-bar-close-other-tabs))
 
-(defun goto-emacs-init ()
-  (interactive)
-  (find-file (concat rr-emacs-dir "/init.org")))
-
-(defun goto-shell-init ()
-  (interactive)
-  (find-file "~/.config/fish/functions/"))
-
 (setq save-interprogram-paste-before-kill t)
 
 (setq default-input-method 'TeX)
@@ -505,7 +559,6 @@
   ("C-c p d" . project-find-dired))
 
 (use-package ace-window
-  :ensure
   :config
   (setq aw-dispatch-always t)
   :bind
@@ -647,8 +700,8 @@
   ("C-x w" . delete-frame)
   ;; ("M-o" . crux-other-window-or-switch-buffer)
   ("s-\"" . previous-window-any-frame)
-  ("s-t" . tab-new)
-  ("s-T" . rlr/find-file-new-tab)
+  ("s-T" . tab-new)
+  ("s-t" . rlr/find-file-new-tab)
   ("s-w" . rlr/delete-tab-or-frame)
   ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
 
@@ -672,10 +725,7 @@
   ("s-/" . avy-goto-char-timer)
   ("C-c C-j" . avy-resume)
   ("C-c g l" . avy-goto-line)
-  ("C-c g w" . avy-goto-word-1)
-  ("C-c m" . consult-mark)
-  ("C-c o" . consult-outline)
-  ("C-c p f" . consult-project-buffer))
+  ("C-c g w" . avy-goto-word-1))
 
 (use-package fzf
   :commands (fzf fzf-directory)
@@ -708,20 +758,6 @@
 (use-package dired+
   :vc (:url "https://github.com/emacsmirror/dired-plus"))
 
-(defun rlr/dired-search-and-enter ()
-  "Search file or directory with `consult-line' and then visit it."
-  (interactive)
-  (consult-line)
-  (dired-find-file))
-
-(defun my-substspaces (str)
-  (subst-char-in-string ?\s ?- str))
-
-(defun my-dired-substspaces (&optional arg)
-  "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
-  (interactive "P")
-  (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
-
 (defun hide-dired-details-include-all-subdir-paths ()
   (save-excursion
     (goto-char (point-min))
@@ -734,21 +770,6 @@
 	       (inhibit-read-only t))
 	  (put-text-property path-start path-end
 			     'invisible 'dired-hide-details-information)))))
-
-(use-package dired
-  :ensure nil
-  :bind
-  (:map dired-mode-map
-	      ("M-<RET>" . crux-open-with)
-	      ("j" . rlr/dired-search-and-enter)
-	      ("J" . dired-goto-file)
-	      ("%s" . my-dired-substspaces))
-  :config
-  (setq dired-clean-confirm-killing-deleted-buffers nil)
-  (setq dired-dwim-target t) ;; Make copying and moving files easier.
-  (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
-  :hook ((dired-mode . dired-hide-details-mode)
-	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 
 (use-package diredfl
   :defer
@@ -766,6 +787,35 @@
     (setq-default dired-omit-extensions '(".fdb_latexmk" ".aux" ".bbl" ".blg" ".fls" ".glo" ".idx" ".ilg" ".ind" ".ist" ".log" ".out" ".gz" ".DS_Store" ".xml" ".bcf" ".nav" ".snm" ".toc"))))
 
 (add-hook 'dired-mode-hook #'dired-omit-mode)
+
+(defun rlr/dired-search-and-enter ()
+  "Search file or directory with `consult-line' and then visit it."
+  (interactive)
+  (consult-line)
+  (dired-find-file))
+
+(defun my-substspaces (str)
+  (subst-char-in-string ?\s ?- str))
+
+(defun my-dired-substspaces (&optional arg)
+  "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+  (interactive "P")
+  (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
+
+(use-package dired
+  :ensure nil
+  :bind
+  (:map dired-mode-map
+	      ("M-<RET>" . crux-open-with)
+	      ("j" . rlr/dired-search-and-enter)
+	      ("J" . dired-goto-file)
+	      ("%s" . my-dired-substspaces))
+  :config
+  (setq dired-clean-confirm-killing-deleted-buffers nil)
+  (setq dired-dwim-target t) ;; Make copying and moving files easier.
+  (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
+  :hook ((dired-mode . dired-hide-details-mode)
+	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 
 (use-package reveal-in-osx-finder
   :bind
@@ -833,6 +883,10 @@
   ("C-c H v" . helpful-variable)
   ("C-c H k" . helpful-key))
 
+(use-package discover
+  :config
+  (global-discover-mode 1))
+
 (defun insert-date-string ()
   "Insert current date yyyymmdd."
   (interactive)
@@ -841,7 +895,7 @@
 (defun insert-standard-date ()
   "Inserts standard date time string."
   (interactive)
-  (insert (format-time-string "%B %e, %Y")))
+  (insert (format-time-string "%B%e, %Y")))
 
 (defun insert-blog-date ()
   (interactive)
@@ -957,8 +1011,8 @@
   (push-mark (point) t nil)
   (message "Pushed mark to ring"))
 
-;;  (general-define-key "C-`" #'push-mark-no-activate) ;
-;;  (general-define-key "M-`" #'consult-mark)
+ (bind-key "C-`" 'push-mark-no-activate)
+ (bind-key "M-`" 'consult-mark)
 
 ; Don't break out a separate frame for ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
@@ -1000,10 +1054,44 @@
 
 (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 
+(use-package expand-region
+  :bind
+  ("C-=" . er/expand-region))
+
 (use-package hungry-delete
   :config
   (setq hungry-delete-join-reluctantly t)
   (global-hungry-delete-mode))
+
+(use-package magit
+  :after transient
+  :bind ("C-x g" . magit-status)
+  :custom
+  (magit-git-executable "/opt/homebrew/bin/git")
+  :init
+  (setq magit-process-connection-type nil)
+  :config
+  (setq magit-refresh-verbose t)
+  )
+
+(use-package jinx
+  :init
+  (setenv "PKG_CONFIG_PATH" (concat "/opt/homebrew/opt/glib/lib/pkgconfig/:" (getenv "PKG_CONFIG_PATH")))
+  :config
+  (setq ispell-silently-savep t)
+  :hook (emacs-startup . global-jinx-mode)
+  :bind
+  (([remap ispell-word] . jinx-correct)
+   ("<f7>" . jinx-correct)
+   ("S-<f7>" . jinx-correct-all)))
+
+(add-to-list 'vertico-multiform-categories
+             '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
+(vertico-multiform-mode)
+
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+		 '(text-mode . ("harper-ls" "--stdio"))))
 
 (use-package osx-dictionary
   :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
@@ -1051,28 +1139,6 @@
 
 (use-package ws-butler)
 
-(use-package magit
-  :after transient
-  :bind ("C-x g" . magit-status)
-  :custom
-  (magit-git-executable "/opt/homebrew/bin/git")
-  :init
-  (setq magit-process-connection-type nil)
-  :config
-  (setq magit-refresh-verbose t)
-  )
-
-(use-package jinx
-  :init
-  (setenv "PKG_CONFIG_PATH" (concat "/opt/homebrew/opt/glib/lib/pkgconfig/:" (getenv "PKG_CONFIG_PATH")))
-  :config
-  (setq ispell-silently-savep t)
-  :hook (emacs-startup . global-jinx-mode)
-  :bind
-  (([remap ispell-word] . jinx-correct)
-   ("<f7>" . jinx-correct)
-   ("S-<f7>" . jinx-correct-all)))
-
 (bind-keys
  ("<s-up>" . beginning-of-buffer)
  ("<s-down>" .  end-of-buffer)
@@ -1092,7 +1158,6 @@
  ("C-c d l" . dictionary-search))
 
 (use-package org
-    :ensure nil
     :init
     ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
     (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
@@ -1562,6 +1627,17 @@ and convert it to Org using the pandoc utility."
 				(cond ((= off 0) 0) (at-end 2) (t 1)))))
 	      (if is-word (org-emphasize type))))))))
 
+(bind-keys
+ :map org-mode-map
+ ("s-<right>" . org-end-of-line)
+ ("s-<left>" . org-beginning-of-line)
+ ("s-i" . (lambda () (interactive) (my/org-toggle-emphasis ?/)))
+ ("s-b" . (lambda () (interactive) (my/org-toggle-emphasis ?*)))
+ ("C-c e e" . (lambda () (interactive) (my/org-toggle-emphasis ?~)))
+ ("C-c e =" . (lambda () (interactive) (my/org-toggle-emphasis ?=)))
+ ("C-c e _" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
+ ("C-c e +" . (lambda () (interactive) (my/org-toggle-emphasis ?+))))
+
 (use-package org-upcoming-modeline
   :after org                               ; if you don't want it to start until org has been loaded
   :config
@@ -2003,18 +2079,18 @@ and convert it to Org using the pandoc utility."
   :ensure auctex
   :init
   (setq TeX-parse-self t
-	  TeX-auto-save t
-	  TeX-electric-math nil
-	  LaTeX-electric-left-right-brace nil
-	  TeX-electric-sub-and-superscript nil
-	  LaTeX-item-indent 0
-	  TeX-quote-after-quote nil
-	  TeX-clean-confirm nil
-	  TeX-source-correlate-mode t
-	  TeX-source-correlate-method 'synctex
-	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
-	  TeX-view-program-list
-	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+	      TeX-auto-save t
+	      TeX-electric-math nil
+	      LaTeX-electric-left-right-brace nil
+	      TeX-electric-sub-and-superscript nil
+	      LaTeX-item-indent 0
+	      TeX-quote-after-quote nil
+	      TeX-clean-confirm nil
+	      TeX-source-correlate-mode t
+	      TeX-source-correlate-method 'synctex
+	      TeX-view-program-selection '((output-pdf "PDF Viewer"))
+	      TeX-view-program-list
+	      '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
   :bind
   ("C-c g p" . pdf-sync-forward-search))
 
@@ -2426,6 +2502,11 @@ and convert it to Org using the pandoc utility."
 	    (:maildir "/fastmail/INBOX" :key ?f)
 	    (:maildir "/gmail/INBOX" :key ?g)))
   (require 'mu4e-transient))
+
+(add-hook 'mu4e-view-mode-hook
+            (lambda () (setq-local bidi-display-reordering nil)))
+  (add-hook 'mu4e-headers-mode-hook
+            (lambda () (setq-local bidi-display-reordering nil)))
 
 (defun my-confirm-empty-subject ()
   "Allow user to quit when current message subject is empty."

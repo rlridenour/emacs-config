@@ -25,17 +25,6 @@ Set the header and prevent package initialization.
 
 ** Performance
 
-*** Garbage Collection
-
-#+begin_src emacs-lisp
-  ;; Temporarily increase GC threshold during startup
-  (setq gc-cons-threshold most-positive-fixnum)
-
-  ;; Restore to normal value after startup (e.g. 50MB)
-  (add-hook 'emacs-startup-hook
-	    (lambda () (setq gc-cons-threshold (* 50 1024 1024))))
-#+end_src
-
 *** Native Comp
 
 Improve execution speed.
@@ -55,7 +44,7 @@ Silence native compilation warnings.
 
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp
   (defvar default-file-name-handler-alist file-name-handler-alist)
   (setq file-name-handler-alist nil)
 #+end_src
@@ -86,26 +75,7 @@ Remove unnecessary GUI elements.
   (setq use-dialog-box nil)
 #+end_src
 
-Silence warning bells.
-
-#+begin_src emacs-lisp
-  (setq ring-bell-function 'ignore)
-#+end_src
-
-Make scrolling smoother.
-
-#+begin_src emacs-lisp
-  (setq scroll-conservatively 10
-	scroll-margin 0)
-#+end_src
-
 *** Initial Frame
-
-Suppress "When done with this frame..." message.
-
-#+begin_src emacs-lisp
-  (setq server-client-instructions nil)
-#+end_src
 
 Set initial frame size to fullheight.
 
@@ -125,13 +95,6 @@ Bring new frame to front. From [[https://www.reddit.com/r/emacs/comments/1g2hkh8
 		     "-e"
 		     "tell application \"Emacs\" to activate")))
   (add-hook 'server-after-make-frame-hook #'initd/bring-emacs-to-front)
-#+end_src
-
-Set the frame title format.
-
-#+begin_src emacs-lisp
-  (setq-default cursor-in-non-selected-windows nil
-		frame-title-format '("%f [%m]"))
 #+end_src
 
 Set window title to file name.
@@ -191,10 +154,10 @@ Add some space between lines.
 Enable lexical bindings in the exported Emacs Lisp file.
 
 #+begin_src emacs-lisp
-  ;;; init.el -*- lexical-binding: t; -*-
+;;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 #+end_src
 
-Add Melpa
+Add Melpa as a package source.
 
 #+begin_src emacs-lisp
 (with-eval-after-load 'package
@@ -205,6 +168,16 @@ Always ensure declared packages.
 
 #+begin_src emacs-lisp
   (setq use-package-always-ensure t)
+#+end_src
+
+** GCMH
+
+For garbage collection.
+
+#+begin_src emacs-lisp
+  (use-package gcmh
+    :config
+    (gcmh-mode 1))
 #+end_src
 
 ** Custom Variables
@@ -265,11 +238,65 @@ Use Exec-Path-From-Shell to set path.
       (make-directory dir t)))
 #+end_src
 
+** Backups
+
+Backup files are in ~/Users/rlridenour/.cache/emacs/backup/~.
+
+#+begin_src emacs-lisp
+  (setq backup-directory-alist (list (cons "."  rr-backup-dir)))
+#+end_src
+
+Always backup by copying.
+
+#+begin_src emacs-lisp
+  (setq backup-by-copying t)
+#+end_src
+
+Delete old backup files
+
+#+begin_src emacs-lisp
+  (setq delete-old-versions t)
+#+end_src
+
+Keep 5 backup files
+
+#+begin_src emacs-lisp
+  (setq kept-new-versions 5)
+#+end_src
+
+Make numeric backup versions
+
+#+begin_src emacs-lisp
+  (setq version-control t)
+#+end_src
+
 Don't make all those files that look like =#foo.ext=.
 
 #+begin_src emacs-lisp
   (setq create-lockfiles nil)
 #+end_src
+
+*** Buffer Guardian
+
+Use [[https://github.com/jamescherti/buffer-guardian.el\]][Buffer Guardian]] for auto-saving.
+
+#+begin_src emacs-lisp
+  (use-package buffer-guardian
+    :custom
+    ;; When non-nil, include remote files in the auto-save process
+    (buffer-guardian-inhibit-saving-remote-files t)
+    ;; When non-nil, buffers visiting nonexistent files are not saved
+    (buffer-guardian-inhibit-saving-nonexistent-files nil)
+    ;; Save the buffer even if the window change results in the same buffer
+    (buffer-guardian-save-on-same-buffer-window-change t)
+    ;; Non-nil to enable verbose mode to log when a buffer is automatically saved
+    (buffer-guardian-verbose nil)
+    ;; Save all buffers after N seconds of user idle time. (Disabled by default)
+    ;; (buffer-guardian-save-all-buffers-idle 30)
+    :hook
+    (after-init . buffer-guardian-mode))
+#+end_src
+
 
 ** Menus
 
@@ -279,8 +306,47 @@ Don't make all those files that look like =#foo.ext=.
 
 *** Transient
 
+Quit transient menus with escape. This affects /all/ transient menus, so it might have unexpected consequences.
+
 #+begin_src emacs-lisp
-  (use-package transient)
+  (use-package transient
+    :bind
+    (:map transient-map
+	 ("<escape>" . transient-quit-one)))
+#+end_src
+
+
+*** Casual Suite
+
+#+begin_src emacs-lisp
+  (use-package casual-suite
+    :bind
+    (("H-." . casual-editkit-main-tmenu)
+    ("M-g a" . casual-avy-tmenu)
+    :map reb-mode-map
+	      ("s-." . casual-re-builder-tmenu)
+    :map calc-mode-map
+	      ("s-." . casual-calc-tmenu)
+    :map dired-mode-map
+	      ("s-." . casual-dired-tmenu)
+    :map isearch-mode-map
+	      ("s-." . casual-isearch-tmenu)
+    :map ibuffer-mode-map
+	      ("s-." . casual-ibuffer-tmenu)
+	      ("F" . casual-ibuffer-filter-tmenu)
+	      ("s" . casual-ibuffer-sortby-tmenu)
+    :map bookmark-bemenu-mode-map
+	      ("s-." . casual-bookmarks-tmenu)
+    :map org-agenda-mode-map
+	      ("s-." . casual-agenda-tmenu)
+    :map Info-mode-map
+	      ("s-." . casual-info-tmenu)
+    :map calendar-mode-map
+	      ("s-." . casual-calendar-tmenu)
+    :map eww-mode-map
+	      ("s-." . casual-eww-tmenu)
+    :map org-mode-map
+	      ("s-." . casual-org-tmenu)))
 #+end_src
 
 *** Hydra
@@ -311,7 +377,7 @@ Send deleted files to an Emacs folder in system trash.
 	trash-directory "~/.Trash/emacs")
 #+end_src
 
-** Open Config
+** Open Config Files
 
 *** Emacs Config
 
@@ -338,52 +404,27 @@ Open fish functions directory.
 
 ** Vertico
 
-#+begin_src emacs-lisp
-  ;; Enable Vertico.
+#+begin_src emacs-lisp :lexical t
   (use-package vertico
-
-    :custom
-    (vertico-cycle t)
-    ;; (vertico-scroll-margin 0) ;; Different scroll margin
-    ;; (vertico-count 20) ;; Show more candidates
-    ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
-    ;; (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
-    :init
-    (vertico-mode)
+    :demand
+    :custom (vertico-cycle t)
     :config
+    (setf (car vertico-multiline) "\n") ;; don't replace newlines
+    (vertico-mode)
     (vertico-multiform-mode 1)
     (setq vertico-multiform-categories
 	  '((file grid)
-	    ;; (jinx grid (vertico-grid-annotate . 20))
-	    ;; (citar buffer)
-	    ))
+	(jinx grid (vertico-grid-annotate . 20))
+	(citar buffer)))
+    (setq vertico-cycle t) ;; enable cycling for 'vertico-next' and 'vertico-prev'
+    (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
     :bind
-    (:map vertico-map
-	  ;; keybindings to cycle through vertico results.
-	  ("C-h" . +minibuffer-up-dir)
-	  ("<backspace>" . vertico-directory-delete-char)
-	  ("RET" . vertico-directory-enter)))
-
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :init
-    (savehist-mode))
-
-  ;; Emacs minibuffer configurations.
-  (use-package emacs
-    :custom
-    ;; Enable context menu. `vertico-multiform-mode' adds a menu in the minibuffer
-    ;; to switch display modes.
-    (context-menu-mode t)
-    ;; Support opening new minibuffers from inside existing minibuffers.
-    (enable-recursive-minibuffers t)
-    ;; Hide commands in M-x which do not work in the current mode.  Vertico
-    ;; commands are hidden in normal buffers. This setting is useful beyond
-    ;; Vertico.
-    (read-extended-command-predicate #'command-completion-default-include-p)
-    ;; Do not allow the cursor in the minibuffer prompt
-    (minibuffer-prompt-properties
-     '(read-only t cursor-intangible t face minibuffer-prompt)))
+    (("C-z" . vertico-suspend)
+     :map vertico-map
+     ;; keybindings to cycle through vertico results.
+     ("C-h" . +minibuffer-up-dir)
+     ("<backspace>" . vertico-directory-delete-char)
+     ("RET" . vertico-directory-enter)))
 #+end_src
 
 ** Orderless
@@ -401,7 +442,6 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package marginalia
-    :ensure
     :config (marginalia-mode))
 #+end_src
 
@@ -409,28 +449,51 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package consult
-    :ensure
     :demand
+    :config
+    (defun rlr/consult-rg ()
+      "Function for consult-ripgrep with the universal-argument."
+      (interactive)
+      (consult-ripgrep (list 4)))
+    (defun rlr/consult-fd ()
+      "Function for consult-find with the universal-argument."
+      (interactive)
+      (consult-find (list 4)))
     :bind
     (("C-x b" . consult-buffer)
-     ("s-f" . consult-line)
      ("s-r" . consult-buffer)
+     ("M-s-r" . consult-buffer-other-window)
+     ("s-f" . consult-line)
      ("M-y" . consult-yank-pop)
-     ("C-c b" . consult-bookmark)))
+     ("C-x 4 b" . consult-buffer-other-window)
+     ("C-x 5 b" . consult-buffer-other-frame)
+     ("C-x r x" . consult-register)
+     ("C-c m" . consult-mark)
+     ("C-c o" . consult-outline)
+     ("C-c p f" . consult-project-buffer)
+     ("M-s m" . consult-multi-occur)))
 #+end_src
 
-Some functions to use with Consult.
+*** Consult Dir
 
 #+begin_src emacs-lisp
-  (defun rlr/consult-rg ()
-    "Function for consult-ripgrep with the universal-argument."
-    (interactive)
-    (consult-ripgrep (list 4)))
+  (use-package consult-dir
+:bind
+    (("C-x C-d" . consult-dir)
+    :map vertico-map
+	  ("C-x C-d" . consult-dir)
+	  ("C-x C-j" . consult-dir-jump-file)))
+#+end_src
 
-  (defun rlr/consult-fd ()
-    "Function for consult-find with the universal-argument."
-    (interactive)
-    (consult-find (list 4)))
+*** Consult Spotlight
+
+[[https://github.com/guibor/consult-spotlight/tree/main][guibor/consult-spotlight]]
+
+#+begin_src emacs-lisp
+(use-package consult-spotlight
+  :after consult
+  :custom
+  (consult-spotlight-stderr "/dev/null"))
 #+end_src
 
 ** Embark
@@ -484,11 +547,12 @@ Some functions to use with Consult.
 
 ** Corfu
 
-#+begin_src emacs-lisp :tangle no
-    :custom
-    (corfu-cycle t)
-    :config
-    (global-corfu-mode))
+#+begin_src emacs-lisp
+  (use-package corfu
+  :custom
+  (corfu-cycle t)
+  :config
+  (global-corfu-mode))
 #+end_src
 
 ** Abbrev
@@ -655,6 +719,17 @@ Use MacOS SF Symbols
     (set-fontset-font t nil "SF Pro Display" nil 'append))
 #+end_src
 
+
+Set server to use tcp for [[http://yummymelon.com/scrim/][Scrim]]
+
+#+begin_src emacs-lisp
+  (setq server-use-tcp t)
+  (server-start)
+  (require 'org-protocol)
+#+end_src
+
+
+
 Auto-insert and immediately highlight matching pairs of parentheses and quotes.
 
 #+begin_src emacs-lisp
@@ -680,7 +755,7 @@ Make M-x not offer options that don't apply to the current buffer.
 
 These are from [[https://emacsredux.com/blog/2026/04/07/stealing-from-the-best-emacs-configs/][Stealing from the Best Emacs Configs | Emacs Redux]]
 
-Disable Bidirectional Text Scanning
+Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4e to crash Emacs on certain messages.)
 
 #+begin_src emacs-lisp :tangle no
 (setq-default bidi-display-reordering 'left-to-right
@@ -1078,22 +1153,6 @@ Kill other buffers and tabs.
     (tab-bar-close-other-tabs))
 #+end_src
 
-Open the Emacs =init.org= file.
-
-#+begin_src emacs-lisp
-  (defun goto-emacs-init ()
-    (interactive)
-    (find-file (concat rr-emacs-dir "/init.org")))
-#+end_src
-
-Open the Fish function directory in Dired.
-
-#+begin_src emacs-lisp
-  (defun goto-shell-init ()
-    (interactive)
-    (find-file "~/.config/fish/functions/"))
-#+end_src
-
 Save the current (system) clipboard before replacing it with the Emacs’ text. https://github.com/dakrone/eos/blob/master/eos.org
 
 #+begin_src emacs-lisp
@@ -1204,7 +1263,6 @@ Use ~persistent-scratch~ to save scratch file between sessions.
 
 #+begin_src emacs-lisp
   (use-package ace-window
-    :ensure
     :config
     (setq aw-dispatch-always t)
     :bind
@@ -1378,8 +1436,8 @@ Reversible C-x 1
   ("C-x w" . delete-frame)
   ;; ("M-o" . crux-other-window-or-switch-buffer)
   ("s-\"" . previous-window-any-frame)
-  ("s-t" . tab-new)
-  ("s-T" . rlr/find-file-new-tab)
+  ("s-T" . tab-new)
+  ("s-t" . rlr/find-file-new-tab)
   ("s-w" . rlr/delete-tab-or-frame)
   ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
 #+end_src
@@ -1425,10 +1483,7 @@ Find non-ascii characters in buffer.
     ("s-/" . avy-goto-char-timer)
     ("C-c C-j" . avy-resume)
     ("C-c g l" . avy-goto-line)
-    ("C-c g w" . avy-goto-word-1)
-    ("C-c m" . consult-mark)
-    ("C-c o" . consult-outline)
-    ("C-c p f" . consult-project-buffer))
+    ("C-c g w" . avy-goto-word-1))
 #+end_src
 
 *** FZF
@@ -1490,28 +1545,6 @@ Hide file details and absolute path by default, from [[https://lmno.lol/alvaro/h
     :vc (:url "https://github.com/emacsmirror/dired-plus"))
 #+end_src
 
-Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
-
-#+begin_src emacs-lisp
-  (defun rlr/dired-search-and-enter ()
-    "Search file or directory with `consult-line' and then visit it."
-    (interactive)
-    (consult-line)
-    (dired-find-file))
-#+end_src
-
-Replace spaces in file names with hyphens using "%s" in dired.
-
-#+begin_src emacs-lisp
-  (defun my-substspaces (str)
-    (subst-char-in-string ?\s ?- str))
-
-  (defun my-dired-substspaces (&optional arg)
-    "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
-    (interactive "P")
-    (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
-#+end_src
-
 #+begin_src emacs-lisp
   (defun hide-dired-details-include-all-subdir-paths ()
     (save-excursion
@@ -1525,23 +1558,6 @@ Replace spaces in file names with hyphens using "%s" in dired.
 	       (inhibit-read-only t))
 	  (put-text-property path-start path-end
 			     'invisible 'dired-hide-details-information)))))
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package dired
-    :ensure nil
-    :bind
-    (:map dired-mode-map
-	      ("M-<RET>" . crux-open-with)
-	      ("j" . rlr/dired-search-and-enter)
-	      ("J" . dired-goto-file)
-	      ("%s" . my-dired-substspaces))
-    :config
-    (setq dired-clean-confirm-killing-deleted-buffers nil)
-    (setq dired-dwim-target t) ;; Make copying and moving files easier.
-    (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
-    :hook ((dired-mode . dired-hide-details-mode)
-	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 Add some color with diredfl.
@@ -1570,6 +1586,48 @@ For some reason, adding the dired-omit-mode hook in the use-package declaration 
 #+begin_src emacs-lisp
    (add-hook 'dired-mode-hook #'dired-omit-mode)
 #+end_src
+
+
+Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
+
+#+begin_src emacs-lisp
+  (defun rlr/dired-search-and-enter ()
+    "Search file or directory with `consult-line' and then visit it."
+    (interactive)
+    (consult-line)
+    (dired-find-file))
+#+end_src
+
+Replace spaces in file names with hyphens using "%s" in dired.
+
+#+begin_src emacs-lisp
+  (defun my-substspaces (str)
+    (subst-char-in-string ?\s ?- str))
+
+  (defun my-dired-substspaces (&optional arg)
+    "Rename all marked (or next ARG) files so that spaces are replaced with underscores."
+    (interactive "P")
+    (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package dired
+    :ensure nil
+    :bind
+    (:map dired-mode-map
+	      ("M-<RET>" . crux-open-with)
+	      ("j" . rlr/dired-search-and-enter)
+	      ("J" . dired-goto-file)
+	      ("%s" . my-dired-substspaces))
+    :config
+    (setq dired-clean-confirm-killing-deleted-buffers nil)
+    (setq dired-dwim-target t) ;; Make copying and moving files easier.
+    (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
+    :hook ((dired-mode . dired-hide-details-mode)
+	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+#+end_src
+
 
 *** Reveal in Finder
 
@@ -1703,6 +1761,18 @@ Helpful gives better contextual information in help buffers.
     ("C-c H k" . helpful-key))
 #+end_src
 
+
+*** Discover
+
+From [[https://github.com/mickeynp/discover.el][mickeynp/discover.el: Discover more of emacs with context menus!]]
+
+#+begin_src emacs-lisp
+  (use-package discover
+    :config
+    (global-discover-mode 1))
+#+end_src
+
+
 * Editing
 
 ** Miscellaneous Functions
@@ -1718,7 +1788,7 @@ Use ~C-c d d~ to insert Month, Day Year and ~C-c d s~ to insert YYYYMMDD date st
   (defun insert-standard-date ()
     "Inserts standard date time string."
     (interactive)
-    (insert (format-time-string "%B %e, %Y")))
+    (insert (format-time-string "%B%e, %Y")))
 
   (defun insert-blog-date ()
     (interactive)
@@ -1862,8 +1932,8 @@ Set the mark at a location without highlighting anything with =C-`=. This is use
     (push-mark (point) t nil)
     (message "Pushed mark to ring"))
 
-  ;;  (general-define-key "C-`" #'push-mark-no-activate) ;
-  ;;  (general-define-key "M-`" #'consult-mark)
+   (bind-key "C-`" 'push-mark-no-activate)
+   (bind-key "M-`" 'consult-mark)
 #+end_src
 
 Ediff settings.
@@ -1940,6 +2010,15 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
   (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 #+end_src
 
+** Expand-region
+
+#+begin_src emacs-lisp
+  (use-package expand-region
+    :bind
+    ("C-=" . er/expand-region))
+#+end_src
+
+
 ** Hungry Delete
 
 #+begin_src emacs-lisp
@@ -1949,12 +2028,62 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
     (global-hungry-delete-mode))
 #+end_src
 
+** Magit
+
+Solved Applescript error with these default write settings:
+
+=defaults write org.gnu.Emacs NSApplicationUpdateCycleEnabled -bool NO=
+=defaults write org.gnu.Emacs NSEventConcurrentProcessingEnabled -bool NO=
+
+#+begin_src emacs-lisp
+  (use-package magit
+    :after transient
+    :bind ("C-x g" . magit-status)
+    :custom
+    (magit-git-executable "/opt/homebrew/bin/git")
+    :init
+    (setq magit-process-connection-type nil)
+    :config
+    (setq magit-refresh-verbose t)
+    )
+#+end_src
+
+** Jinx
+
+For spell-checking
+
+#+begin_src emacs-lisp
+  (use-package jinx
+    :init
+    (setenv "PKG_CONFIG_PATH" (concat "/opt/homebrew/opt/glib/lib/pkgconfig/:" (getenv "PKG_CONFIG_PATH")))
+    :config
+    (setq ispell-silently-savep t)
+    :hook (emacs-startup . global-jinx-mode)
+    :bind
+    (([remap ispell-word] . jinx-correct)
+     ("<f7>" . jinx-correct)
+     ("S-<f7>" . jinx-correct-all)))
+#+end_src
+
+Display suggestions in grid.
+
+#+begin_src emacs-lisp
+(add-to-list 'vertico-multiform-categories
+             '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
+(vertico-multiform-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs
+		 '(text-mode . ("harper-ls" "--stdio"))))
+#+end_src
+
 ** OSX Dictionary
 
 #+begin_src emacs-lisp
   (use-package osx-dictionary
     :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
-
 #+end_src
 
 ** Selected
@@ -2079,43 +2208,6 @@ Strips trailing whitespace when saving the file.
   (use-package ws-butler)
 #+end_src
 
-** Magit
-
-Solved Applescript error with these default write settings:
-
-=defaults write org.gnu.Emacs NSApplicationUpdateCycleEnabled -bool NO=
-=defaults write org.gnu.Emacs NSEventConcurrentProcessingEnabled -bool NO=
-
-#+begin_src emacs-lisp
-  (use-package magit
-    :after transient
-    :bind ("C-x g" . magit-status)
-    :custom
-    (magit-git-executable "/opt/homebrew/bin/git")
-    :init
-    (setq magit-process-connection-type nil)
-    :config
-    (setq magit-refresh-verbose t)
-    )
-#+end_src
-
-** Jinx
-
-For spell-checking
-
-#+begin_src emacs-lisp
-  (use-package jinx
-    :init
-    (setenv "PKG_CONFIG_PATH" (concat "/opt/homebrew/opt/glib/lib/pkgconfig/:" (getenv "PKG_CONFIG_PATH")))
-    :config
-    (setq ispell-silently-savep t)
-    :hook (emacs-startup . global-jinx-mode)
-    :bind
-    (([remap ispell-word] . jinx-correct)
-     ("<f7>" . jinx-correct)
-     ("S-<f7>" . jinx-correct-all)))
-#+end_src
-
 ** Editing Keybindings
 
 #+begin_src emacs-lisp
@@ -2144,7 +2236,6 @@ For spell-checking
 
 #+begin_src emacs-lisp
     (use-package org
-      :ensure nil
       :init
       ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
       (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
@@ -2743,7 +2834,7 @@ Use Emacs appointment system for notifications.
 	      (if is-word (org-emphasize type))))))))
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (bind-keys
    :map org-mode-map
    ("s-<right>" . org-end-of-line)
@@ -3323,18 +3414,18 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
     :ensure auctex
     :init
     (setq TeX-parse-self t
-  	  TeX-auto-save t
-  	  TeX-electric-math nil
-  	  LaTeX-electric-left-right-brace nil
-  	  TeX-electric-sub-and-superscript nil
-  	  LaTeX-item-indent 0
-  	  TeX-quote-after-quote nil
-  	  TeX-clean-confirm nil
-  	  TeX-source-correlate-mode t
-  	  TeX-source-correlate-method 'synctex
-  	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
-  	  TeX-view-program-list
-  	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+	      TeX-auto-save t
+	      TeX-electric-math nil
+	      LaTeX-electric-left-right-brace nil
+	      TeX-electric-sub-and-superscript nil
+	      LaTeX-item-indent 0
+	      TeX-quote-after-quote nil
+	      TeX-clean-confirm nil
+	      TeX-source-correlate-mode t
+	      TeX-source-correlate-method 'synctex
+	      TeX-view-program-selection '((output-pdf "PDF Viewer"))
+	      TeX-view-program-list
+	      '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
     :bind
     ("C-c g p" . pdf-sync-forward-search))
 #+end_src
@@ -3866,6 +3957,19 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
 	    (:maildir "/gmail/INBOX" :key ?g)))
     (require 'mu4e-transient))
 #+end_src
+
+
+Claude suggestions to fix crash. Added June 4, 2026
+
+#+begin_src emacs-lisp
+(add-hook 'mu4e-view-mode-hook
+            (lambda () (setq-local bidi-display-reordering nil)))
+  (add-hook 'mu4e-headers-mode-hook
+            (lambda () (setq-local bidi-display-reordering nil)))
+#+end_src
+
+
+
 
 This asks before sending messages without subjects. From [[https://emacs.stackexchange.com/questions/41175/how-to-warn-before-sending-email-if-subject-is-empty][message mode - How to warn before sending email if Subject: is empty - Emacs Stack Exchange]]
 
