@@ -3287,6 +3287,40 @@ and convert it to Org using the pandoc utility."
  ;; "H-'" . hydra-surround/body
  ("C-x 9" . hydra-logic/body))
 
+(major-mode-hydra-define LaTeX-mode
+  (:quit-key "q")
+  ("Bibtex"
+   (("r" citar-insert-citation "citation"))
+   "LaTeXmk"
+   (
+    ("m" rlr/tex-mklua "LuaLaTeX")
+    ("p" rlr/tex-mkpdf "PDFLaTeX")
+    ("w" rlr/tex-mktc "watch PDFLaTeX")
+    ("L" rlr/tex-mklua "watch LuaLaTeX")
+    ("c" tex-clean "clean aux")
+    ("C" tex-clean-all "clean all")
+    ("n" latex-word-count "word count"))
+   "Exams"
+   (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
+   ))
+
+(major-mode-hydra-define mu4e-main-mode
+  (:quit-key "q")
+  ("Message"
+   (
+    ("n" mu4e-compose-mail "New")
+    ("e" mu4e-view-save-attachments "Save attachments")
+    )))
+
+(major-mode-hydra-define mu4e-headers-mode
+  (:quit-key "q")
+  ("Message"
+   (
+    ("n" mu4e-compose-mail "New")
+    ("r" mu4e-compose-reply "Reply")
+    ("a"  mu4e-compose-wide-reply "Reply All")
+    )))
+
 (defun reload-user-init-file()
   (interactive)
   (load-file user-init-file))

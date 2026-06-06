@@ -5139,7 +5139,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 
 *** LaTeX Mode
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
   (major-mode-hydra-define LaTeX-mode
     (:quit-key "q")
@@ -5267,7 +5267,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 
 *** Mu4e Mode
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
   (major-mode-hydra-define mu4e-main-mode
     (:quit-key "q")
@@ -5278,7 +5278,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
       )))
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 
   (major-mode-hydra-define mu4e-headers-mode
     (:quit-key "q")
