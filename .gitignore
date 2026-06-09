@@ -38,3 +38,5 @@ tldr/
 server/
 image-dired/
 history/
+custom.el
+tree-sitter/

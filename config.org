@@ -431,6 +431,7 @@ Open fish functions directory.
 
 #+begin_src emacs-lisp
   (use-package orderless
+    :defer 1
     :custom
     (completion-styles '(orderless basic))
     (completion-category-overrides '((file (styles partial-completion)))))
@@ -442,8 +443,9 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package marginalia
+    :defer 1
     :config (marginalia-mode))
-#+end_src
+    #+end_src
 
 ** Consult
 
@@ -478,11 +480,11 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package consult-dir
-:bind
+    :bind
     (("C-x C-d" . consult-dir)
-    :map vertico-map
-	  ("C-x C-d" . consult-dir)
-	  ("C-x C-j" . consult-dir-jump-file)))
+     :map vertico-map
+     ("C-x C-d" . consult-dir)
+     ("C-x C-j" . consult-dir-jump-file)))
 #+end_src
 
 *** Consult Spotlight
@@ -490,10 +492,11 @@ Enrich existing commands with completion annotations
 [[https://github.com/guibor/consult-spotlight/tree/main][guibor/consult-spotlight]]
 
 #+begin_src emacs-lisp
-(use-package consult-spotlight
-  :after consult
-  :custom
-  (consult-spotlight-stderr "/dev/null"))
+  (use-package consult-spotlight
+    :commands (consult-spotlight)
+    :after consult
+    :custom
+    (consult-spotlight-stderr "/dev/null"))
 #+end_src
 
 ** Embark
@@ -549,6 +552,7 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package corfu
+    :defer 1
   :custom
   (corfu-cycle t)
   :config
@@ -572,6 +576,7 @@ https://github.com/joaotavora/yasnippet
 
 #+begin_src emacs-lisp :lexical t
   (use-package yasnippet
+    :commands (yas-new-snippet)
     :config
     :init
     (yas-global-mode 1)
@@ -742,6 +747,7 @@ Save minibuffer history.
 
 #+begin_src emacs-lisp
   (use-package savehist
+    :commands (savehist-save)
     :config
     (savehist-mode 1))
 #+end_src
@@ -985,7 +991,8 @@ I can't imagine wanting the same buffer in two tabs, so this calls consult-buffe
 *** Olivetti
 
 #+begin_src emacs-lisp
-  (use-package olivetti)
+  (use-package olivetti
+    :defer 5)
 #+end_src
 
 *** Text Scaling
@@ -1240,9 +1247,10 @@ Use ~persistent-scratch~ to save scratch file between sessions.
 
 #+begin_src emacs-lisp
   (use-package persistent-scratch
+    :commands (persistent-scratch-save)
     :init
-    (persistent-scratch-setup-default)
-    :commands persistent-scratch-save)
+    (persistent-scratch-setup-default))
+
 #+end_src
 
 ** Projects
@@ -1508,7 +1516,7 @@ Find non-ascii characters in buffer.
 
 #+begin_src emacs-lisp
   (use-package rg
-    :commands rg
+    :commands (rg)
     :config
     :bind
     ("C-c s m" . rg-menu))
@@ -1519,7 +1527,7 @@ Find non-ascii characters in buffer.
 #+begin_src emacs-lisp
   (use-package wgrep
     :vc (:url https://github.com/mhayashi1120/Emacs-wgrep)
-    :commands wgrep-save-all-buffers)
+    :commands (wgrep-save-all-buffers))
 #+end_src
 
 *** Deadgrep
@@ -1564,7 +1572,7 @@ Add some color with diredfl.
 
 #+begin_src emacs-lisp
   (use-package diredfl
-    :defer
+    :defer 2
     :config
     (diredfl-global-mode 1))
 #+end_src
@@ -1643,6 +1651,7 @@ Replace spaces in file names with hyphens using "%s" in dired.
 
 #+begin_src emacs-lisp
   (use-package eat
+    :commands (eat)
     :config
     (when (eq system-type 'darwin)
       (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
@@ -1766,7 +1775,7 @@ Helpful gives better contextual information in help buffers.
 
 From [[https://github.com/mickeynp/discover.el][mickeynp/discover.el: Discover more of emacs with context menus!]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package discover
     :config
     (global-discover-mode 1))
@@ -1959,7 +1968,8 @@ From [[https://github.com/mkleehammer/surround][Michael Kleehammer]]. [[https://
 ** DWIM Shell Command
 
 #+begin_src emacs-lisp
-  (use-package dwim-shell-command)
+  (use-package dwim-shell-command
+    :commands (dwim-shell-command))
 #+end_src
 
 ** Evil Nerd Commenter
@@ -1988,6 +1998,7 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
 
 #+begin_src emacs-lisp
   (use-package aggressive-indent
+    :commands (aggressive-indent-indent-defun)
     :config
     (global-aggressive-indent-mode 1))
 #+end_src
@@ -2023,12 +2034,24 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
 
 #+begin_src emacs-lisp
   (use-package hungry-delete
+    :commands (hungry-delete-forward hungry-delete-backward)
     :config
     (setq hungry-delete-join-reluctantly t)
     (global-hungry-delete-mode))
 #+end_src
 
+
+** With-Editor
+
+Required by Magit.
+
+#+begin_src emacs-lisp :tangle no
+(use-package with-editor)
+#+end_src
+
 ** Magit
+
+
 
 Solved Applescript error with these default write settings:
 
@@ -2069,7 +2092,7 @@ Display suggestions in grid.
 
 #+begin_src emacs-lisp
 (add-to-list 'vertico-multiform-categories
-             '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
+	     '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
 (vertico-multiform-mode)
 #+end_src
 
@@ -2159,6 +2182,7 @@ Display suggestions in grid.
 
 #+begin_src emacs-lisp
   (use-package speedrect
+    :commands (speedrect-kill-rectangle)
     :config
     (speedrect-mode))
 #+end_src
@@ -2205,7 +2229,8 @@ Raise the undo limits.
 Strips trailing whitespace when saving the file.
 
 #+begin_src emacs-lisp
-  (use-package ws-butler)
+  (use-package ws-butler
+    :commands (ws-butler-clean-region))
 #+end_src
 
 ** Editing Keybindings
@@ -2770,7 +2795,8 @@ Use Emacs appointment system for notifications.
 ** Org Bulletproof
 
 #+begin_src emacs-lisp
-  (use-package org-bulletproof)
+  (use-package org-bulletproof
+    :defer 2)
 #+end_src
 
 ** Org Toggle Emphasis
@@ -2852,7 +2878,8 @@ Use Emacs appointment system for notifications.
 
 #+begin_src emacs-lisp
   (use-package org-people
-    :after org)
+    :after org
+    :defer 2)
 #+end_src
 
 ** Org Mac Link
@@ -3375,7 +3402,7 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
       ("ff" org-footnote-action "edit footnote")
       ("fc" citar-insert-citation "citation")
       ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-      ("s" org-insert-structure-template "insert structure block")
+      ("is" org-insert-structure-template "insert structure block")
       ("w" csm/org-word-count "word count")
       ("y" yankpad-set-category "set yankpad"))
      "View"
@@ -3478,19 +3505,20 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 #+begin_src emacs-lisp
   (use-package math-delimiters
     :vc (:url "https://github.com/oantolin/math-delimiters")
+    :defer 3
     :after (:any org latex)
     :commands (math-delimiters-no-dollars math-delimiters-mode)
     :hook ((LaTeX-mode . math-delimiters-mode)
-	   (org-mode . math-delimiters-mode))
+  	   (org-mode . math-delimiters-mode))
     :config (progn
-	  (setq math-delimiters-compressed-display-math nil)
-	  (define-minor-mode math-delimiters-mode
-		"Math Delimeters"
-		:init-value nil
-		:lighter " MD"
-		:keymap (let ((map (make-sparse-keymap)))
-		    (define-key map (kbd "$")  #'math-delimiters-insert)
-		    map))))
+  	  (setq math-delimiters-compressed-display-math nil)
+  	  (define-minor-mode math-delimiters-mode
+  		"Math Delimeters"
+  		:init-value nil
+  		:lighter " MD"
+  		:keymap (let ((map (make-sparse-keymap)))
+  		    (define-key map (kbd "$")  #'math-delimiters-insert)
+  		    map))))
 #+end_src
 
 ** Exams
@@ -3724,6 +3752,7 @@ Remove multiple choice questions and save them to the kill ring.
 #+begin_src emacs-lisp
   (use-package consult-notes
     :after (consult denote)
+    :commands (consult-notes)
     :config
     (consult-notes-denote-mode))
 #+end_src
@@ -3731,6 +3760,7 @@ Remove multiple choice questions and save them to the kill ring.
 #+begin_src emacs-lisp
   (use-package citar-denote
     :after (citar denote)
+    :commands (citar-denote-dwim)
     :config
     (citar-denote-mode)
     (setq citar-open-always-create-notes t))
@@ -3738,7 +3768,8 @@ Remove multiple choice questions and save them to the kill ring.
 
 #+begin_src emacs-lisp
   (use-package denote-menu
-    :after denote)
+    :after denote
+    :commands (denote-menu-list-notes))
 #+end_src
 
 [[https://github.com/lmq-10/denote-search][Denote Search]] — [[https://github.com/lmq-10/denote-search/blob/main/README.org][manual]].
@@ -3953,9 +3984,9 @@ Claude suggestions to fix crash. Added June 4, 2026
 
 #+begin_src emacs-lisp
 (add-hook 'mu4e-view-mode-hook
-            (lambda () (setq-local bidi-display-reordering nil)))
+	    (lambda () (setq-local bidi-display-reordering nil)))
   (add-hook 'mu4e-headers-mode-hook
-            (lambda () (setq-local bidi-display-reordering nil)))
+	    (lambda () (setq-local bidi-display-reordering nil)))
 #+end_src
 
 
@@ -4005,6 +4036,7 @@ Mu4e-alert
 
 #+begin_src emacs-lisp
   (use-package mu4e-alert
+    :defer 2
     :after mu4e
     :config
     (mu4e-alert-enable-mode-line-display))
@@ -4280,6 +4312,7 @@ These functions are for toggling tags when viewing single Elfeed entries. From [
 #+begin_src emacs-lisp
   (use-package elfeed-org
     :after elfeed
+    :commands (elfeed-org)
     :init
     (elfeed-org)
     ;; (setq rmh-elfeed-org-files (list "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed/elfeed.org"))
@@ -4381,15 +4414,15 @@ Publish source to public directory.
       (find-file "~/sites/orgblog/publish.el")
       (eval-buffer)
       (org-publish-all)
-      (webfeeder-build "atom.xml"
-		       "./docs"
-		       "https://randyridenour.net/"
-		       (let ((default-directory (expand-file-name "./docs")))
-			 (remove "posts/index.html"
-				 (directory-files-recursively "posts"
-							      ".*\\.html$")))
-		       :title "Randy Ridenour"
-		       :description "Blog posts by Randy Ridenour")
+      ;; (webfeeder-build "atom.xml"
+      ;;		       "./docs"
+      ;;		       "https://randyridenour.net/"
+      ;;		       (let ((default-directory (expand-file-name "./docs")))
+      ;;			 (remove "posts/index.html"
+      ;;				 (directory-files-recursively "posts"
+      ;;							      ".*\\.html$")))
+      ;;		       :title "Randy Ridenour"
+      ;;		       :description "Blog posts by Randy Ridenour")
       (kill-buffer))
     (message "Build complete!"))
 #+end_src
@@ -4516,6 +4549,21 @@ Select tag, add tag to to post, then add post to tag page.
     (add-post-to-tagfile)
     (save-buffer))
 #+end_src
+
+
+*** Org-Publish-RSS
+
+#+begin_src emacs-lisp
+  (use-package org-publish-rss
+    :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
+	      :rev :newest)
+    :commands (org-publish-all)
+    :config
+    (setq org-publish-rss-publish-immediately t))
+
+#+end_src
+
+
 
 ** Website2org
 
@@ -5157,61 +5205,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
      "Exams"
      (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
      ))
-#+end_src
-
-*** Org Mode
-
-#+begin_src emacs-lisp :tangle no :tangle no
-
-  (major-mode-hydra-define org-mode
-    (:quit-key "q")
-    ("Export"
-     (
-      ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
-      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-      ("o" rlr/org-open-pdf "View PDF")
-      ("h" make-html "HTML")
-      ("el" org-latex-export-to-latex "Org to LaTeX")
-      ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
-      ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
-      ("s" lecture-slides "Lecture slides")
-      ("n" lecture-notes "Lecture notes")
-      ("ep" present "Present slides")
-      ("ec" canvas-copy "Copy HTML for Canvas")
-      ("es" canvas-notes "HTML Canvas notes")
-      ("eS" make-syllabus "Syllabus")
-      ("eh" make-handout "Handout")
-      ("c" tex-clean "clean aux")
-      ("C" tex-clean-all "clean all"))
-     "Edit"
-     (("dd" org-deadline "deadline")
-      ("ds" org-schedule "schedule")
-      ("r" org-refile "refile")
-      ("du" rlr/org-date "update date stamp")
-      ;; ("fn" org-footnote-new "insert footnote")
-      ("ff" org-footnote-action "edit footnote")
-      ("fc" citar-insert-citation "citation")
-      ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-      ("s" org-insert-structure-template "insert structure block")
-      ("w" csm/org-word-count "word count")
-      ("y" yankpad-set-category "set yankpad"))
-     "View"
-     (("va" org-appear-mode :toggle t)
-      ("vl" org-toggle-link-display :toggle t)
-      ("vv" visible-mode :toggle t)
-      ("vi" consult-org-heading "iMenu")
-      ("vu" org-toggle-pretty-entities "org-pretty")
-      ("vI" org-toggle-inline-images "Inline images"))
-     "Blog"
-     (("bn" rlrt-new-post "New draft")
-      ("bt" orgblog-add-tag "Add tag")
-      ("bi" orgblog-insert-image "Insert image")
-      ("bp" orgblog-publish-draft "Publish draft")
-      ("bb" orgblog-build "Build site")
-      ("bs" orgblog-serve "Serve site")
-      ("bd" orgblog-push "Push to Github"))
-     "Notes"
-     (("1" denote-link "link to note"))))
 #+end_src
 
 *** Dired Mode

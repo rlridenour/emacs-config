@@ -150,11 +150,13 @@
    ("RET" . vertico-directory-enter)))
 
 (use-package orderless
+  :defer 1
   :custom
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package marginalia
+  :defer 1
   :config (marginalia-mode))
 
 (use-package consult
@@ -183,24 +185,27 @@
    ("M-s m" . consult-multi-occur)))
 
 (use-package consult-dir
-:bind
-    (("C-x C-d" . consult-dir)
-    :map vertico-map
-	  ("C-x C-d" . consult-dir)
-	  ("C-x C-j" . consult-dir-jump-file)))
+  :bind
+  (("C-x C-d" . consult-dir)
+   :map vertico-map
+   ("C-x C-d" . consult-dir)
+   ("C-x C-j" . consult-dir-jump-file)))
 
 (use-package consult-spotlight
+  :commands (consult-spotlight)
   :after consult
   :custom
   (consult-spotlight-stderr "/dev/null"))
 
 (use-package corfu
+  :defer 1
 :custom
 (corfu-cycle t)
 :config
 (global-corfu-mode))
 
 (use-package yasnippet
+  :commands (yas-new-snippet)
   :config
   :init
   (yas-global-mode 1)
@@ -273,6 +278,7 @@
 (setq show-paren-delay 0)
 
 (use-package savehist
+  :commands (savehist-save)
   :config
   (savehist-mode 1))
 
@@ -414,7 +420,8 @@
   :config
   (pulsar-global-mode 1))
 
-(use-package olivetti)
+(use-package olivetti
+  :defer 5)
 
 (bind-keys
  ("C-+" . text-scale-increase)
@@ -546,9 +553,9 @@
 (bind-key "C-M-S-s-s" 'goto-scratch)
 
 (use-package persistent-scratch
+  :commands (persistent-scratch-save)
   :init
-  (persistent-scratch-setup-default)
-  :commands persistent-scratch-save)
+  (persistent-scratch-setup-default))
 
 (use-package project
   :ensure nil
@@ -742,14 +749,14 @@
 	  fzf/window-height 15))
 
 (use-package rg
-  :commands rg
+  :commands (rg)
   :config
   :bind
   ("C-c s m" . rg-menu))
 
 (use-package wgrep
   :vc (:url https://github.com/mhayashi1120/Emacs-wgrep)
-  :commands wgrep-save-all-buffers)
+  :commands (wgrep-save-all-buffers))
 
 (use-package deadgrep
   :bind
@@ -772,7 +779,7 @@
 			     'invisible 'dired-hide-details-information)))))
 
 (use-package diredfl
-  :defer
+  :defer 2
   :config
   (diredfl-global-mode 1))
 
@@ -822,6 +829,7 @@
   ("C-c z" . 'reveal-in-osx-finder))
 
 (use-package eat
+  :commands (eat)
   :config
   (when (eq system-type 'darwin)
     (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
@@ -882,10 +890,6 @@
   ("C-c H f" . helpful-function)
   ("C-c H v" . helpful-variable)
   ("C-c H k" . helpful-key))
-
-(use-package discover
-  :config
-  (global-discover-mode 1))
 
 (defun insert-date-string ()
   "Insert current date yyyymmdd."
@@ -1024,7 +1028,8 @@
   :ensure t
   :bind-keymap ("H-'" . surround-keymap))
 
-(use-package dwim-shell-command)
+(use-package dwim-shell-command
+  :commands (dwim-shell-command))
 
 (use-package evil-nerd-commenter
   :bind
@@ -1037,6 +1042,7 @@
   ("C-x C-a" . accent-menu))
 
 (use-package aggressive-indent
+  :commands (aggressive-indent-indent-defun)
   :config
   (global-aggressive-indent-mode 1))
 
@@ -1059,6 +1065,7 @@
   ("C-=" . er/expand-region))
 
 (use-package hungry-delete
+  :commands (hungry-delete-forward hungry-delete-backward)
   :config
   (setq hungry-delete-join-reluctantly t)
   (global-hungry-delete-mode))
@@ -1086,7 +1093,7 @@
    ("S-<f7>" . jinx-correct-all)))
 
 (add-to-list 'vertico-multiform-categories
-             '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
+	     '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
 (vertico-multiform-mode)
 
 (with-eval-after-load 'eglot
@@ -1113,6 +1120,7 @@
   (prog-mode . rainbow-delimiters-mode))
 
 (use-package speedrect
+  :commands (speedrect-kill-rectangle)
   :config
   (speedrect-mode))
 
@@ -1137,7 +1145,8 @@
   ("M-q" . unfill-toggle)
   ("C-c u" . unfill-paragraph))
 
-(use-package ws-butler)
+(use-package ws-butler
+  :commands (ws-butler-clean-region))
 
 (bind-keys
  ("<s-up>" . beginning-of-buffer)
@@ -1574,7 +1583,8 @@ and convert it to Org using the pandoc utility."
 (use-package org-autolist
   :hook (org-mode . org-autolist-mode))
 
-(use-package org-bulletproof)
+(use-package org-bulletproof
+  :defer 2)
 
 (defun my/org-toggle-emphasis (type)
   "Toggle org emphasis TYPE (a character) at point."
@@ -1638,7 +1648,8 @@ and convert it to Org using the pandoc utility."
   (org-upcoming-modeline-mode))
 
 (use-package org-people
-  :after org)
+  :after org
+  :defer 2)
 
 (use-package org-mac-link
   :commands org-mac-link-safari-insert-frontmost-url)
@@ -2048,7 +2059,7 @@ and convert it to Org using the pandoc utility."
     ("ff" org-footnote-action "edit footnote")
     ("fc" citar-insert-citation "citation")
     ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-    ("s" org-insert-structure-template "insert structure block")
+    ("is" org-insert-structure-template "insert structure block")
     ("w" csm/org-word-count "word count")
     ("y" yankpad-set-category "set yankpad"))
    "View"
@@ -2139,6 +2150,7 @@ and convert it to Org using the pandoc utility."
 
 (use-package math-delimiters
   :vc (:url "https://github.com/oantolin/math-delimiters")
+  :defer 3
   :after (:any org latex)
   :commands (math-delimiters-no-dollars math-delimiters-mode)
   :hook ((LaTeX-mode . math-delimiters-mode)
@@ -2337,17 +2349,20 @@ and convert it to Org using the pandoc utility."
 
 (use-package consult-notes
   :after (consult denote)
+  :commands (consult-notes)
   :config
   (consult-notes-denote-mode))
 
 (use-package citar-denote
   :after (citar denote)
+  :commands (citar-denote-dwim)
   :config
   (citar-denote-mode)
   (setq citar-open-always-create-notes t))
 
 (use-package denote-menu
-  :after denote)
+  :after denote
+  :commands (denote-menu-list-notes))
 
 (use-package denote-search
   :custom
@@ -2498,9 +2513,9 @@ and convert it to Org using the pandoc utility."
   (require 'mu4e-transient))
 
 (add-hook 'mu4e-view-mode-hook
-            (lambda () (setq-local bidi-display-reordering nil)))
+	    (lambda () (setq-local bidi-display-reordering nil)))
   (add-hook 'mu4e-headers-mode-hook
-            (lambda () (setq-local bidi-display-reordering nil)))
+	    (lambda () (setq-local bidi-display-reordering nil)))
 
 (defun my-confirm-empty-subject ()
   "Allow user to quit when current message subject is empty."
@@ -2516,6 +2531,7 @@ and convert it to Org using the pandoc utility."
   (rlr/delete-tab-or-frame))
 
 (use-package mu4e-alert
+  :defer 2
   :after mu4e
   :config
   (mu4e-alert-enable-mode-line-display))
@@ -2707,6 +2723,7 @@ and convert it to Org using the pandoc utility."
 
 (use-package elfeed-org
   :after elfeed
+  :commands (elfeed-org)
   :init
   (elfeed-org)
   ;; (setq rmh-elfeed-org-files (list "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed/elfeed.org"))
@@ -2775,15 +2792,15 @@ and convert it to Org using the pandoc utility."
     (find-file "~/sites/orgblog/publish.el")
     (eval-buffer)
     (org-publish-all)
-    (webfeeder-build "atom.xml"
-		       "./docs"
-		       "https://randyridenour.net/"
-		       (let ((default-directory (expand-file-name "./docs")))
-			 (remove "posts/index.html"
-				 (directory-files-recursively "posts"
-							      ".*\\.html$")))
-		       :title "Randy Ridenour"
-		       :description "Blog posts by Randy Ridenour")
+    ;; (webfeeder-build "atom.xml"
+    ;;		       "./docs"
+    ;;		       "https://randyridenour.net/"
+    ;;		       (let ((default-directory (expand-file-name "./docs")))
+    ;;			 (remove "posts/index.html"
+    ;;				 (directory-files-recursively "posts"
+    ;;							      ".*\\.html$")))
+    ;;		       :title "Randy Ridenour"
+    ;;		       :description "Blog posts by Randy Ridenour")
     (kill-buffer))
   (message "Build complete!"))
 
@@ -2875,6 +2892,13 @@ and convert it to Org using the pandoc utility."
   (insert-post-tag)
   (add-post-to-tagfile)
   (save-buffer))
+
+(use-package org-publish-rss
+  :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
+	      :rev :newest)
+  :commands (org-publish-all)
+  :config
+  (setq org-publish-rss-publish-immediately t))
 
 (use-package website2org
   :vc (:url "https://github.com/rtrppl/website2org")
