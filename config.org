@@ -321,32 +321,43 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 #+begin_src emacs-lisp
   (use-package casual-suite
     :bind
-    (("H-." . casual-editkit-main-tmenu)
-    ("M-g a" . casual-avy-tmenu)
-    :map reb-mode-map
-	      ("s-." . casual-re-builder-tmenu)
-    :map calc-mode-map
-	      ("s-." . casual-calc-tmenu)
-    :map dired-mode-map
-	      ("s-." . casual-dired-tmenu)
-    :map isearch-mode-map
-	      ("s-." . casual-isearch-tmenu)
-    :map ibuffer-mode-map
-	      ("s-." . casual-ibuffer-tmenu)
-	      ("F" . casual-ibuffer-filter-tmenu)
-	      ("s" . casual-ibuffer-sortby-tmenu)
-    :map bookmark-bemenu-mode-map
-	      ("s-." . casual-bookmarks-tmenu)
-    :map org-agenda-mode-map
-	      ("s-." . casual-agenda-tmenu)
-    :map Info-mode-map
-	      ("s-." . casual-info-tmenu)
-    :map calendar-mode-map
-	      ("s-." . casual-calendar-tmenu)
-    :map eww-mode-map
-	      ("s-." . casual-eww-tmenu)
-    :map org-mode-map
-	      ("s-." . casual-org-tmenu)))
+    ("H-." . casual-editkit-main-tmenu)
+    ("M-g a" . casual-avy-tmenu))
+
+  (with-eval-after-load 'dired
+    (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
+
+  (with-eval-after-load 'calc
+    (define-key calc-mode-map (kbd "s-.") #'casual-calc-tmenu))
+
+  (with-eval-after-load 'isearch
+    (define-key isearch-mode-map (kbd "s-.") #'casual-isearch-tmenu))
+
+  (with-eval-after-load 'reb
+    (define-key casual-re-builder-map (kbd "s-.") #'casual-re-builder-menu))
+
+  (with-eval-after-load 'ibuffer
+    (define-key ibuffer-mode-map (kbd "s-.")  #'casual-ibuffer-tmenu)
+    (define-key ibuffer-mode-map (kbd "F")  #'casual-ibuffer-filter-tmenu)
+    (define-key ibuffer-mode-map (kbd "s")  #'casual-ibuffer-sortby-tmenu))
+
+  (with-eval-after-load 'bookmark
+    (define-key bookmark-bmenu-mode-map (kbd "s-.") #'casual-bookmarks-tmenu))
+
+ (with-eval-after-load 'org-agenda
+    (define-key org-agenda-mode-map (kbd "s-.") #'casual-agenda-tmenu))
+
+  (with-eval-after-load 'Info
+    (define-key Info-mode-map (kbd "s-.") #'casual-info-tmenu))
+
+  (with-eval-after-load 'calendar
+    (define-key calendar-mode-map (kbd "s-.") #'casual-calendar-tmenu))
+
+  (with-eval-after-load 'eww
+    (define-key eww-mode-map (kbd "s-.") #'casual-eww-tmenu))
+
+  (with-eval-after-load 'org
+    (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
 #+end_src
 
 *** Hydra
