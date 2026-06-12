@@ -117,7 +117,6 @@
    (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
 
 (use-package major-mode-hydra
-  :commands (pretty-hydra-define)
   :bind
   ("s-m" . major-mode-hydra))
 
@@ -140,47 +139,27 @@
   (dired "~/.config/fish/functions"))
 
 (use-package vertico
-  :demand
-  :custom (vertico-cycle t)
+  :custom
+  (vertico-cycle t)
+  (context-menu-mode t)
+  (enable-recursive-minibuffers t)
+  (read-extended-command-predicate #'command-completion-default-include-p) ;; Hide commands irrelevant to current mode.
+  (minibuffer-prompt-properties
+ '(read-only t cursor-intangible t face minibuffer-prompt)) ;; Don't allow cursor in minibuffer prompt.
   :config
-  (setf (car vertico-multiline) "\n") ;; don't replace newlines
   (vertico-mode)
-  (vertico-multiform-mode 1)
-  (setq vertico-multiform-categories
-	  '((file grid)
-	(jinx grid (vertico-grid-annotate . 20))
-	(citar buffer)))
-  (setq vertico-cycle t) ;; enable cycling for 'vertico-next' and 'vertico-prev'
-  (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
-  :bind
-  (("C-z" . vertico-suspend)
-   :map vertico-map
-   ;; keybindings to cycle through vertico results.
-   ("C-h" . +minibuffer-up-dir)
-   ("<backspace>" . vertico-directory-delete-char)
-   ("RET" . vertico-directory-enter)))
+  (vertico-multiform-mode 1))
 
 (use-package orderless
-  :defer 1
   :custom
   (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles partial-completion)))))
+  (completion-category-overrides '((file (styles partial-completion))))
+  (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substring
 
 (use-package marginalia
-  :defer 1
-  :config (marginalia-mode))
+  :hook (after-init . marginalia-mode))
 
 (use-package consult
-  :demand
-  :config
-  (defun rlr/consult-rg ()
-    "Function for consult-ripgrep with the universal-argument."
-    (interactive)
-    (consult-ripgrep (list 4)))
-  (defun rlr/consult-fd ()
-    "Function for consult-find with the universal-argument."
-    (interactive)
-    (consult-find (list 4)))
   :bind
   (("C-x b" . consult-buffer)
    ("s-r" . consult-buffer)
@@ -194,6 +173,16 @@
    ("C-c o" . consult-outline)
    ("C-c p f" . consult-project-buffer)
    ("M-s m" . consult-multi-occur)))
+
+(defun rlr/consult-rg ()
+  "Function for consult-ripgrep with the universal-argument."
+  (interactive)
+  (consult-ripgrep (list 4)))
+
+(defun rlr/consult-fd ()
+  "Function for consult-find with the universal-argument."
+  (interactive)
+  (consult-find (list 4)))
 
 (use-package consult-dir
   :bind
@@ -289,9 +278,8 @@
 (setq show-paren-delay 0)
 
 (use-package savehist
-  :commands (savehist-save)
-  :config
-  (savehist-mode 1))
+  :init
+  (savehist-mode))
 
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
@@ -575,6 +563,13 @@
   (setq project-vc-extra-root-markers '(".proj"))
   :bind
   ("C-c p d" . project-find-dired))
+
+(use-package emacs
+  :hook
+  (special-mode . (lambda ()
+          (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+            (when (member "*Warnings*" buffer-name-list)
+              (pop-to-buffer "*Warnings*"))))))
 
 (use-package ace-window
   :config

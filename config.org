@@ -364,7 +364,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 #+begin_src emacs-lisp
   (use-package major-mode-hydra
-    :commands (pretty-hydra-define)
     :bind
     ("s-m" . major-mode-hydra))
 #+end_src
@@ -415,37 +414,28 @@ Open fish functions directory.
 
 ** Vertico
 
-#+begin_src emacs-lisp :lexical t
+#+begin_src emacs-lisp
   (use-package vertico
-    :demand
-    :custom (vertico-cycle t)
+    :custom
+    (vertico-cycle t)
+    (context-menu-mode t)
+    (enable-recursive-minibuffers t)
+    (read-extended-command-predicate #'command-completion-default-include-p) ;; Hide commands irrelevant to current mode.
+    (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt)) ;; Don't allow cursor in minibuffer prompt.
     :config
-    (setf (car vertico-multiline) "\n") ;; don't replace newlines
     (vertico-mode)
-    (vertico-multiform-mode 1)
-    (setq vertico-multiform-categories
-	  '((file grid)
-	(jinx grid (vertico-grid-annotate . 20))
-	(citar buffer)))
-    (setq vertico-cycle t) ;; enable cycling for 'vertico-next' and 'vertico-prev'
-    (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
-    :bind
-    (("C-z" . vertico-suspend)
-     :map vertico-map
-     ;; keybindings to cycle through vertico results.
-     ("C-h" . +minibuffer-up-dir)
-     ("<backspace>" . vertico-directory-delete-char)
-     ("RET" . vertico-directory-enter)))
+    (vertico-multiform-mode 1))
 #+end_src
 
 ** Orderless
 
 #+begin_src emacs-lisp
-  (use-package orderless
-    :defer 1
-    :custom
-    (completion-styles '(orderless basic))
-    (completion-category-overrides '((file (styles partial-completion)))))
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles partial-completion))))
+  (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substring
 #+end_src
 
 ** Marginalia
@@ -454,24 +444,13 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package marginalia
-    :defer 1
-    :config (marginalia-mode))
+    :hook (after-init . marginalia-mode))
     #+end_src
 
 ** Consult
 
 #+begin_src emacs-lisp
   (use-package consult
-    :demand
-    :config
-    (defun rlr/consult-rg ()
-      "Function for consult-ripgrep with the universal-argument."
-      (interactive)
-      (consult-ripgrep (list 4)))
-    (defun rlr/consult-fd ()
-      "Function for consult-find with the universal-argument."
-      (interactive)
-      (consult-find (list 4)))
     :bind
     (("C-x b" . consult-buffer)
      ("s-r" . consult-buffer)
@@ -485,6 +464,18 @@ Enrich existing commands with completion annotations
      ("C-c o" . consult-outline)
      ("C-c p f" . consult-project-buffer)
      ("M-s m" . consult-multi-occur)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun rlr/consult-rg ()
+    "Function for consult-ripgrep with the universal-argument."
+    (interactive)
+    (consult-ripgrep (list 4)))
+
+  (defun rlr/consult-fd ()
+    "Function for consult-find with the universal-argument."
+    (interactive)
+    (consult-find (list 4)))
 #+end_src
 
 *** Consult Dir
@@ -519,8 +510,8 @@ Enrich existing commands with completion annotations
      ("C-S-a" . embark-act)
      ("C-:" . embark-dwim)
      ("C-h B" . embark-bindings))
-    :init
-    (setq prefix-help-command #'embark-prefix-help-command)
+    :custom
+    (prefix-help-command #'embark-prefix-help-command)
     :config
     (add-to-list 'display-buffer-alist
 		 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
@@ -758,9 +749,8 @@ Save minibuffer history.
 
 #+begin_src emacs-lisp
   (use-package savehist
-    :commands (savehist-save)
-    :config
-    (savehist-mode 1))
+    :init
+    (savehist-mode))
 #+end_src
 
 Make M-x not offer options that don't apply to the current buffer.
@@ -1277,6 +1267,20 @@ Use ~persistent-scratch~ to save scratch file between sessions.
 #+end_src
 
 ** Windows
+
+Auto-select warning windows so they can be dismissed with =q=.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :hook
+    (special-mode . (lambda ()
+            (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+              (when (member "*Warnings*" buffer-name-list)
+                (pop-to-buffer "*Warnings*"))))))
+#+end_src
+
+
+
 
 *** Ace Window
 
