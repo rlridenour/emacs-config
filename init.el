@@ -1,4 +1,4 @@
-;;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
+;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 
 (with-eval-after-load 'package
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
@@ -12,6 +12,7 @@
 (setq custom-file (concat user-emacs-directory "custom.el"))
 (load custom-file)
 
+(unbind-key "s-q")
 (global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
 
 (use-package exec-path-from-shell

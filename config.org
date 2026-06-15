@@ -154,7 +154,7 @@ Add some space between lines.
 Enable lexical bindings in the exported Emacs Lisp file.
 
 #+begin_src emacs-lisp
-;;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
+;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 #+end_src
 
 Add Melpa as a package source.
@@ -192,6 +192,7 @@ Keep custom-set variables separate from configuration file.
 Use =C-x c= to kill Emacs.
 
 #+begin_src emacs-lisp
+  (unbind-key "s-q")
   (global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
 #+end_src
 
