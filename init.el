@@ -146,9 +146,8 @@
   (read-extended-command-predicate #'command-completion-default-include-p) ;; Hide commands irrelevant to current mode.
   (minibuffer-prompt-properties
  '(read-only t cursor-intangible t face minibuffer-prompt)) ;; Don't allow cursor in minibuffer prompt.
-  :config
-  (vertico-mode)
-  (vertico-multiform-mode 1))
+  :hook
+  (after-init . (lambda () (vertico-mode) (vertico-multiform-mode))))
 
 (use-package orderless
   :custom
@@ -1097,10 +1096,6 @@
   (([remap ispell-word] . jinx-correct)
    ("<f7>" . jinx-correct)
    ("S-<f7>" . jinx-correct-all)))
-
-(add-to-list 'vertico-multiform-categories
-	     '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
-(vertico-multiform-mode)
 
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
