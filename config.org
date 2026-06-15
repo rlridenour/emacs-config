@@ -838,23 +838,21 @@ Faster Mark Popping
 
 #+begin_src emacs-lisp
   (use-package modus-themes
-    :demand
+    :demand t
     :bind
     (("<f9>" . modus-themes-toggle))
-    :config
+    :custom
     ;; Add all your customizations prior to loading the themes
-    (setq modus-themes-italic-constructs t
-	  modus-themes-mixed-fonts t
-	  modus-themes-variable-pitch-ui t
-	  modus-themes-italic-constructs t
-	  modus-themes-bold-constructs t)
-
-    ;; Maybe define some palette overrides, such as by using our presets
-    (setq modus-themes-common-palette-overrides
-	  modus-themes-preset-overrides-faint)
-
+    (modus-themes-italic-constructs t)
+    (modus-themes-mixed-fonts t)
+    (modus-themes-variable-pitch-ui t)
+    (modus-themes-italic-constructs t)
+    (modus-themes-bold-constructs t)
+    
+    :config
+    (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
     ;; Load the theme of your choice.
-    (load-theme 'modus-operandi t))
+    (modus-themes-load-theme 'modus-operandi))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -1273,9 +1271,9 @@ Auto-select warning windows so they can be dismissed with =q=.
   (use-package emacs
     :hook
     (special-mode . (lambda ()
-            (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
-              (when (member "*Warnings*" buffer-name-list)
-                (pop-to-buffer "*Warnings*"))))))
+	    (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+	      (when (member "*Warnings*" buffer-name-list)
+		(pop-to-buffer "*Warnings*"))))))
 #+end_src
 
 
@@ -3523,16 +3521,16 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
     :after (:any org latex)
     :commands (math-delimiters-no-dollars math-delimiters-mode)
     :hook ((LaTeX-mode . math-delimiters-mode)
-  	   (org-mode . math-delimiters-mode))
+	   (org-mode . math-delimiters-mode))
     :config (progn
-  	  (setq math-delimiters-compressed-display-math nil)
-  	  (define-minor-mode math-delimiters-mode
-  		"Math Delimeters"
-  		:init-value nil
-  		:lighter " MD"
-  		:keymap (let ((map (make-sparse-keymap)))
-  		    (define-key map (kbd "$")  #'math-delimiters-insert)
-  		    map))))
+	  (setq math-delimiters-compressed-display-math nil)
+	  (define-minor-mode math-delimiters-mode
+		"Math Delimeters"
+		:init-value nil
+		:lighter " MD"
+		:keymap (let ((map (make-sparse-keymap)))
+		    (define-key map (kbd "$")  #'math-delimiters-insert)
+		    map))))
 #+end_src
 
 ** Exams

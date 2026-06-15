@@ -307,23 +307,21 @@
 (setq set-mark-command-repeat-pop t)
 
 (use-package modus-themes
-  :demand
+  :demand t
   :bind
   (("<f9>" . modus-themes-toggle))
-  :config
+  :custom
   ;; Add all your customizations prior to loading the themes
-  (setq modus-themes-italic-constructs t
-	  modus-themes-mixed-fonts t
-	  modus-themes-variable-pitch-ui t
-	  modus-themes-italic-constructs t
-	  modus-themes-bold-constructs t)
-
-  ;; Maybe define some palette overrides, such as by using our presets
-  (setq modus-themes-common-palette-overrides
-	  modus-themes-preset-overrides-faint)
-
+  (modus-themes-italic-constructs t)
+  (modus-themes-mixed-fonts t)
+  (modus-themes-variable-pitch-ui t)
+  (modus-themes-italic-constructs t)
+  (modus-themes-bold-constructs t)
+  
+  :config
+  (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
   ;; Load the theme of your choice.
-  (load-theme 'modus-operandi t))
+  (modus-themes-load-theme 'modus-operandi))
 
 (defun rlr/customize-org-headings ()
   "Make Org headings larger."
@@ -566,9 +564,9 @@
 (use-package emacs
   :hook
   (special-mode . (lambda ()
-          (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
-            (when (member "*Warnings*" buffer-name-list)
-              (pop-to-buffer "*Warnings*"))))))
+	    (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+	      (when (member "*Warnings*" buffer-name-list)
+		(pop-to-buffer "*Warnings*"))))))
 
 (use-package ace-window
   :config
