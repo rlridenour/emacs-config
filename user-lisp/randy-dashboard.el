@@ -122,17 +122,31 @@ Optional HINT is displayed in comment face after the label."
        )))
   (insert "\n"))
 
+;; (defun randy-dashboard--agenda-string ()
+;;   "Return today's org-agenda as a plain string."
+;;   (require 'org-agenda)
+;;   (let ((org-agenda-window-setup 'current-window)
+;;         (org-agenda-sticky nil))
+;;     (with-temp-buffer
+;;       (let ((org-agenda-buffer (current-buffer)))
+;;         ;; Capture agenda output into a string
+;;         (org-agenda-list nil nil randy-dashboard-agenda-days)
+;;         (with-current-buffer org-agenda-buffer
+;;           (buffer-substring-no-properties (point-min) (point-max)))))))
+
 (defun randy-dashboard--agenda-string ()
   "Return today's org-agenda as a plain string."
   (require 'org-agenda)
-  (let ((org-agenda-window-setup 'current-window)
-        (org-agenda-sticky nil))
-    (with-temp-buffer
-      (let ((org-agenda-buffer (current-buffer)))
-        ;; Capture agenda output into a string
-        (org-agenda-list nil nil randy-dashboard-agenda-days)
-        (with-current-buffer org-agenda-buffer
-          (buffer-substring-no-properties (point-min) (point-max)))))))
+  (save-window-excursion
+    (let ((org-agenda-window-setup 'current-window)
+          (org-agenda-sticky nil))
+      ;; org-agenda-list builds and switches to the agenda buffer
+      (org-agenda-list nil nil randy-dashboard-agenda-days)
+      (prog1
+          (buffer-substring-no-properties (point-min) (point-max))
+        ;; Clean up the agenda buffer we just created
+        (when (string= (buffer-name) org-agenda-buffer-name)
+          (kill-buffer))))))
 
 (defun randy-dashboard--insert-agenda ()
   "Insert today's org-agenda."

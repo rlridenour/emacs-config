@@ -2741,7 +2741,7 @@ Make the current time more visible.
   (global-set-key (kbd "s-d") #'agenda-home)
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defun rlr/agenda-links ()
     (end-of-buffer)
     (insert-file-contents "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/agenda-links.org")

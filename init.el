@@ -1550,17 +1550,6 @@ and convert it to Org using the pandoc utility."
 
 (global-set-key (kbd "s-d") #'agenda-home)
 
-(defun rlr/agenda-links ()
-  (end-of-buffer)
-  (insert-file-contents "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/agenda-links.org")
-  (while (org-activate-links (point-max))
-    (goto-char (match-end 0)))
-  ;; (end-of-buffer)
-  ;; (insert (concat "\n\n" (get-votd)))
-  (beginning-of-buffer))
-
-(add-hook 'org-agenda-finalize-hook #'rlr/agenda-links)
-
 (setq org-return-follows-link t)
 
 (setopt org-link-elisp-skip-confirm-regexp "rlr.*")
