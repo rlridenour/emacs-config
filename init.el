@@ -3122,6 +3122,10 @@ and convert it to Org using the pandoc utility."
   :bind
   ("C-M-S-s-c" . calc))
 
+(require 'randy-dashboard)
+;; Open on startup:
+(add-hook 'emacs-startup-hook #'randy-dashboard-open)
+
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
   (" "

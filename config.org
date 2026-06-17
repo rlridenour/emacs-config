@@ -4863,6 +4863,15 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     ("C-M-S-s-c" . calc))
 #+end_src
 
+* Dashboard
+
+#+begin_src emacs-lisp
+(require 'randy-dashboard)
+;; Open on startup:
+(add-hook 'emacs-startup-hook #'randy-dashboard-open)
+#+end_src
+
+
 * Keybindings
 
 ** Hydras
