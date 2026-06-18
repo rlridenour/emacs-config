@@ -10,7 +10,7 @@
 
 (defvar randy-dashboard-org-files
   '(("Tasks"    . "~/org/tasks.org")
-    ("Journal"  . "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents "))
+    ("Journal"  . "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
   "Alist of (LABEL . PATH) for Org file quick links.")
 
 (defvar randy-dashboard-project-dirs
@@ -68,7 +68,7 @@ Use 60 when your format shows only minutes, or 1 for a seconds display.")
 
 (defun randy-dashboard--insert-header ()
   "Insert the dashboard title and timestamp."
-  (let* ((title "  ✦  Dashboard")
+  (let* ((title "  ✦  Randy Ridenour")
          (date  (format-time-string "%A, %B %-d, %Y")))
     (insert (propertize title 'face 'randy-dashboard-title-face))
     (insert "\n")
@@ -103,7 +103,8 @@ Optional HINT is displayed in comment face after the label."
       (randy-dashboard--insert-link
        label
        (lambda () (find-file (expand-file-name path)))
-       (abbreviate-file-name (expand-file-name path)))))
+       ;; (abbreviate-file-name (expand-file-name path))
+       )))
   (insert "\n"))
 
 (defun randy-dashboard--insert-project-links ()
@@ -115,7 +116,8 @@ Optional HINT is displayed in comment face after the label."
       (randy-dashboard--insert-link
        label
        (lambda () (dired (expand-file-name path)))
-       (abbreviate-file-name (expand-file-name path)))))
+       ;; (abbreviate-file-name (expand-file-name path))
+       )))
   (insert "\n"))
 
 (defun randy-dashboard--insert-mu4e-links ()
@@ -130,23 +132,8 @@ Optional HINT is displayed in comment face after the label."
          (if (fboundp 'mu4e)
              (progn (mu4e)
                     (mu4e-search query))
-           (message "mu4e is not available.")
-	 ))
-       ;;(concat "  " query)
-       )))
+           (message "mu4e is not available."))))))
   (insert "\n"))
-
-;; (defun randy-dashboard--agenda-string ()
-;;   "Return today's org-agenda as a plain string."
-;;   (require 'org-agenda)
-;;   (let ((org-agenda-window-setup 'current-window)
-;;         (org-agenda-sticky nil))
-;;     (with-temp-buffer
-;;       (let ((org-agenda-buffer (current-buffer)))
-;;         ;; Capture agenda output into a string
-;;         (org-agenda-list nil nil randy-dashboard-agenda-days)
-;;         (with-current-buffer org-agenda-buffer
-;;           (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun randy-dashboard--agenda-string ()
   "Return today's org-agenda as a plain string."
@@ -277,8 +264,7 @@ tick is aligned to the next interval boundary (see
       (dolist (path files)
         (randy-dashboard--insert-link
          (file-name-nondirectory path)
-         (lambda () (find-file path))
-         (concat "  " (abbreviate-file-name (file-name-directory path)))))))
+         (lambda () (find-file path))))))
   (insert "\n"))
 
 (defun randy-dashboard--insert-footer ()
