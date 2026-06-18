@@ -318,7 +318,7 @@
   (modus-themes-variable-pitch-ui t)
   (modus-themes-italic-constructs t)
   (modus-themes-bold-constructs t)
-  
+
   :config
   (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
   ;; Load the theme of your choice.
@@ -1470,11 +1470,18 @@ and convert it to Org using the pandoc utility."
 	  org-agenda-window-setup "current-window"
 	  org-agenda-include-diary nil
 	  org-agenda-start-on-weekday nil)
+  (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy")))
+  (setq org-agenda-prefix-format
+	  '((agenda . " %i  %?-12t% s"))
+	  ;; (todo . " %i %-12:c")
+	  ;; (tags . " %i %-12:c")
+	  ;; (search . " %i %-12:c")
+	  )
   (setq org-agenda-time-grid
 	  '((daily today remove-match)
-	()
-	"......"
-	""))
+	    ()
+	    "......"
+	    ""))
   (org-super-agenda-mode))
 
 (setq org-agenda-custom-commands
