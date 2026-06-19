@@ -10,7 +10,7 @@
 
 (defvar randy-dashboard-org-files
   '(("Tasks"    . "~/org/tasks.org")
-    ("Journal"  . "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
+    ("Journal"  . "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents "))
   "Alist of (LABEL . PATH) for Org file quick links.")
 
 (defvar randy-dashboard-project-dirs
@@ -27,23 +27,18 @@
 (defvar randy-dashboard-agenda-days 1
   "Number of days to show in the agenda section (1 = today only).")
 
-(defvar randy-dashboard-clock-format "%-I:%M %p"
-  "`format-time-string' spec for the clock section time.")
-
-(defvar randy-dashboard-live-clock t
-  "When non-nil, the clock ticks live via a repeating timer.
-When nil, the clock is static and only updates on refresh (\\[randy-dashboard-open]).")
-
-(defvar randy-dashboard-clock-interval 60
-  "Seconds between live clock updates.
-Use 60 when your format shows only minutes, or 1 for a seconds display.")
-
 (defvar randy-dashboard-recent-files-count 5
   "Number of recent files to list in the Recent Files section.")
+
+(defvar randy-dashboard-refresh-interval 60
+  "Seconds between automatic dashboard refreshes, or nil to disable.")
 
 ;;; Internal implementation
 
 (defconst randy-dashboard-buffer-name "*Dashboard*")
+
+(defvar randy-dashboard--timer nil
+  "Timer that periodically refreshes the dashboard buffer.")
 
 (defface randy-dashboard-title-face
   '((t :inherit font-lock-keyword-face :height 1.4 :weight bold))
@@ -132,7 +127,10 @@ Optional HINT is displayed in comment face after the label."
          (if (fboundp 'mu4e)
              (progn (mu4e)
                     (mu4e-search query))
-           (message "mu4e is not available."))))))
+           (message "mu4e is not available.")
+	 ))
+       ;;(concat "  " query)
+       )))
   (insert "\n"))
 
 (defun randy-dashboard--agenda-string ()
@@ -165,88 +163,6 @@ Optional HINT is displayed in comment face after the label."
      (insert (propertize (format "    Agenda unavailable: %s\n" (error-message-string err))
                          'face 'randy-dashboard-hint-face))))
   (insert "\n"))
-
-(defface randy-dashboard-clock-face
-  '((t :inherit font-lock-string-face :height 1.6 :weight bold))
-  "Face for the clock time.")
-
-(defvar-local randy-dashboard--clock-timer nil
-  "Buffer-local repeating timer driving the live clock, or nil.")
-
-(defvar-local randy-dashboard--clock-start nil
-  "Marker at the start of the clock time text.")
-
-(defun randy-dashboard--clock-text ()
-  "Return the propertized clock line: time followed by timezone."
-  (concat
-   (propertize (format-time-string randy-dashboard-clock-format)
-               'face 'randy-dashboard-clock-face)
-   (propertize (format-time-string "   %Z") 'face 'randy-dashboard-hint-face)))
-
-(defun randy-dashboard--insert-clock ()
-  "Insert a clock section showing the current time.
-Records a single start marker so the timer can replace the clock
-line in place without any marker drift."
-  (randy-dashboard--insert-section "Clock")
-  (insert "    ")
-  ;; One marker, default insertion type (nil): it stays anchored at the
-  ;; start of the time text. Updates replace from here to end of line,
-  ;; so nothing below the clock is ever touched.
-  (setq randy-dashboard--clock-start (copy-marker (point) nil))
-  (insert (randy-dashboard--clock-text))
-  (insert "\n\n"))
-
-(defun randy-dashboard--update-clock (buffer)
-  "Refresh the clock line in BUFFER in place.
-Replace from the start marker to the end of its line.  Cancel the
-driving timer if BUFFER or its marker are no longer valid."
-  (if (and (buffer-live-p buffer)
-           (buffer-local-value 'randy-dashboard--clock-start buffer)
-           (marker-buffer (buffer-local-value 'randy-dashboard--clock-start buffer)))
-      (with-current-buffer buffer
-        (let ((inhibit-read-only t))
-          (save-excursion
-            (goto-char randy-dashboard--clock-start)
-            (delete-region randy-dashboard--clock-start (line-end-position))
-            (goto-char randy-dashboard--clock-start)
-            (insert (randy-dashboard--clock-text)))))
-    ;; Buffer or marker gone: stop ticking.
-    (randy-dashboard--clock-teardown buffer)))
-
-(defun randy-dashboard--clock-teardown (&optional buffer)
-  "Cancel the live-clock timer for BUFFER (defaults to current buffer)."
-  (let ((buf (or buffer (current-buffer))))
-    (when (buffer-live-p buf)
-      (with-current-buffer buf
-        (when (timerp randy-dashboard--clock-timer)
-          (cancel-timer randy-dashboard--clock-timer))
-        (setq randy-dashboard--clock-timer nil)))))
-
-(defun randy-dashboard--clock-initial-delay ()
-  "Seconds until the next clock-interval boundary.
-For a 60-second interval this is the time until the next minute, so
-updates land on the minute rather than 60s after rendering."
-  (let* ((interval randy-dashboard-clock-interval)
-         (secs (string-to-number (format-time-string "%S")))
-         (delay (- interval (mod secs interval))))
-    ;; A boundary-aligned delay of 0 means fire a full interval later.
-    (if (zerop delay) interval delay)))
-
-(defun randy-dashboard--clock-start-timer ()
-  "Start the live-clock timer for the current buffer.
-Cancel any existing timer first so timers never stack.  The first
-tick is aligned to the next interval boundary (see
-`randy-dashboard--clock-initial-delay')."
-  (randy-dashboard--clock-teardown)
-  (when randy-dashboard-live-clock
-    (let ((buffer (current-buffer)))
-      (setq randy-dashboard--clock-timer
-            (run-with-timer (randy-dashboard--clock-initial-delay)
-                            randy-dashboard-clock-interval
-                            #'randy-dashboard--update-clock
-                            buffer))
-      ;; Ensure the timer dies with the buffer.
-      (add-hook 'kill-buffer-hook #'randy-dashboard--clock-teardown nil t))))
 
 (defun randy-dashboard--recent-files ()
   "Return up to `randy-dashboard-recent-files-count' recent file paths."
@@ -289,30 +205,55 @@ tick is aligned to the next interval boundary (see
     (define-key map [backtab] #'backward-button)
     map))
 
+(defun randy-dashboard--start-timer ()
+  "Start the periodic refresh timer if not already running."
+  (when (and randy-dashboard-refresh-interval
+             (not randy-dashboard--timer))
+    (setq randy-dashboard--timer
+          (run-at-time randy-dashboard-refresh-interval
+                       randy-dashboard-refresh-interval
+                       #'randy-dashboard--refresh))))
+
+(defun randy-dashboard--stop-timer ()
+  "Stop the periodic refresh timer."
+  (when randy-dashboard--timer
+    (cancel-timer randy-dashboard--timer)
+    (setq randy-dashboard--timer nil)))
+
+(defun randy-dashboard--refresh ()
+  "Rebuild the dashboard buffer if it still exists, without selecting it."
+  (let ((buf (get-buffer randy-dashboard-buffer-name)))
+    (if (not buf)
+        (randy-dashboard--stop-timer)
+      (randy-dashboard--render buf))))
+
+(defun randy-dashboard--render (buf)
+  "Erase and rebuild the dashboard contents in BUF."
+  (with-current-buffer buf
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (insert "\n")
+      (randy-dashboard--insert-header)
+      (randy-dashboard--insert-agenda)
+      (randy-dashboard--insert-recent-files)
+      (randy-dashboard--insert-org-links)
+      (randy-dashboard--insert-project-links)
+      (randy-dashboard--insert-mu4e-links)
+      (randy-dashboard--insert-footer)
+      (insert "\n"))
+    (use-local-map (randy-dashboard--keymap))
+    (setq-local cursor-type nil)
+    (setq buffer-read-only t)
+    (add-hook 'kill-buffer-hook #'randy-dashboard--stop-timer nil t)
+    (goto-char (point-min))))
+
 ;;;###autoload
 (defun randy-dashboard-open ()
   "Open (or refresh) the personal dashboard buffer."
   (interactive)
   (let ((buf (get-buffer-create randy-dashboard-buffer-name)))
-    (with-current-buffer buf
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (insert "\n")
-        (randy-dashboard--insert-header)
-        (randy-dashboard--insert-clock)
-        (randy-dashboard--insert-agenda)
-        (randy-dashboard--insert-org-links)
-        (randy-dashboard--insert-project-links)
-        (randy-dashboard--insert-recent-files)
-        (randy-dashboard--insert-mu4e-links)
-        (randy-dashboard--insert-footer)
-        (insert "\n"))
-      (use-local-map (randy-dashboard--keymap))
-      (setq-local cursor-type nil)
-      (setq buffer-read-only t)
-      (goto-char (point-min))
-      ;; (Re)start the live clock; this cancels any prior timer first.
-      (randy-dashboard--clock-start-timer))
+    (randy-dashboard--render buf)
+    (randy-dashboard--start-timer)
     (switch-to-buffer buf)))
 
 (provide 'randy-dashboard)
