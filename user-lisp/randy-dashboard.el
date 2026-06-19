@@ -72,7 +72,8 @@
 
 (defun randy-dashboard--insert-section (title)
   "Insert a section heading TITLE."
-  (insert (propertize (concat "  " title "\n\n") 'face 'randy-dashboard-section-face)))
+  (insert (propertize (concat "  " title "\n") 'face 'randy-dashboard-section-face))
+  (insert "\n"))
 
 (defun randy-dashboard--insert-link (label action &optional hint)
   "Insert a clickable link with LABEL that runs ACTION (a thunk).
