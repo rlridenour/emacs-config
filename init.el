@@ -378,12 +378,12 @@
 (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
 
 (use-package doom-modeline
-  :init
-  (doom-modeline-mode 1)
-  :config
-  (setopt doom-modeline-enable-word-count t)
-  (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
-  (setopt display-time-day-and-date t))
+    :custom
+    (setopt doom-modeline-enable-word-count t)
+    (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+    (setopt display-time-day-and-date t)
+:hook
+(after-init . doom-modeline-mode))
 
 (use-package spacious-padding
   :demand
