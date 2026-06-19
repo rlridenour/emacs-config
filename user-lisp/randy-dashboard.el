@@ -58,13 +58,13 @@
 
 (defun randy-dashboard--insert-rule ()
   "Insert a subtle horizontal rule."
-  (insert (propertize (concat "\n" (make-string 60 ?─) "\n\n")
+  (insert (propertize (concat "\n" (make-string 40 ?─) "\n\n")
                       'face 'font-lock-comment-face)))
 
 (defun randy-dashboard--insert-header ()
   "Insert the dashboard title and timestamp."
   (let* ((title "  ✦  Randy Ridenour")
-         (date  (format-time-string "%A, %B %-d, %Y")))
+         (date  (format-time-string "%A, %B %-d, %Y, %R %Z")))
     (insert (propertize title 'face 'randy-dashboard-title-face))
     (insert "\n")
     (insert (propertize (concat "  " date "\n") 'face 'randy-dashboard-hint-face))
