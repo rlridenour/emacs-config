@@ -188,7 +188,7 @@ Optional HINT is displayed in comment face after the label."
   "Insert key hints at the bottom."
   (randy-dashboard--insert-rule)
   (insert (propertize
-           "  g  refresh    a  org-agenda    m  mu4e    q  quit\n"
+           "  g  refresh    a  org-agenda    m  mu4e    e  elfeed    q  quit\n"
            'face 'randy-dashboard-hint-face)))
 
 (defun randy-dashboard--keymap ()
@@ -200,6 +200,9 @@ Optional HINT is displayed in comment face after the label."
     (define-key map (kbd "m") (lambda () (interactive)
                                 (if (fboundp 'mu4e) (mu4e)
                                   (message "mu4e not available"))))
+    (define-key map (kbd "e") (lambda () (interactive)
+                                (if (fboundp 'elfeed) (elfeed)
+                                  (message "elfeed not available"))))
     (define-key map (kbd "n") #'forward-button)
     (define-key map (kbd "p") #'backward-button)
     (define-key map (kbd "TAB") #'forward-button)
