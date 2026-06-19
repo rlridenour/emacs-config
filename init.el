@@ -5,6 +5,8 @@
 
 (setq use-package-always-ensure t)
 
+(setq use-package-compute-statistics t)
+
 (use-package gcmh
   :config
   (gcmh-mode 1))
@@ -550,9 +552,9 @@
 (bind-key "C-M-S-s-s" 'goto-scratch)
 
 (use-package persistent-scratch
-  :commands (persistent-scratch-save)
-  :init
-  (persistent-scratch-setup-default))
+  :commands (persistent-scratch-setup-default)
+  :hook
+  (after-init . persistent-scratch-setup-default))
 
 (use-package project
   :ensure nil
@@ -1640,8 +1642,8 @@ and convert it to Org using the pandoc utility."
 
 (use-package org-upcoming-modeline
   :after org                               ; if you don't want it to start until org has been loaded
-  :config
-  (org-upcoming-modeline-mode))
+  :hook
+  (after-init . org-upcoming-modeline-mode))
 
 (use-package org-people
   :after org
@@ -2593,20 +2595,17 @@ and convert it to Org using the pandoc utility."
 (bind-key "C-M-S-s-b"  #'rlr/select-browser)
 
 (use-package elfeed
-  :demand
-  :init
+  :custom
   ;; (setq elfeed-db-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed")
-  (setq elfeed-db-directory "~/.elfeed-db")
-  :config
+  (elfeed-db-directory "~/.elfeed-db")
   :bind
-  (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
-   :map elfeed-search-mode-map
-   ("q" . rlr/elfeed-save-db-and-quit)
-   :map elfeed-show-mode-map
-   ("S-<SPC>" . scroll-down)
-   ("," . link-hint-open-link)
-   ("." . rlr/link-hint-open-link-in-secondary-browser))
-  :commands elfeed)
+  ("C-M-S-s-e" . rlr/open-elfeed-new-tab)
+  (:map elfeed-search-mode-map
+	  ("q" . rlr/elfeed-save-db-and-quit))
+  (:map elfeed-show-mode-map
+	  ("S-<SPC>" . scroll-down)
+	  ("," . link-hint-open-link)
+        ("." . rlr/link-hint-open-link-in-secondary-browser)))
 
 (defvar rlr/elfeed-db-save-timer nil
   "Timer for debounced elfeed database saves.")
@@ -2670,14 +2669,15 @@ and convert it to Org using the pandoc utility."
 	 (mapc #'elfeed-search-update-entry entries)
 	 (unless (use-region-p) (forward-line)))))
 
-(bind-keys
- :map elfeed-search-mode-map
- ("l" . (elfeed-tag-selection-as 'readlater))
- ("d" . (elfeed-tag-selection-as 'junk))
- ("m" . (elfeed-tag-selection-as 'starred))
- ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
- ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
- )
+(with-eval-after-load 'elfeed-search
+  (bind-keys
+   :map elfeed-search-mode-map
+   ("l" . (elfeed-tag-selection-as 'readlater))
+   ("d" . (elfeed-tag-selection-as 'junk))
+   ("m" . (elfeed-tag-selection-as 'starred))
+   ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
+   ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
+   ))
 
 (defun rlr/elfeed-show-toggle-tag (tag)
   "Toggle tag for elfeed article."
@@ -2696,10 +2696,11 @@ and convert it to Org using the pandoc utility."
   (interactive)
   (rlr/elfeed-show-toggle-tag 'readlater))
 
-(bind-keys
- :map elfeed-show-mode-map
- ("l" . rlr/elfeed-show-toggle-readlater)
- ("m" . rlr/elfeed-show-toggle-starred))
+(with-eval-after-load 'elfeed-show
+  (bind-keys
+   :map elfeed-show-mode-map
+   ("l" . rlr/elfeed-show-toggle-readlater)
+   ("m" . rlr/elfeed-show-toggle-starred)))
 
 (defun ar/elfeed-search-browse-background-url ()
   "Open current `elfeed' entry (or region entries) in browser without losing focus."
@@ -2715,7 +2716,8 @@ and convert it to Org using the pandoc utility."
     (unless (or elfeed-search-remain-on-entry (use-region-p))
 	(forward-line))))
 
-(bind-key "B" #'ar/elfeed-search-browse-background-url 'elfeed-search-mode-map)
+(with-eval-after-load 'elfeed-search
+  (bind-key "B" #'ar/elfeed-search-browse-background-url elfeed-search-mode-map))
 
 (use-package elfeed-org
   :after elfeed
@@ -2744,11 +2746,14 @@ and convert it to Org using the pandoc utility."
 	(tab-new)
 	(eww url))))
 
-(bind-keys
- :map elfeed-show-mode-map
- ("e" . rlr/elfeed-open-in-eww)
- :map elfeed-search-mode-map
- ("e" . rlr/elfeed-open-in-eww))
+(with-eval-after-load 'elfeed-show
+  (bind-keys
+   :map elfeed-show-mode-map
+   ("e" . rlr/elfeed-open-in-eww)))
+(with-eval-after-load 'elfeed-search
+  (bind-keys
+   :map elfeed-search-mode-map
+   ("e" . rlr/elfeed-open-in-eww)))
 
 (defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
 (defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")

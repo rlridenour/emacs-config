@@ -170,6 +170,12 @@ Always ensure declared packages.
   (setq use-package-always-ensure t)
 #+end_src
 
+Run =M-x use-package-report= to see which packages are taking more time to load.
+
+#+begin_src emacs-lisp
+(setq use-package-compute-statistics t)
+#+end_src
+
 ** GCMH
 
 For garbage collection.
@@ -1246,9 +1252,9 @@ Use ~persistent-scratch~ to save scratch file between sessions.
 
 #+begin_src emacs-lisp
   (use-package persistent-scratch
-    :commands (persistent-scratch-save)
-    :init
-    (persistent-scratch-setup-default))
+    :commands (persistent-scratch-setup-default)
+    :hook
+    (after-init . persistent-scratch-setup-default))
 
 #+end_src
 
@@ -2890,8 +2896,8 @@ Use Emacs appointment system for notifications.
 #+begin_src emacs-lisp
   (use-package org-upcoming-modeline
     :after org                               ; if you don't want it to start until org has been loaded
-    :config
-    (org-upcoming-modeline-mode))
+    :hook
+    (after-init . org-upcoming-modeline-mode))
 #+end_src
 
 ** Org People
@@ -4186,20 +4192,17 @@ Functions for setting default browser,
 
 #+begin_src emacs-lisp
   (use-package elfeed
-    :demand
-    :init
+    :custom
     ;; (setq elfeed-db-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/elfeed")
-    (setq elfeed-db-directory "~/.elfeed-db")
-    :config
+    (elfeed-db-directory "~/.elfeed-db")
     :bind
-    (("C-M-S-s-e" . rlr/open-elfeed-new-tab)
-     :map elfeed-search-mode-map
-     ("q" . rlr/elfeed-save-db-and-quit)
-     :map elfeed-show-mode-map
-     ("S-<SPC>" . scroll-down)
-     ("," . link-hint-open-link)
-     ("." . rlr/link-hint-open-link-in-secondary-browser))
-    :commands elfeed)
+    ("C-M-S-s-e" . rlr/open-elfeed-new-tab)
+    (:map elfeed-search-mode-map
+	  ("q" . rlr/elfeed-save-db-and-quit))
+    (:map elfeed-show-mode-map
+	  ("S-<SPC>" . scroll-down)
+	  ("," . link-hint-open-link)
+          ("." . rlr/link-hint-open-link-in-secondary-browser)))
 #+end_src
 
 Save elfeed-db to Codeberg. From [[https://punchagan.muse-amuse.in/blog/elfeed-db-back-up-hooks/][Elfeed DB backup hooks - Noetic Nought]]
@@ -4275,14 +4278,15 @@ Tag items — from [[https://www.reddit.com/r/emacs/comments/go5d0v/using_emacs_
 	 (mapc #'elfeed-search-update-entry entries)
 	 (unless (use-region-p) (forward-line)))))
 
-  (bind-keys
-   :map elfeed-search-mode-map
-   ("l" . (elfeed-tag-selection-as 'readlater))
-   ("d" . (elfeed-tag-selection-as 'junk))
-   ("m" . (elfeed-tag-selection-as 'starred))
-   ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
-   ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
-   )
+  (with-eval-after-load 'elfeed-search
+    (bind-keys
+     :map elfeed-search-mode-map
+     ("l" . (elfeed-tag-selection-as 'readlater))
+     ("d" . (elfeed-tag-selection-as 'junk))
+     ("m" . (elfeed-tag-selection-as 'starred))
+     ("M" . (lambda () (interactive) (elfeed-search-set-filter "@6-months-ago +starred")))
+     ("L" . (lambda () (interactive) (elfeed-search-set-filter "+readlater")))
+     ))
 #+end_src
 
 These functions are for toggling tags when viewing single Elfeed entries. From [[https://github.com/sfromm/emacs.d][sfromm/emacs.d: emacs configuration]]
@@ -4305,10 +4309,11 @@ These functions are for toggling tags when viewing single Elfeed entries. From [
     (interactive)
     (rlr/elfeed-show-toggle-tag 'readlater))
 
-  (bind-keys
-   :map elfeed-show-mode-map
-   ("l" . rlr/elfeed-show-toggle-readlater)
-   ("m" . rlr/elfeed-show-toggle-starred))
+  (with-eval-after-load 'elfeed-show
+    (bind-keys
+     :map elfeed-show-mode-map
+     ("l" . rlr/elfeed-show-toggle-readlater)
+     ("m" . rlr/elfeed-show-toggle-starred)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4326,7 +4331,8 @@ These functions are for toggling tags when viewing single Elfeed entries. From [
       (unless (or elfeed-search-remain-on-entry (use-region-p))
 	(forward-line))))
 
-  (bind-key "B" #'ar/elfeed-search-browse-background-url 'elfeed-search-mode-map)
+  (with-eval-after-load 'elfeed-search
+    (bind-key "B" #'ar/elfeed-search-browse-background-url elfeed-search-mode-map))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -4365,11 +4371,14 @@ Open Elfeed entry in EWW
 	(tab-new)
 	(eww url))))
 
-  (bind-keys
-   :map elfeed-show-mode-map
-   ("e" . rlr/elfeed-open-in-eww)
-   :map elfeed-search-mode-map
-   ("e" . rlr/elfeed-open-in-eww))
+  (with-eval-after-load 'elfeed-show
+    (bind-keys
+     :map elfeed-show-mode-map
+     ("e" . rlr/elfeed-open-in-eww)))
+  (with-eval-after-load 'elfeed-search
+    (bind-keys
+     :map elfeed-search-mode-map
+     ("e" . rlr/elfeed-open-in-eww)))
 #+end_src
 
 * HTML and Web
