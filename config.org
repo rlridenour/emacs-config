@@ -40,13 +40,47 @@ Silence native compilation warnings.
   (setq native-comp-async-report-warnings-errors nil)
 #+end_src
 
+*** Garbage Collection
+
+Defer garbage collection during startup and when using the minibuffer. Afterwards raise the threshold to 64MB.
+
+#+begin_src emacs-lisp
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 1.0)
+
+(defconst rlr/gc-normal-threshold (* 64 1024 1024)) ;; 64MB
+(defconst rlr/gc-normal-percentage 0.1)
+
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold rlr/gc-normal-threshold
+                  gc-cons-percentage rlr/gc-normal-percentage)))
+
+(add-hook 'minibuffer-setup-hook
+          (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+
+(add-hook 'minibuffer-exit-hook
+          (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
+                           gc-cons-percentage rlr/gc-normal-percentage)))
+#+end_src
+
 *** File-Name-Handler-Alist
 
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defvar default-file-name-handler-alist file-name-handler-alist)
   (setq file-name-handler-alist nil)
+#+end_src
+
+#+begin_src emacs-lisp
+(defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
+(setq file-name-handler-alist nil)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq file-name-handler-alist
+                  (delete-dups (append file-name-handler-alist
+                                       rlr/file-name-handler-alist-backup)))))
 #+end_src
 
 ** Personal Identification
@@ -174,16 +208,6 @@ Run =M-x use-package-report= to see which packages are taking more time to load.
 
 #+begin_src emacs-lisp
 (setq use-package-compute-statistics t)
-#+end_src
-
-** GCMH
-
-For garbage collection.
-
-#+begin_src emacs-lisp
-  (use-package gcmh
-    :config
-    (gcmh-mode 1))
 #+end_src
 
 ** Custom Variables

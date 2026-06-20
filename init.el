@@ -7,10 +7,6 @@
 
 (setq use-package-compute-statistics t)
 
-(use-package gcmh
-  :config
-  (gcmh-mode 1))
-
 (setq custom-file (concat user-emacs-directory "custom.el"))
 (load custom-file)
 

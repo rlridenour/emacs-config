@@ -8,8 +8,31 @@
 
 (setq native-comp-async-report-warnings-errors nil)
 
-(defvar default-file-name-handler-alist file-name-handler-alist)
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 1.0)
+
+(defconst rlr/gc-normal-threshold (* 64 1024 1024)) ;; 64MB
+(defconst rlr/gc-normal-percentage 0.1)
+
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold rlr/gc-normal-threshold
+                  gc-cons-percentage rlr/gc-normal-percentage)))
+
+(add-hook 'minibuffer-setup-hook
+          (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+
+(add-hook 'minibuffer-exit-hook
+          (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
+                           gc-cons-percentage rlr/gc-normal-percentage)))
+
+(defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
 (setq file-name-handler-alist nil)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq file-name-handler-alist
+                  (delete-dups (append file-name-handler-alist
+                                       rlr/file-name-handler-alist-backup)))))
 
 (setq user-full-name "Randy Ridenour"
 	user-mail-address "rlridenour@fastmail.com")
