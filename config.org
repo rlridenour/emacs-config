@@ -304,7 +304,6 @@ Use [[https://github.com/jamescherti/buffer-guardian.el\]][Buffer Guardian]] for
     (after-init . buffer-guardian-mode))
 #+end_src
 
-
 ** Menus
 
 #+begin_src emacs-lisp
@@ -321,7 +320,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
     (:map transient-map
 	 ("<escape>" . transient-quit-one)))
 #+end_src
-
 
 *** Casual Suite
 
@@ -731,7 +729,6 @@ Use MacOS SF Symbols
     (set-fontset-font t nil "SF Pro Display" nil 'append))
 #+end_src
 
-
 Set server to use tcp for [[http://yummymelon.com/scrim/][Scrim]]
 
 #+begin_src emacs-lisp
@@ -739,8 +736,6 @@ Set server to use tcp for [[http://yummymelon.com/scrim/][Scrim]]
   (server-start)
   (require 'org-protocol)
 #+end_src
-
-
 
 Auto-insert and immediately highlight matching pairs of parentheses and quotes.
 
@@ -774,9 +769,6 @@ Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4
 	      bidi-paragraph-direction 'left-to-right)
 (setq bidi-inhibit-bpa t)
 #+end_src
-
-
-
 
 Skip Fontification During Input
 
@@ -929,7 +921,6 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
 
   (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
 #+end_src
-
 
 *** Modeline
 
@@ -1281,9 +1272,6 @@ Auto-select warning windows so they can be dismissed with =q=.
 		(pop-to-buffer "*Warnings*"))))))
 #+end_src
 
-
-
-
 *** Ace Window
 
 #+begin_src emacs-lisp
@@ -1612,7 +1600,6 @@ For some reason, adding the dired-omit-mode hook in the use-package declaration 
    (add-hook 'dired-mode-hook #'dired-omit-mode)
 #+end_src
 
-
 Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
 
 #+begin_src emacs-lisp
@@ -1635,7 +1622,6 @@ Replace spaces in file names with hyphens using "%s" in dired.
     (dired-rename-non-directory #'my-substspaces "Rename by substituting spaces" arg))
 #+end_src
 
-
 #+begin_src emacs-lisp
   (use-package dired
     :ensure nil
@@ -1652,7 +1638,6 @@ Replace spaces in file names with hyphens using "%s" in dired.
     :hook ((dired-mode . dired-hide-details-mode)
 	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
-
 
 *** Reveal in Finder
 
@@ -1787,7 +1772,6 @@ Helpful gives better contextual information in help buffers.
     ("C-c H k" . helpful-key))
 #+end_src
 
-
 *** Discover
 
 From [[https://github.com/mickeynp/discover.el][mickeynp/discover.el: Discover more of emacs with context menus!]]
@@ -1797,7 +1781,6 @@ From [[https://github.com/mickeynp/discover.el][mickeynp/discover.el: Discover m
     :config
     (global-discover-mode 1))
 #+end_src
-
 
 * Editing
 
@@ -2046,7 +2029,6 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
     ("C-=" . er/expand-region))
 #+end_src
 
-
 ** Hungry Delete
 
 #+begin_src emacs-lisp
@@ -2057,7 +2039,6 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
     (global-hungry-delete-mode))
 #+end_src
 
-
 ** With-Editor
 
 Required by Magit.
@@ -2067,8 +2048,6 @@ Required by Magit.
 #+end_src
 
 ** Magit
-
-
 
 Solved Applescript error with these default write settings:
 
@@ -2258,8 +2237,6 @@ For word counts.
   (use-package wc-mode
     :commands (wc-mode))
 #+end_src
-
-
 
 ** Editing Keybindings
 
@@ -4014,7 +3991,6 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
     (require 'mu4e-transient))
 #+end_src
 
-
 Claude suggestions to fix crash. Added June 4, 2026
 
 #+begin_src emacs-lisp
@@ -4023,9 +3999,6 @@ Claude suggestions to fix crash. Added June 4, 2026
   (add-hook 'mu4e-headers-mode-hook
 	    (lambda () (setq-local bidi-display-reordering nil)))
 #+end_src
-
-
-
 
 This asks before sending messages without subjects. From [[https://emacs.stackexchange.com/questions/41175/how-to-warn-before-sending-email-if-subject-is-empty][message mode - How to warn before sending email if Subject: is empty - Emacs Stack Exchange]]
 
@@ -4590,7 +4563,6 @@ Select tag, add tag to to post, then add post to tag page.
     (save-buffer))
 #+end_src
 
-
 *** Org-Publish-RSS
 
 #+begin_src emacs-lisp
@@ -4602,8 +4574,6 @@ Select tag, add tag to to post, then add post to tag page.
     (setq org-publish-rss-publish-immediately t))
 
 #+end_src
-
-
 
 ** Website2org
 
@@ -4897,7 +4867,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 ;; Open on startup:
 (add-hook 'emacs-startup-hook #'randy-dashboard-open)
 #+end_src
-
 
 * Keybindings
 
