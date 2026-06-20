@@ -282,8 +282,8 @@
 (setq show-paren-delay 0)
 
 (use-package savehist
-  :init
-  (savehist-mode))
+  :hook
+  (after-init . savehist-mode))
 
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
@@ -322,7 +322,6 @@
   (modus-themes-variable-pitch-ui t)
   (modus-themes-italic-constructs t)
   (modus-themes-bold-constructs t)
-
   :config
   (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
   ;; Load the theme of your choice.
@@ -379,7 +378,7 @@
 
 (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
 
-(setq mode-line-collapse-minor-modes t)
+(setq mode-line-collapse-minor-modes '(not))
 
 (use-package spacious-padding
   :demand
@@ -1134,6 +1133,9 @@
 
 (use-package ws-butler
   :commands (ws-butler-clean-region))
+
+(use-package wc-mode
+  :commands (wc-mode))
 
 (bind-keys
  ("<s-up>" . beginning-of-buffer)

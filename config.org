@@ -754,8 +754,8 @@ Save minibuffer history.
 
 #+begin_src emacs-lisp
   (use-package savehist
-    :init
-    (savehist-mode))
+    :hook
+    (after-init . savehist-mode))
 #+end_src
 
 Make M-x not offer options that don't apply to the current buffer.
@@ -857,7 +857,6 @@ Faster Mark Popping
     (modus-themes-variable-pitch-ui t)
     (modus-themes-italic-constructs t)
     (modus-themes-bold-constructs t)
-
     :config
     (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
     ;; Load the theme of your choice.
@@ -937,7 +936,7 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
 Click on the ellipsis to reveal minor modes. Can also be used with a list to hide only certain modes.
 
 #+begin_src emacs-lisp
-(setq mode-line-collapse-minor-modes t)
+(setq mode-line-collapse-minor-modes '(not))
 #+end_src
 
 *** Spacious-Padding
@@ -2250,6 +2249,17 @@ Strips trailing whitespace when saving the file.
   (use-package ws-butler
     :commands (ws-butler-clean-region))
 #+end_src
+
+** WC-Mode
+
+For word counts.
+
+#+begin_src emacs-lisp
+  (use-package wc-mode
+    :commands (wc-mode))
+#+end_src
+
+
 
 ** Editing Keybindings
 
