@@ -569,7 +569,7 @@ Enrich existing commands with completion annotations
 
 ** Abbrev
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (set-default 'abbrev-mode t)
   (load "~/Dropbox/emacs/my-emacs-abbrev")
 #+end_src
@@ -585,11 +585,10 @@ https://github.com/joaotavora/yasnippet
 #+begin_src emacs-lisp :lexical t
   (use-package yasnippet
     :commands (yas-new-snippet)
-    :config
-    :init
-    (yas-global-mode 1)
     :custom
-    (yas-snippet-dirs '("~/.config/emacs/snippets")))
+    (yas-snippet-dirs '("~/.config/emacs/snippets"))
+    :hook
+    (after-init . yas-global-mode))
 #+end_src
 
 *** Yankpad
@@ -776,6 +775,9 @@ Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4
 (setq bidi-inhibit-bpa t)
 #+end_src
 
+
+
+
 Skip Fontification During Input
 
 #+begin_src emacs-lisp
@@ -929,16 +931,13 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
   (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
 #+end_src
 
-*** Doom Modeline
+
+*** Modeline
+
+Click on the ellipsis to reveal minor modes. Can also be used with a list to hide only certain modes.
 
 #+begin_src emacs-lisp
-    (use-package doom-modeline
-      :custom
-      (setopt doom-modeline-enable-word-count t)
-      (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
-      (setopt display-time-day-and-date t)
-  :hook
-  (after-init . doom-modeline-mode))
+(setq mode-line-collapse-minor-modes t)
 #+end_src
 
 *** Spacious-Padding
@@ -1018,7 +1017,7 @@ Disable changing text size with mouse and trackpad
 
 *** Ultra-Scroll
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package ultra-scroll
 :vc (:url "https://github.com/jdtsmith/ultra-scroll")
     :init
@@ -1567,7 +1566,7 @@ Find non-ascii characters in buffer.
 
 Hide file details and absolute path by default, from [[https://lmno.lol/alvaro/hide-another-detail][Hide another detail]]. Check back later to see if =dired-hide-details-hide-absolute-location= has been merged into Dired.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package dired+
     :vc (:url "https://github.com/emacsmirror/dired-plus"))
 #+end_src
@@ -2893,7 +2892,7 @@ Use Emacs appointment system for notifications.
 
 [[https://github.com/unhammer/org-upcoming-modeline][unhammer/org-upcoming-modeline: 📅 Show upcoming org event in modeline]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package org-upcoming-modeline
     :after org                               ; if you don't want it to start until org has been loaded
     :hook
@@ -4198,11 +4197,13 @@ Functions for setting default browser,
     :bind
     ("C-M-S-s-e" . rlr/open-elfeed-new-tab)
     (:map elfeed-search-mode-map
-	  ("q" . rlr/elfeed-save-db-and-quit))
+  	  ("q" . rlr/elfeed-save-db-and-quit))
     (:map elfeed-show-mode-map
-	  ("S-<SPC>" . scroll-down)
-	  ("," . link-hint-open-link)
-          ("." . rlr/link-hint-open-link-in-secondary-browser)))
+  	  ("S-<SPC>" . scroll-down)
+  	  ("," . link-hint-open-link)
+          ("." . rlr/link-hint-open-link-in-secondary-browser))
+    :commands
+    (elfeed-db-load))
 #+end_src
 
 Save elfeed-db to Codeberg. From [[https://punchagan.muse-amuse.in/blog/elfeed-db-back-up-hooks/][Elfeed DB backup hooks - Noetic Nought]]

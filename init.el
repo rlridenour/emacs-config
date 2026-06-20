@@ -206,13 +206,15 @@
 :config
 (global-corfu-mode))
 
+(set-default 'abbrev-mode t)
+(load "~/Dropbox/emacs/my-emacs-abbrev")
+
 (use-package yasnippet
   :commands (yas-new-snippet)
-  :config
-  :init
-  (yas-global-mode 1)
   :custom
-  (yas-snippet-dirs '("~/.config/emacs/snippets")))
+  (yas-snippet-dirs '("~/.config/emacs/snippets"))
+  :hook
+  (after-init . yas-global-mode))
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -377,13 +379,7 @@
 
 (defalias 'rlr/dark 'rlr/color-scheme-system-toggle)
 
-(use-package doom-modeline
-    :custom
-    (setopt doom-modeline-enable-word-count t)
-    (setopt doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
-    (setopt display-time-day-and-date t)
-:hook
-(after-init . doom-modeline-mode))
+(setq mode-line-collapse-minor-modes t)
 
 (use-package spacious-padding
   :demand
@@ -429,14 +425,6 @@
 (global-set-key (kbd "<pinch>") 'ignore)
 (global-set-key (kbd "<C-wheel-up>") 'ignore)
 (global-set-key (kbd "<C-wheel-down>") 'ignore)
-
-(use-package ultra-scroll
-:vc (:url "https://github.com/jdtsmith/ultra-scroll")
-    :init
-    (setq scroll-conservatively 3 ; or whatever value you prefer, since v0.4
-	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
-    :config
-    (ultra-scroll-mode 1))
 
 (global-visual-wrap-prefix-mode 1)
 
@@ -767,9 +755,6 @@
 (use-package deadgrep
   :bind
   ("<f5>" . deadgrep))
-
-(use-package dired+
-  :vc (:url "https://github.com/emacsmirror/dired-plus"))
 
 (defun hide-dired-details-include-all-subdir-paths ()
   (save-excursion
@@ -1639,11 +1624,6 @@ and convert it to Org using the pandoc utility."
  ("C-c e =" . (lambda () (interactive) (my/org-toggle-emphasis ?=)))
  ("C-c e _" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
  ("C-c e +" . (lambda () (interactive) (my/org-toggle-emphasis ?+))))
-
-(use-package org-upcoming-modeline
-  :after org                               ; if you don't want it to start until org has been loaded
-  :hook
-  (after-init . org-upcoming-modeline-mode))
 
 (use-package org-people
   :after org
@@ -2605,7 +2585,9 @@ and convert it to Org using the pandoc utility."
   (:map elfeed-show-mode-map
 	  ("S-<SPC>" . scroll-down)
 	  ("," . link-hint-open-link)
-        ("." . rlr/link-hint-open-link-in-secondary-browser)))
+        ("." . rlr/link-hint-open-link-in-secondary-browser))
+  :commands
+  (elfeed-db-load))
 
 (defvar rlr/elfeed-db-save-timer nil
   "Timer for debounced elfeed database saves.")
