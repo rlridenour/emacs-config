@@ -855,6 +855,14 @@ Faster Mark Popping
 (setq set-mark-command-repeat-pop t)
 #+end_src
 
+Smoother scrolling.
+
+#+begin_src emacs-lisp
+(pixel-scroll-precision-mode 1)
+#+end_src
+
+
+
 ** Appearance
 
 *** Themes
@@ -1675,7 +1683,7 @@ Replace spaces in file names with hyphens using "%s" in dired.
 
 *** Eat
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package eat
     :commands (eat)
     :config
@@ -1688,27 +1696,50 @@ Replace spaces in file names with hyphens using "%s" in dired.
 
 I use Ghostty on Mac OS. Not sure if I like this better than Eat, though.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package ghostel
-    :ensure (:type git :host github :repo "dakra/ghostel"))
+    :commands (ghostel))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun rlr/ghostel-buffer ()
+    "Return the active ghostel buffer, or nil if none exists."
+    (seq-find (lambda (buf)
+                (string-match-p "\\*ghostel:" (buffer-name buf)))
+              (buffer-list)))
+
+  (defun rlr/ghostel-toggle ()
+    "Toggle ghostel: start it if not running, switch to its buffer if
+  running but not active, or bury it if it is the current buffer."
+    (interactive)
+    (let ((buf (rlr/ghostel-buffer)))
+      (cond
+       ((not buf)
+        (ghostel))
+       ((eq (current-buffer) buf)
+        (bury-buffer))
+       (t
+        (switch-to-buffer buf)))))
+
+  (bind-key* "<f2>" 'rlr/ghostel-toggle)
 #+end_src
 
 *** Term Toggle
 https://github.com/amno1/emacs-term-toggle
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package term-toggle
     :vc (:url "https://github.com/amno1/emacs-term-toggle")
     :config
     (setq term-toggle-no-confirm-exit t)
-    (defun term-toggle-eat ()
+     ;; (defun term-toggle-eat ()
+     ;;  "Toggle `term'."
+     ;;  (interactive) (term-toggle 'eat))
+    (defun term-toggle-ghostel ()
       "Toggle `term'."
-      (interactive) (term-toggle 'eat))
-    ;; (defun term-toggle-ghostel ()
-    ;;   "Toggle `term'."
-    ;;   (interactive) (term-toggle 'ghostel))
+      (interactive) (term-toggle 'ghostel))
     :bind
-    ("<f2>" . term-toggle-eat)
+    ("<f2>" . term-toggle-ghostel)
     ("<S-f2>" . term-toggle-eshell))
 #+end_src
 
@@ -2647,7 +2678,7 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
 	  org-agenda-window-setup "current-window"
 	  org-agenda-include-diary nil
 	  org-agenda-start-on-weekday nil)
-    (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy")))
+    (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy" "home")))
     (setq org-agenda-prefix-format
 	  '((agenda . " %i  %?-12t% s"))
 	  ;; (todo . " %i %-12:c")

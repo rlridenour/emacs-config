@@ -307,6 +307,8 @@
 
 (setq set-mark-command-repeat-pop t)
 
+(pixel-scroll-precision-mode 1)
+
 (use-package modus-themes
   :demand t
   :bind
@@ -814,26 +816,29 @@
   :bind
   ("C-c z" . 'reveal-in-osx-finder))
 
-(use-package eat
-  :commands (eat)
-  :config
-  (when (eq system-type 'darwin)
-    (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
-    (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
+(use-package ghostel
+  :commands (ghostel))
 
-(use-package term-toggle
-  :vc (:url "https://github.com/amno1/emacs-term-toggle")
-  :config
-  (setq term-toggle-no-confirm-exit t)
-  (defun term-toggle-eat ()
-    "Toggle `term'."
-    (interactive) (term-toggle 'eat))
-  ;; (defun term-toggle-ghostel ()
-  ;;   "Toggle `term'."
-  ;;   (interactive) (term-toggle 'ghostel))
-  :bind
-  ("<f2>" . term-toggle-eat)
-  ("<S-f2>" . term-toggle-eshell))
+(defun rlr/ghostel-buffer ()
+  "Return the active ghostel buffer, or nil if none exists."
+  (seq-find (lambda (buf)
+              (string-match-p "\\*ghostel:" (buffer-name buf)))
+            (buffer-list)))
+
+(defun rlr/ghostel-toggle ()
+  "Toggle ghostel: start it if not running, switch to its buffer if
+running but not active, or bury it if it is the current buffer."
+  (interactive)
+  (let ((buf (rlr/ghostel-buffer)))
+    (cond
+     ((not buf)
+      (ghostel))
+     ((eq (current-buffer) buf)
+      (bury-buffer))
+     (t
+      (switch-to-buffer buf)))))
+
+(bind-key* "<f2>" 'rlr/ghostel-toggle)
 
 (setq async-shell-command-buffer "new-buffer")
 
@@ -1455,7 +1460,7 @@ and convert it to Org using the pandoc utility."
 	  org-agenda-window-setup "current-window"
 	  org-agenda-include-diary nil
 	  org-agenda-start-on-weekday nil)
-  (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy")))
+  (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy" "home")))
   (setq org-agenda-prefix-format
 	  '((agenda . " %i  %?-12t% s"))
 	  ;; (todo . " %i %-12:c")
