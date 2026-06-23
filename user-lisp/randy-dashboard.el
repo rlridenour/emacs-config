@@ -40,12 +40,17 @@
 (defvar randy-dashboard--timer nil
   "Timer that periodically refreshes the dashboard buffer.")
 
+;; (defface randy-dashboard-title-face
+;;   '((t :inherit font-lock-keyword-face :height 1.4 :weight bold))
+;;   "Face for the dashboard title.")
+
 (defface randy-dashboard-title-face
-  '((t :inherit font-lock-keyword-face :height 1.4 :weight bold))
+  '((t :inherit font-lock-keyword-face :height 1.4 :weight bold :foreground "#6C201C"))
   "Face for the dashboard title.")
 
+
 (defface randy-dashboard-section-face
-  '((t :inherit font-lock-type-face :height 1.15 :weight bold :underline t))
+  '((t :inherit font-lock-type-face :height 1.15 :weight bold :underline t :foreground "#100F0F"))
   "Face for section headings.")
 
 (defface randy-dashboard-label-face
@@ -63,7 +68,7 @@
 
 (defun randy-dashboard--insert-header ()
   "Insert the dashboard title and timestamp."
-  (let* ((title "  ✦  Randy Ridenour")
+  (let* ((title "Randy Ridenour — Dashboard")
          (date  (format-time-string "%A, %B %-d, %Y, %R %Z")))
     (insert (propertize title 'face 'randy-dashboard-title-face))
     (insert "\n")

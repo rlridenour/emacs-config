@@ -1,14 +1,27 @@
 ;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 
-(with-eval-after-load 'package
-  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
-
-(setq use-package-always-ensure t)
-
-(setq use-package-compute-statistics t)
+(use-package package
+  :ensure nil
+  :custom
+  (use-package-always-ensure t)
+  (use-package-compute-statistics t)
+  :config
+  ;; I am not using `add-to-list' here because the default "gnu" is
+  ;; confusing to people, given that "elpa" is the better known name
+  ;; for it.
+  (setq package-archives
+        '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
+          ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+          ("melpa" . "https://melpa.org/packages/")))
+  ;; Prefer GNU ELPA but accept the reality of MELPA's utility to the
+  ;; wider community.
+  (setq package-archive-priorities
+        '(("gnu-elpa" . 3)
+          ("nongnu" . 2)
+          ("melpa" . 1))))
 
 (setq custom-file (concat user-emacs-directory "custom.el"))
-(load custom-file)
+(load custom-file :no-error-if-file-is-missing)
 
 (unbind-key "s-q")
 (global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
@@ -16,9 +29,6 @@
 (use-package exec-path-from-shell
   :config
   (exec-path-from-shell-initialize))
-
-(defconst rr-emacs-dir (expand-file-name user-emacs-directory)
-  "The path to the emacs.d directory.")
 
 (defconst rr-cache-dir "~/.cache/emacs/"
   "The directory for Emacs activity files.")
