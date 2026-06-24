@@ -1709,8 +1709,6 @@ I use Ghostty on Mac OS. Not sure if I like this better than Eat, though.
               (buffer-list)))
 
   (defun rlr/ghostel-toggle ()
-    "Toggle ghostel: start it if not running, switch to its buffer if
-  running but not active, or bury it if it is the current buffer."
     (interactive)
     (let ((buf (rlr/ghostel-buffer)))
       (cond
@@ -4918,9 +4916,10 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 * Dashboard
 
 #+begin_src emacs-lisp
-(require 'randy-dashboard)
-;; Open on startup:
-(add-hook 'emacs-startup-hook #'randy-dashboard-open)
+  (require 'randy-dashboard)
+  ;; Open on startup:
+  (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+  (bind-key "M-s-d" 'randy-dashboard-open)
 #+end_src
 
 * Keybindings

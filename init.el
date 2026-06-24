@@ -836,8 +836,6 @@
             (buffer-list)))
 
 (defun rlr/ghostel-toggle ()
-  "Toggle ghostel: start it if not running, switch to its buffer if
-running but not active, or bury it if it is the current buffer."
   (interactive)
   (let ((buf (rlr/ghostel-buffer)))
     (cond
@@ -3121,6 +3119,7 @@ and convert it to Org using the pandoc utility."
 (require 'randy-dashboard)
 ;; Open on startup:
 (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+(bind-key "M-s-d" 'randy-dashboard-open)
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
