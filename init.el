@@ -3184,7 +3184,7 @@ and convert it to Org using the pandoc utility."
     ("f" rlr/consult-fd "find from dir"))
    "Files"
    (("e" rr/open-init-file "Emacs init")
-    ("s" goto-shell-init "Fish functions"))
+    ("s" open-fish-functions "Fish functions"))
    ))
 
 (pretty-hydra-define hydra-window
