@@ -1,0 +1,27 @@
+# -*- mode: snippet -*-
+# name: typarticle
+# group: skeleton
+# key: typarticle
+# --
+
+#+TYPST: #set document(title: "Test Article")
+#+TYPST: #set document(author: "Randy Ridenour")
+#+TYPST: #set page(paper: "us-letter", margin: (x: 1.5in, y: 1.5in))
+#+TYPST: #set text(font: "Libertinus", size: 12pt,)
+#+TYPST: #set heading(numbering: "1.1")
+#+TYPST: #show title: set text(font: "Libertinus", size: 20pt, weight: "regular")
+#+TYPST: #show heading: set text(font: "Libertinus Sans", weight: "regular")
+#+TYPST: #show heading: smallcaps
+#+TYPST: #show heading: set block(above: 2em, below: 1em)
+#+OPTIONS: toc:nil
+
+#+BEGIN_EXPORT typst
+#align(center)[
+    #title()
+    #v(1em)
+    #set text(14pt)
+    Randy Ridenour
+    #v(.05em)
+    `(format-time-string "%B %e, %Y")`]
+#+END_EXPORT
+

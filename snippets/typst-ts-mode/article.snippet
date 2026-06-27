@@ -1,0 +1,24 @@
+# -*- mode: snippet -*-
+# name: article
+# group: skeleton
+# key: article
+# --
+
+#set document(title: "Test Article")
+#set document(author: "Randy Ridenour")
+#set page(paper: "us-letter", margin: (x: 1.5in, y: 1.5in))
+#set text(font: "Libertinus", size: 12pt,)
+#set heading(numbering: "1.1")
+#show title: set text(font: "Libertinus", size: 20pt, weight: "regular")
+#show heading: set text(font: "Libertinus Sans", weight: "regular")
+#show heading: smallcaps
+#show heading: set block(above: 2em, below: 1em)
+
+#align(center)[
+    #title()
+    #v(1em)
+    #set text(14pt)
+    Randy Ridenour
+    #v(.05em)
+    `(format-time-string "%B %e, %Y")`]
+
