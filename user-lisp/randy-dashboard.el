@@ -264,7 +264,7 @@ Optional HINT is displayed in comment face after the label."
     (randy-dashboard--start-timer)
     (switch-to-buffer buf)))
 
-(define-key randy-dashboard-mode-map (kbd "f") #'link-hint-open-link)
+;; (define-key randy-dashboard-mode-map (kbd "f") #'link-hint-open-link)
 
 (provide 'randy-dashboard)
 ;;; randy-dashboard.el ends here
