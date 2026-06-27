@@ -201,6 +201,7 @@ Optional HINT is displayed in comment face after the label."
     (define-key map (kbd "g") #'randy-dashboard-open)
     (define-key map (kbd "q") #'quit-window)
     (define-key map (kbd "a") #'org-agenda-list)
+    (define-key map (kbd "f") #'link-hint-open-link)
     (define-key map (kbd "m") (lambda () (interactive)
                                 (if (fboundp 'mu4e) (mu4e)
                                   (message "mu4e not available"))))
@@ -251,6 +252,7 @@ Optional HINT is displayed in comment face after the label."
       (insert "\n"))
     (use-local-map (randy-dashboard--keymap))
     (setq-local cursor-type nil)
+    (setq-local link-hint-types '(link-hint-randy-dashboard-button))
     (setq buffer-read-only t)
     (add-hook 'kill-buffer-hook #'randy-dashboard--stop-timer nil t)
     (goto-char (point-min))))
@@ -264,7 +266,18 @@ Optional HINT is displayed in comment face after the label."
     (randy-dashboard--start-timer)
     (switch-to-buffer buf)))
 
-;; (define-key randy-dashboard-mode-map (kbd "f") #'link-hint-open-link)
+(with-eval-after-load 'link-hint
+  (link-hint-define-type 'randy-dashboard-button
+    :next (lambda (bound)
+            (let ((btn (next-button (point))))
+              (when btn
+                (let ((pos (button-start btn)))
+                  (when (< pos bound) pos)))))
+    :at-point-p (lambda () (not (null (button-at (point)))))
+    :open #'push-button
+    :copy (lambda ()
+            (when-let ((btn (button-at (point))))
+              (kill-new (button-label btn))))))
 
 (provide 'randy-dashboard)
 ;;; randy-dashboard.el ends here
