@@ -4994,6 +4994,12 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 * Dashboard
 
 #+begin_src emacs-lisp
+(define-derived-mode dashboard-mode
+  fundamental-mode "Dashboard"
+  "Major mode for dashboard buffer.")
+#+end_src
+
+#+begin_src emacs-lisp
     (require 'randy-dashboard)
     ;; Open on startup:
     ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
@@ -5002,12 +5008,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (defun dashboard-startup ()
     (randy-dashboard-open)
     (delete-other-windows))
-
 #+end_src
 
 #+begin_src emacs-lisp
   (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 #+end_src
+
+
 
 * Keybindings
 

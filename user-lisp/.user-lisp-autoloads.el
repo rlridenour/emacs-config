@@ -11,7 +11,7 @@
 
 (autoload 'randy-dashboard-open "randy-dashboard"
 "Open (or refresh) the personal dashboard buffer." t)
-(register-definition-prefixes "randy-dashboard" '("randy-dashboard-"))
+(register-definition-prefixes "randy-dashboard" '("dashboard-mode" "randy-dashboard-"))
 
 
 ;;; End of scraped data

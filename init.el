@@ -3167,6 +3167,10 @@ and convert it to Org using the pandoc utility."
   :bind
   ("C-M-S-s-c" . calc))
 
+(define-derived-mode dashboard-mode
+  fundamental-mode "Dashboard"
+  "Major mode for dashboard buffer.")
+
 (require 'randy-dashboard)
   ;; Open on startup:
   ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
