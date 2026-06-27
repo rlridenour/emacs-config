@@ -52,16 +52,16 @@ Defer garbage collection during startup and when using the minibuffer. Afterward
 (defconst rlr/gc-normal-percentage 0.1)
 
 (add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq gc-cons-threshold rlr/gc-normal-threshold
-                  gc-cons-percentage rlr/gc-normal-percentage)))
+	  (lambda ()
+	    (setq gc-cons-threshold rlr/gc-normal-threshold
+		  gc-cons-percentage rlr/gc-normal-percentage)))
 
 (add-hook 'minibuffer-setup-hook
-          (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+	  (lambda () (setq gc-cons-threshold most-positive-fixnum)))
 
 (add-hook 'minibuffer-exit-hook
-          (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
-                           gc-cons-percentage rlr/gc-normal-percentage)))
+	  (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
+			   gc-cons-percentage rlr/gc-normal-percentage)))
 #+end_src
 
 *** File-Name-Handler-Alist
@@ -77,10 +77,10 @@ Skipping a bunch of regular expression searching in the =file-name-handler-alist
 (defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
 (setq file-name-handler-alist nil)
 (add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq file-name-handler-alist
-                  (delete-dups (append file-name-handler-alist
-                                       rlr/file-name-handler-alist-backup)))))
+	  (lambda ()
+	    (setq file-name-handler-alist
+		  (delete-dups (append file-name-handler-alist
+				       rlr/file-name-handler-alist-backup)))))
 #+end_src
 
 ** Personal Identification
@@ -202,15 +202,15 @@ Enable lexical bindings in the exported Emacs Lisp file.
     ;; confusing to people, given that "elpa" is the better known name
     ;; for it.
     (setq package-archives
-          '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
-            ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-            ("melpa" . "https://melpa.org/packages/")))
+	  '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
+	    ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+	    ("melpa" . "https://melpa.org/packages/")))
     ;; Prefer GNU ELPA but accept the reality of MELPA's utility to the
     ;; wider community.
     (setq package-archive-priorities
-          '(("gnu-elpa" . 3)
-            ("nongnu" . 2)
-            ("melpa" . 1))))
+	  '(("gnu-elpa" . 3)
+	    ("nongnu" . 2)
+	    ("melpa" . 1))))
 #+end_src
 
 ** Custom Variables
@@ -393,6 +393,8 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 #+begin_src emacs-lisp
   (use-package major-mode-hydra
+    :custom
+    (major-mode-hydra-invisible-quit-key "q")
     :bind
     ("s-m" . major-mode-hydra))
 #+end_src
@@ -861,7 +863,11 @@ Smoother scrolling.
 (pixel-scroll-precision-mode 1)
 #+end_src
 
+Hide warnings.
 
+#+begin_src emacs-lisp 
+  (setq warning-minimum-level :emergency)
+#+end_src
 
 ** Appearance
 
@@ -1705,19 +1711,19 @@ I use Ghostty on Mac OS. Not sure if I like this better than Eat, though.
   (defun rlr/ghostel-buffer ()
     "Return the active ghostel buffer, or nil if none exists."
     (seq-find (lambda (buf)
-                (string-match-p "\\*ghostel:" (buffer-name buf)))
-              (buffer-list)))
+		(string-match-p "\\*ghostel:" (buffer-name buf)))
+	      (buffer-list)))
 
   (defun rlr/ghostel-toggle ()
     (interactive)
     (let ((buf (rlr/ghostel-buffer)))
       (cond
        ((not buf)
-        (ghostel))
+	(ghostel))
        ((eq (current-buffer) buf)
-        (bury-buffer))
+	(bury-buffer))
        (t
-        (switch-to-buffer buf)))))
+	(switch-to-buffer buf)))))
 
   (bind-key* "<f2>" 'rlr/ghostel-toggle)
 #+end_src
@@ -2245,6 +2251,13 @@ Display suggestions in grid.
     :commands titlecase-dwim)
 #+end_src
 
+** Treesitter
+
+#+begin_src emacs-lisp
+(setq treesit-auto-install-grammar 'always)
+(setq treesit-enabled-modes t) 
+#+end_src
+
 ** Vundo
 
 #+begin_src emacs-lisp
@@ -2601,6 +2614,18 @@ Use [[https://math.nist.gov/~BMiller/LaTeXML/ussage.html][latexml]] to export la
    org-html-with-latex 'html)
 #+end_src
 
+** Org Typst Export
+
+#+begin_src emacs-lisp
+  (defun rlr/org-mktypst ()
+    "Make PDF with Typst."
+    (interactive)
+    (save-buffer)
+    (org-typst-export-to-typst)
+    (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
+
+#+end_src
+
 ** Org Auto Tangle
 
 Use ~org-auto-tangle~ to generate ~early-init.el~ and ~init.el~ whenever ~README.org~ is saved.
@@ -2663,31 +2688,33 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
   (use-package org-super-agenda
     :after org
     :config
-    (setq org-agenda-skip-scheduled-if-done t
-	  org-agenda-skip-deadline-if-done t
-	  org-agenda-skip-scheduled-if-deadline-is-shown t
-	  org-agenda-skip-deadline-prewarning-if-scheduled t
-	  org-agenda-include-deadlines t
-	  org-deadline-warning-days 1
-	  org-agenda-block-separator nil
-	  org-agenda-compact-blocks t
-	  org-agenda-start-day nil ;; i.e. today
-	  org-agenda-span 1
-	  org-agenda-window-setup "current-window"
-	  org-agenda-include-diary nil
-	  org-agenda-start-on-weekday nil)
+    (setq org-agenda-skip-timestamp-if-done t
+  	  org-agenda-skip-scheduled-if-done t
+  	  org-agenda-skip-deadline-if-done t
+  	  org-agenda-skip-scheduled-if-deadline-is-shown t
+  	  org-agenda-skip-timestamp-if-deadline-is-shown t
+  	  org-agenda-skip-deadline-prewarning-if-scheduled t
+  	  org-agenda-include-deadlines t
+  	  org-deadline-warning-days 1
+  	  org-agenda-block-separator nil
+  	  org-agenda-compact-blocks t
+  	  org-agenda-start-day nil ;; i.e. today
+  	  org-agenda-span 1
+  	  org-agenda-window-setup "current-window"
+  	  org-agenda-include-diary nil
+  	  org-agenda-start-on-weekday nil)
     (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy" "home")))
     (setq org-agenda-prefix-format
-	  '((agenda . " %i  %?-12t% s"))
-	  ;; (todo . " %i %-12:c")
-	  ;; (tags . " %i %-12:c")
-	  ;; (search . " %i %-12:c")
-	  )
+  	  '((agenda . " %i  %?-12t% s"))
+  	  ;; (todo . " %i %-12:c")
+  	  ;; (tags . " %i %-12:c")
+  	  ;; (search . " %i %-12:c")
+  	  )
     (setq org-agenda-time-grid
-	  '((daily today remove-match)
-	    ()
-	    "......"
-	    ""))
+  	  '((daily today remove-match)
+  	    ()
+  	    "......"
+  	    ""))
     (org-super-agenda-mode))
 #+end_src
 
@@ -2705,7 +2732,7 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
     (interactive)
     (org-agenda nil "d")
     )
-  (today-agenda)
+  ;; (today-agenda)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2757,7 +2784,7 @@ This opens the daily agenda and deletes all other windows.
 
 Set the initial frame. This opens the daily agenda on start-up.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (add-hook 'server-after-make-frame-hook #'agenda-home)
 #+end_src
 
@@ -2789,7 +2816,7 @@ Make the current time more visible.
    '(org-agenda-current-time ((t (:foreground "red3")))))
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (global-set-key (kbd "s-d") #'agenda-home)
 #+end_src
 
@@ -3445,6 +3472,7 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
       ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
       ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
       ("o" rlr/org-open-pdf "View PDF")
+      ("t" rlr/org-mktypst "Make PDF with Typst")
       ("h" make-html "HTML")
       ("el" org-latex-export-to-latex "Org to LaTeX")
       ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
@@ -3733,6 +3761,56 @@ Remove multiple choice questions and save them to the kill ring.
 		     (point-max)))))
 	(kill-region start end)))
     (org-list-repair))
+#+end_src
+
+* Typst
+
+#+begin_src emacs-lisp
+  (use-package reformatter
+    :defer t)
+#+end_src
+
+#+begin_src emacs-lisp
+    (reformatter-define typst-format
+      :program "typstyle")
+
+    (defun my/typst-compile-and-preview ()
+    "Compile and preview PDF for the current buffer."
+    (interactive)
+    (typst-ts-compile t))
+
+  (use-package typst-ts-mode
+    :config
+    (setq typst-ts-watch-auto-display-compilation-error t)
+    :mode-hydra
+    ((:title (concat (nerd-icons-icon-for-buffer) " Typst Commands"))
+     ("Build"
+      (("b" typst-ts-compile "Compile")
+       ("p" my/typst-compile-and-preview "Compile and preview"))
+      "Format"
+      (("f" typst-format-buffer "Format")))))
+
+  (with-eval-after-load 'eglot
+  (with-eval-after-load 'typst-ts-mode
+    (add-to-list 'eglot-server-programs
+                 `((typst-ts-mode) .
+                   ,(eglot-alternatives '("tinymist"
+                                          "typst-lsp"))))))
+#+end_src
+
+Close compilation window after successful compile.
+
+#+begin_src emacs-lisp
+(add-hook 'compilation-finish-functions
+          (lambda (buf status)
+            (when (string-match-p "^finished" status)
+              ;; Closes the window pane but preserves the buffer history
+              (delete-windows-on buf))))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package ox-typst
+  :after org)
 #+end_src
 
 * Citations
@@ -4233,11 +4311,11 @@ Functions for setting default browser,
     :bind
     ("C-M-S-s-e" . rlr/open-elfeed-new-tab)
     (:map elfeed-search-mode-map
-  	  ("q" . rlr/elfeed-save-db-and-quit))
+	  ("q" . rlr/elfeed-save-db-and-quit))
     (:map elfeed-show-mode-map
-  	  ("S-<SPC>" . scroll-down)
-  	  ("," . link-hint-open-link)
-          ("." . rlr/link-hint-open-link-in-secondary-browser))
+	  ("S-<SPC>" . scroll-down)
+	  ("," . link-hint-open-link)
+	  ("." . rlr/link-hint-open-link-in-secondary-browser))
     :commands
     (elfeed-db-load))
 #+end_src
@@ -4916,10 +4994,19 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 * Dashboard
 
 #+begin_src emacs-lisp
-  (require 'randy-dashboard)
-  ;; Open on startup:
-  (add-hook 'emacs-startup-hook #'randy-dashboard-open)
-  (bind-key "M-s-d" 'randy-dashboard-open)
+    (require 'randy-dashboard)
+    ;; Open on startup:
+    ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+    (bind-key "s-d" 'randy-dashboard-open)
+
+  (defun dashboard-startup ()
+    (randy-dashboard-open)
+    (delete-other-windows))
+
+#+end_src
+
+#+begin_src emacs-lisp
+  (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 #+end_src
 
 * Keybindings

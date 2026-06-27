@@ -10,15 +10,15 @@
   ;; confusing to people, given that "elpa" is the better known name
   ;; for it.
   (setq package-archives
-        '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
-          ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-          ("melpa" . "https://melpa.org/packages/")))
+	  '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
+	    ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+	    ("melpa" . "https://melpa.org/packages/")))
   ;; Prefer GNU ELPA but accept the reality of MELPA's utility to the
   ;; wider community.
   (setq package-archive-priorities
-        '(("gnu-elpa" . 3)
-          ("nongnu" . 2)
-          ("melpa" . 1))))
+	  '(("gnu-elpa" . 3)
+	    ("nongnu" . 2)
+	    ("melpa" . 1))))
 
 (setq custom-file (concat user-emacs-directory "custom.el"))
 (load custom-file :no-error-if-file-is-missing)
@@ -126,6 +126,8 @@
    (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
 
 (use-package major-mode-hydra
+  :custom
+  (major-mode-hydra-invisible-quit-key "q")
   :bind
   ("s-m" . major-mode-hydra))
 
@@ -318,6 +320,8 @@
 (setq set-mark-command-repeat-pop t)
 
 (pixel-scroll-precision-mode 1)
+
+(setq warning-minimum-level :emergency)
 
 (use-package modus-themes
   :demand t
@@ -832,19 +836,19 @@
 (defun rlr/ghostel-buffer ()
   "Return the active ghostel buffer, or nil if none exists."
   (seq-find (lambda (buf)
-              (string-match-p "\\*ghostel:" (buffer-name buf)))
-            (buffer-list)))
+		(string-match-p "\\*ghostel:" (buffer-name buf)))
+	      (buffer-list)))
 
 (defun rlr/ghostel-toggle ()
   (interactive)
   (let ((buf (rlr/ghostel-buffer)))
     (cond
      ((not buf)
-      (ghostel))
+	(ghostel))
      ((eq (current-buffer) buf)
-      (bury-buffer))
+	(bury-buffer))
      (t
-      (switch-to-buffer buf)))))
+	(switch-to-buffer buf)))))
 
 (bind-key* "<f2>" 'rlr/ghostel-toggle)
 
@@ -1123,6 +1127,9 @@
   :config
   (setq titlecase-style "chicago")
   :commands titlecase-dwim)
+
+(setq treesit-auto-install-grammar 'always)
+(setq treesit-enabled-modes t)
 
 (use-package vundo
   :custom
@@ -1411,6 +1418,13 @@ and convert it to Org using the pandoc utility."
  org-latex-to-html-convert-command "latexmlc literal:%i --profile=math 2>/dev/null"
  org-html-with-latex 'html)
 
+(defun rlr/org-mktypst ()
+  "Make PDF with Typst."
+  (interactive)
+  (save-buffer)
+  (org-typst-export-to-typst)
+  (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
+
 (use-package org-auto-tangle
   :hook (org-mode . org-auto-tangle-mode))
 
@@ -1455,9 +1469,11 @@ and convert it to Org using the pandoc utility."
 (use-package org-super-agenda
   :after org
   :config
-  (setq org-agenda-skip-scheduled-if-done t
+  (setq org-agenda-skip-timestamp-if-done t
+	  org-agenda-skip-scheduled-if-done t
 	  org-agenda-skip-deadline-if-done t
 	  org-agenda-skip-scheduled-if-deadline-is-shown t
+	  org-agenda-skip-timestamp-if-deadline-is-shown t
 	  org-agenda-skip-deadline-prewarning-if-scheduled t
 	  org-agenda-include-deadlines t
 	  org-deadline-warning-days 1
@@ -1493,7 +1509,7 @@ and convert it to Org using the pandoc utility."
   (interactive)
   (org-agenda nil "d")
   )
-(today-agenda)
+;; (today-agenda)
 
 (with-eval-after-load 'org
   (add-to-list
@@ -1536,8 +1552,6 @@ and convert it to Org using the pandoc utility."
   (org-agenda-list 1)
   (delete-other-windows))
 
-(add-hook 'server-after-make-frame-hook #'agenda-home)
-
 (defun refresh-agenda-periodic-function ()
   "Recompute the Org Agenda buffer(s) periodically."
   (ignore-errors
@@ -1552,8 +1566,6 @@ and convert it to Org using the pandoc utility."
 
 (custom-set-faces
  '(org-agenda-current-time ((t (:foreground "red3")))))
-
-(global-set-key (kbd "s-d") #'agenda-home)
 
 (setq org-return-follows-link t)
 
@@ -2026,6 +2038,7 @@ and convert it to Org using the pandoc utility."
     ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
     ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
     ("o" rlr/org-open-pdf "View PDF")
+    ("t" rlr/org-mktypst "Make PDF with Typst")
     ("h" make-html "HTML")
     ("el" org-latex-export-to-latex "Org to LaTeX")
     ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
@@ -2276,6 +2289,44 @@ and convert it to Org using the pandoc utility."
 		     (point-max)))))
 	(kill-region start end)))
   (org-list-repair))
+
+(use-package reformatter
+  :defer t)
+
+(reformatter-define typst-format
+    :program "typstyle")
+
+  (defun my/typst-compile-and-preview ()
+  "Compile and preview PDF for the current buffer."
+  (interactive)
+  (typst-ts-compile t))
+
+(use-package typst-ts-mode
+  :config
+  (setq typst-ts-watch-auto-display-compilation-error t)
+  :mode-hydra
+  ((:title (concat (nerd-icons-icon-for-buffer) " Typst Commands"))
+   ("Build"
+    (("b" typst-ts-compile "Compile")
+     ("p" my/typst-compile-and-preview "Compile and preview"))
+    "Format"
+    (("f" typst-format-buffer "Format")))))
+
+(with-eval-after-load 'eglot
+(with-eval-after-load 'typst-ts-mode
+  (add-to-list 'eglot-server-programs
+               `((typst-ts-mode) .
+                 ,(eglot-alternatives '("tinymist"
+                                        "typst-lsp"))))))
+
+(add-hook 'compilation-finish-functions
+          (lambda (buf status)
+            (when (string-match-p "^finished" status)
+              ;; Closes the window pane but preserves the buffer history
+              (delete-windows-on buf))))
+
+(use-package ox-typst
+  :after org)
 
 (use-package citar
   :bind
@@ -2596,7 +2647,7 @@ and convert it to Org using the pandoc utility."
   (:map elfeed-show-mode-map
 	  ("S-<SPC>" . scroll-down)
 	  ("," . link-hint-open-link)
-        ("." . rlr/link-hint-open-link-in-secondary-browser))
+	  ("." . rlr/link-hint-open-link-in-secondary-browser))
   :commands
   (elfeed-db-load))
 
@@ -3117,9 +3168,15 @@ and convert it to Org using the pandoc utility."
   ("C-M-S-s-c" . calc))
 
 (require 'randy-dashboard)
-;; Open on startup:
-(add-hook 'emacs-startup-hook #'randy-dashboard-open)
-(bind-key "M-s-d" 'randy-dashboard-open)
+  ;; Open on startup:
+  ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+  (bind-key "s-d" 'randy-dashboard-open)
+
+(defun dashboard-startup ()
+  (randy-dashboard-open)
+  (delete-other-windows))
+
+(add-hook 'server-after-make-frame-hook #'dashboard-startup)
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")

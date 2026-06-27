@@ -48,7 +48,6 @@
   '((t :inherit font-lock-keyword-face :height 1.4 :weight bold :foreground "#6C201C"))
   "Face for the dashboard title.")
 
-
 (defface randy-dashboard-section-face
   '((t :inherit font-lock-type-face :height 1.15 :weight bold :underline t :foreground "#100F0F"))
   "Face for section headings.")
@@ -206,7 +205,7 @@ Optional HINT is displayed in comment face after the label."
                                 (if (fboundp 'mu4e) (mu4e)
                                   (message "mu4e not available"))))
     (define-key map (kbd "e") (lambda () (interactive)
-                                (if (fboundp 'elfeed) (elfeed)
+                                (if (fboundp 'rlr/open-elfeed-new-tab) (rlr/open-elfeed-new-tab)
                                   (message "elfeed not available"))))
     (define-key map (kbd "n") #'forward-button)
     (define-key map (kbd "p") #'backward-button)
@@ -264,6 +263,8 @@ Optional HINT is displayed in comment face after the label."
     (randy-dashboard--render buf)
     (randy-dashboard--start-timer)
     (switch-to-buffer buf)))
+
+(define-key randy-dashboard-mode-map (kbd "f") #'link-hint-open-link)
 
 (provide 'randy-dashboard)
 ;;; randy-dashboard.el ends here

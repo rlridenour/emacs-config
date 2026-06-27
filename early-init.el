@@ -15,24 +15,24 @@
 (defconst rlr/gc-normal-percentage 0.1)
 
 (add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq gc-cons-threshold rlr/gc-normal-threshold
-                  gc-cons-percentage rlr/gc-normal-percentage)))
+	  (lambda ()
+	    (setq gc-cons-threshold rlr/gc-normal-threshold
+		  gc-cons-percentage rlr/gc-normal-percentage)))
 
 (add-hook 'minibuffer-setup-hook
-          (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+	  (lambda () (setq gc-cons-threshold most-positive-fixnum)))
 
 (add-hook 'minibuffer-exit-hook
-          (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
-                           gc-cons-percentage rlr/gc-normal-percentage)))
+	  (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
+			   gc-cons-percentage rlr/gc-normal-percentage)))
 
 (defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
 (setq file-name-handler-alist nil)
 (add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq file-name-handler-alist
-                  (delete-dups (append file-name-handler-alist
-                                       rlr/file-name-handler-alist-backup)))))
+	  (lambda ()
+	    (setq file-name-handler-alist
+		  (delete-dups (append file-name-handler-alist
+				       rlr/file-name-handler-alist-backup)))))
 
 (setq user-full-name "Randy Ridenour"
 	user-mail-address "rlridenour@fastmail.com")
