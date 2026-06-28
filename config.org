@@ -1165,17 +1165,18 @@ Kills all open buffers except scratch, dashboard, Mu4e, and messages. From https
 #+begin_src emacs-lisp
   (defun nuke-all-buffers ()
     "Kill all the open buffers except the current one.
-	      Leave *scratch*, *dashboard* and *Messages* alone too."
+  	      Leave *scratch*, *dashboard* and *Messages* alone too."
     (interactive)
     (mapc
      (lambda (buffer)
        (unless (or
-		(string= (buffer-name buffer) "*scratch*")
-		(string= (buffer-name buffer) "*Org Agenda*")
-		(string= (buffer-name buffer) "*Messages*")
-		(string= (buffer-name buffer) "*mu4e-main*")
-		)
-	 (kill-buffer buffer)))
+  		(string= (buffer-name buffer) "*scratch*")
+  		(string= (buffer-name buffer) "*Org Agenda*")
+  		(string= (buffer-name buffer) "*Messages*")
+  		(string= (buffer-name buffer) "*mu4e-main*")
+  		(string= (buffer-name buffer) "*Dashboard*")
+  		)
+  	 (kill-buffer buffer)))
      (buffer-list))
     (delete-other-windows)
     (tab-bar-close-other-tabs)

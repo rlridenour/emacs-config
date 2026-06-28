@@ -495,6 +495,7 @@
 		(string= (buffer-name buffer) "*Org Agenda*")
 		(string= (buffer-name buffer) "*Messages*")
 		(string= (buffer-name buffer) "*mu4e-main*")
+		(string= (buffer-name buffer) "*Dashboard*")
 		)
 	 (kill-buffer buffer)))
    (buffer-list))
