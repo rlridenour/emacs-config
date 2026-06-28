@@ -40,3 +40,5 @@ image-dired/
 history/
 custom.el
 tree-sitter/
+*.elc
+*-autoloads.el
