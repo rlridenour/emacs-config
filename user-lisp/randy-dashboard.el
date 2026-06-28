@@ -7,6 +7,7 @@
 ;;   (add-hook 'emacs-startup-hook #'randy-dashboard-open)
 
 ;;; Configuration — edit these to match your paths:
+
 (defvar randy-dashboard-org-files
   '(("Tasks"    . "~/org/tasks.org")
     ("Journal"  . "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents "))
@@ -33,10 +34,6 @@
   "Seconds between automatic dashboard refreshes, or nil to disable.")
 
 ;;; Internal implementation
-
-(define-derived-mode dashboard-mode
-  fundamental-mode "Dashboard"
-  "Major mode for dashboard buffer.")
 
 (defconst randy-dashboard-buffer-name "*Dashboard*")
 
@@ -215,6 +212,8 @@ Optional HINT is displayed in comment face after the label."
     (define-key map (kbd "p") #'backward-button)
     (define-key map (kbd "TAB") #'forward-button)
     (define-key map [backtab] #'backward-button)
+    (define-key map (kbd "SPC") #'scroll-up-command)
+    (define-key map (kbd "S-SPC") #'scroll-down-command)
     map))
 
 (defun randy-dashboard--start-timer ()
@@ -267,8 +266,7 @@ Optional HINT is displayed in comment face after the label."
   (let ((buf (get-buffer-create randy-dashboard-buffer-name)))
     (randy-dashboard--render buf)
     (randy-dashboard--start-timer)
-    (switch-to-buffer buf)
-    (dashboard-mode)))
+    (switch-to-buffer buf)))
 
 (with-eval-after-load 'link-hint
   (link-hint-define-type 'randy-dashboard-button

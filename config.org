@@ -5014,6 +5014,24 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 #+end_src
 
+#+begin_src emacs-lisp :tangle no
+  (bind-keys
+   :map dashboard-mode-map
+   ("g" . randy-dashboard-open)
+   ("q" . quit-window)
+     ("a" . org-agenda-list)
+  ("f" . link-hint-open-link)
+  ("m" . mu4e)
+  ("e" . rlr/open-elfeed-new-tab)
+  ("n" . forward-button)
+  ("p" . backward-button)
+  ("<TAB>" . forward-button)
+  ("[backtab]" . backward-button)
+  ("<SPC>" . scroll-up-command)
+  ("S-<SPC>" . scroll-down-command)
+  )
+#+end_src
+
 
 
 * Keybindings
