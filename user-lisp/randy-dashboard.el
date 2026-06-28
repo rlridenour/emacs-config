@@ -278,7 +278,7 @@ Optional HINT is displayed in comment face after the label."
     :at-point-p (lambda () (not (null (button-at (point)))))
     :open #'push-button
     :copy (lambda ()
-            (when-let ((btn (button-at (point))))
+            (when-let* ((btn (button-at (point))))
               (kill-new (button-label btn))))))
 
 (provide 'randy-dashboard)
