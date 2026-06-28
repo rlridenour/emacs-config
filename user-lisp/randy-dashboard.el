@@ -40,6 +40,9 @@
 (defvar randy-dashboard--timer nil
   "Timer that periodically refreshes the dashboard buffer.")
 
+(defvar-local randy-dashboard--section-positions nil
+  "Ordered list of buffer positions where section headings begin.")
+
 ;; (defface randy-dashboard-title-face
 ;;   '((t :inherit font-lock-keyword-face :height 1.4 :weight bold))
 ;;   "Face for the dashboard title.")
@@ -76,8 +79,17 @@
 
 (defun randy-dashboard--insert-section (title)
   "Insert a section heading TITLE."
+  (push (point) randy-dashboard--section-positions)
   (insert (propertize (concat "  " title "\n") 'face 'randy-dashboard-section-face))
   (insert "\n"))
+
+(defvar randy-dashboard--button-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map button-map)
+    (define-key map (kbd "TAB") #'randy-dashboard-next-section)
+    (define-key map [backtab] #'randy-dashboard-prev-section)
+    map)
+  "Keymap for dashboard buttons; overrides TAB/backtab to navigate sections.")
 
 (defun randy-dashboard--insert-link (label action &optional hint)
   "Insert a clickable link with LABEL that runs ACTION (a thunk).
@@ -89,6 +101,7 @@ Optional HINT is displayed in comment face after the label."
    'follow-link t
    'face 'randy-dashboard-label-face
    'mouse-face 'highlight
+   'keymap randy-dashboard--button-map
    'help-echo (format "Open %s" label))
   (when hint
     (insert (propertize hint 'face 'randy-dashboard-hint-face)))
@@ -195,6 +208,22 @@ Optional HINT is displayed in comment face after the label."
            "  g  refresh    a  org-agenda    m  mu4e    e  elfeed    q  quit\n"
            'face 'randy-dashboard-hint-face)))
 
+(defun randy-dashboard-next-section ()
+  "Move point to the next section heading."
+  (interactive)
+  (if-let* ((pos (seq-find (lambda (p) (> p (point)))
+                           randy-dashboard--section-positions)))
+      (goto-char pos)
+    (message "No next section")))
+
+(defun randy-dashboard-prev-section ()
+  "Move point to the previous section heading."
+  (interactive)
+  (if-let* ((pos (seq-find (lambda (p) (< p (point)))
+                           (reverse randy-dashboard--section-positions))))
+      (goto-char pos)
+    (message "No previous section")))
+
 (defun randy-dashboard--keymap ()
   "Return the dashboard keymap."
   (let ((map (make-sparse-keymap)))
@@ -210,8 +239,8 @@ Optional HINT is displayed in comment face after the label."
                                   (message "elfeed not available"))))
     (define-key map (kbd "n") #'forward-button)
     (define-key map (kbd "p") #'backward-button)
-    (define-key map (kbd "TAB") #'forward-button)
-    (define-key map [backtab] #'backward-button)
+    (define-key map (kbd "TAB") #'randy-dashboard-next-section)
+    (define-key map [backtab] #'randy-dashboard-prev-section)
     (define-key map (kbd "SPC") #'scroll-up-command)
     (define-key map (kbd "S-SPC") #'scroll-down-command)
     map))
@@ -242,6 +271,7 @@ Optional HINT is displayed in comment face after the label."
   "Erase and rebuild the dashboard contents in BUF."
   (with-current-buffer buf
     (let ((inhibit-read-only t))
+      (setq-local randy-dashboard--section-positions nil)
       (erase-buffer)
       (insert "\n")
       (randy-dashboard--insert-header)
@@ -251,7 +281,9 @@ Optional HINT is displayed in comment face after the label."
       (randy-dashboard--insert-project-links)
       (randy-dashboard--insert-mu4e-links)
       (randy-dashboard--insert-footer)
-      (insert "\n"))
+      (insert "\n")
+      (setq-local randy-dashboard--section-positions
+                  (nreverse randy-dashboard--section-positions)))
     (use-local-map (randy-dashboard--keymap))
     (setq-local cursor-type nil)
     (setq-local link-hint-types '(link-hint-randy-dashboard-button))
