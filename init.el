@@ -1426,10 +1426,10 @@ and convert it to Org using the pandoc utility."
   (org-typst-export-to-typst)
   (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
 
-(defvar randy/org-typst-watch-processes (make-hash-table :test 'equal)
+(defvar rlr/org-typst-watch-processes (make-hash-table :test 'equal)
   "Hash table mapping org file paths to their typst watch processes.")
 
-(defun randy/org-typst-export-and-watch ()
+(defun rlr/org-typst-export-and-watch ()
   "Export current org buffer to Typst, start `typst watch`, and re-export on save.
   Subsequent saves of the org file will trigger a fresh Typst export.
   Calling this again on an already-watched buffer stops the old watcher first."
@@ -1445,7 +1445,7 @@ and convert it to Org using the pandoc utility."
                            (file-name-nondirectory typst-file))))
 
     ;; Kill any existing watcher for this file
-    (randy/org-typst-stop-watch org-file)
+    (rlr/org-typst-stop-watch org-file)
 
     ;; Initial export
     (message "Exporting %s → %s..." (file-name-nondirectory org-file)
@@ -1454,11 +1454,11 @@ and convert it to Org using the pandoc utility."
 
     ;; Start typst watch in a dedicated buffer
     (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
-	(puthash org-file proc randy/org-typst-watch-processes)
+	(puthash org-file proc rlr/org-typst-watch-processes)
 	(set-process-sentinel proc
 			(lambda (p _event)
 			(when (memq (process-status p) '(exit signal))
-			  (remhash org-file randy/org-typst-watch-processes)
+			  (remhash org-file rlr/org-typst-watch-processes)
 			  (message "typst watch ended for %s" typst-file))))
 	(message "typst watch started → %s" typst-file))
 
@@ -1467,32 +1467,32 @@ and convert it to Org using the pandoc utility."
     (rlr/org-open-pdf)
 
     ;; Add a buffer-local after-save hook
-    (add-hook 'after-save-hook #'randy/org-typst--on-save nil t)
+    (add-hook 'after-save-hook #'rlr/org-typst--on-save nil t)
     (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
 
-(defun randy/org-typst--on-save ()
+(defun rlr/org-typst--on-save ()
   "Re-export the current org buffer to Typst on save."
   (when (and (derived-mode-p 'org-mode)
              (buffer-file-name)
-             (gethash (buffer-file-name) randy/org-typst-watch-processes))
+             (gethash (buffer-file-name) rlr/org-typst-watch-processes))
     (org-typst-export-to-typst)
     (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
 
-(defun randy/org-typst-stop-watch (&optional org-file)
+(defun rlr/org-typst-stop-watch (&optional org-file)
   "Stop the typst watch process for ORG-FILE (default: current buffer)."
   (interactive)
   (let* ((file (or org-file (buffer-file-name)))
-         (proc (gethash file randy/org-typst-watch-processes)))
+         (proc (gethash file rlr/org-typst-watch-processes)))
     (when (process-live-p proc)
       (delete-process proc)
       (message "Stopped typst watch for %s" (file-name-nondirectory file)))
-    (remhash file randy/org-typst-watch-processes)
-    (remove-hook 'after-save-hook #'randy/org-typst--on-save t)))
+    (remhash file rlr/org-typst-watch-processes)
+    (remove-hook 'after-save-hook #'rlr/org-typst--on-save t)))
 
-(defun randy/org-typst-list-watches ()
+(defun rlr/org-typst-list-watches ()
   "Show all active typst watch processes."
   (interactive)
-  (if (hash-table-empty-p randy/org-typst-watch-processes)
+  (if (hash-table-empty-p rlr/org-typst-watch-processes)
       (message "No active typst watch processes.")
     (with-current-buffer (get-buffer-create "*typst-watches*")
       (erase-buffer)
@@ -1501,7 +1501,7 @@ and convert it to Org using the pandoc utility."
                  (insert (format "  %-50s [%s]\n"
                                  (file-name-nondirectory file)
                                  (process-status proc))))
-               randy/org-typst-watch-processes)
+               rlr/org-typst-watch-processes)
       (display-buffer (current-buffer)))))
 
 (use-package org-auto-tangle
