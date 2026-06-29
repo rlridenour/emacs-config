@@ -1431,8 +1431,8 @@ and convert it to Org using the pandoc utility."
 
 (defun randy/org-typst-export-and-watch ()
   "Export current org buffer to Typst, start `typst watch`, and re-export on save.
-Subsequent saves of the org file will trigger a fresh Typst export.
-Calling this again on an already-watched buffer stops the old watcher first."
+  Subsequent saves of the org file will trigger a fresh Typst export.
+  Calling this again on an already-watched buffer stops the old watcher first."
   (interactive)
   (unless (derived-mode-p 'org-mode)
     (user-error "Not in an org-mode buffer"))
@@ -1449,21 +1449,22 @@ Calling this again on an already-watched buffer stops the old watcher first."
 
     ;; Initial export
     (message "Exporting %s → %s..." (file-name-nondirectory org-file)
-                                    (file-name-nondirectory typst-file))
+             (file-name-nondirectory typst-file))
     (org-typst-export-to-typst)
 
     ;; Start typst watch in a dedicated buffer
     (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
-      (puthash org-file proc randy/org-typst-watch-processes)
-      (set-process-sentinel proc
-        (lambda (p _event)
-          (when (memq (process-status p) '(exit signal))
-            (let ((entry (cl-find p (hash-table-values randy/org-typst-watch-processes))))
-              (when entry
-                (remhash (car (rassoc p (ht->alist randy/org-typst-watch-processes)))
-                         randy/org-typst-watch-processes)))
-            (message "typst watch ended for %s" typst-file))))
-      (message "typst watch started → %s  (buffer: %s)" typst-file buf-name))
+	(puthash org-file proc randy/org-typst-watch-processes)
+	(set-process-sentinel proc
+			(lambda (p _event)
+			(when (memq (process-status p) '(exit signal))
+			  (remhash org-file randy/org-typst-watch-processes)
+			  (message "typst watch ended for %s" typst-file))))
+	(message "typst watch started → %s" typst-file))
+
+    ;; Give typst a moment to complete the first compile, then open the PDF
+    (sleep-for 1)
+    (rlr/org-open-pdf)
 
     ;; Add a buffer-local after-save hook
     (add-hook 'after-save-hook #'randy/org-typst--on-save nil t)
