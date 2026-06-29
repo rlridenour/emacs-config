@@ -1426,6 +1426,83 @@ and convert it to Org using the pandoc utility."
   (org-typst-export-to-typst)
   (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
 
+(defvar randy/org-typst-watch-processes (make-hash-table :test 'equal)
+  "Hash table mapping org file paths to their typst watch processes.")
+
+(defun randy/org-typst-export-and-watch ()
+  "Export current org buffer to Typst, start `typst watch`, and re-export on save.
+Subsequent saves of the org file will trigger a fresh Typst export.
+Calling this again on an already-watched buffer stops the old watcher first."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "Not in an org-mode buffer"))
+  (unless (require 'ox-typst nil t)
+    (user-error "ox-typst is not available; please install it"))
+
+  (let* ((org-file (buffer-file-name))
+         (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+         (buf-name (format "*typst-watch: %s*"
+                           (file-name-nondirectory typst-file))))
+
+    ;; Kill any existing watcher for this file
+    (randy/org-typst-stop-watch org-file)
+
+    ;; Initial export
+    (message "Exporting %s → %s..." (file-name-nondirectory org-file)
+                                    (file-name-nondirectory typst-file))
+    (org-typst-export-to-typst)
+
+    ;; Start typst watch in a dedicated buffer
+    (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
+      (puthash org-file proc randy/org-typst-watch-processes)
+      (set-process-sentinel proc
+        (lambda (p _event)
+          (when (memq (process-status p) '(exit signal))
+            (let ((entry (cl-find p (hash-table-values randy/org-typst-watch-processes))))
+              (when entry
+                (remhash (car (rassoc p (ht->alist randy/org-typst-watch-processes)))
+                         randy/org-typst-watch-processes)))
+            (message "typst watch ended for %s" typst-file))))
+      (message "typst watch started → %s  (buffer: %s)" typst-file buf-name))
+
+    ;; Add a buffer-local after-save hook
+    (add-hook 'after-save-hook #'randy/org-typst--on-save nil t)
+    (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
+
+(defun randy/org-typst--on-save ()
+  "Re-export the current org buffer to Typst on save."
+  (when (and (derived-mode-p 'org-mode)
+             (buffer-file-name)
+             (gethash (buffer-file-name) randy/org-typst-watch-processes))
+    (org-typst-export-to-typst)
+    (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
+
+(defun randy/org-typst-stop-watch (&optional org-file)
+  "Stop the typst watch process for ORG-FILE (default: current buffer)."
+  (interactive)
+  (let* ((file (or org-file (buffer-file-name)))
+         (proc (gethash file randy/org-typst-watch-processes)))
+    (when (process-live-p proc)
+      (delete-process proc)
+      (message "Stopped typst watch for %s" (file-name-nondirectory file)))
+    (remhash file randy/org-typst-watch-processes)
+    (remove-hook 'after-save-hook #'randy/org-typst--on-save t)))
+
+(defun randy/org-typst-list-watches ()
+  "Show all active typst watch processes."
+  (interactive)
+  (if (hash-table-empty-p randy/org-typst-watch-processes)
+      (message "No active typst watch processes.")
+    (with-current-buffer (get-buffer-create "*typst-watches*")
+      (erase-buffer)
+      (insert "Active typst watch processes:\n\n")
+      (maphash (lambda (file proc)
+                 (insert (format "  %-50s [%s]\n"
+                                 (file-name-nondirectory file)
+                                 (process-status proc))))
+               randy/org-typst-watch-processes)
+      (display-buffer (current-buffer)))))
+
 (use-package org-auto-tangle
   :hook (org-mode . org-auto-tangle-mode))
 
