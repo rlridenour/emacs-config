@@ -1388,7 +1388,7 @@ and convert it to Org using the pandoc utility."
 (defun rlr/org-open-pdf ()
   "Open PDF in background with default viewer."
   (interactive)
-  (async-shell-command-no-window (concat "open -g " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
+  (async-shell-command-no-window (concat "open -g " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))) " 2>/dev/null")))
 
 (defun rlr/org-mklua ()
   "Make PDF with lua latexmk."
