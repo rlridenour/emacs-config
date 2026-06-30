@@ -246,26 +246,33 @@
 (setq browse-url-browser-function 'browse-url-default-macosx-browser)
 (setq browse-url-secondary-browser-function 'eww-browse-url)
 
-(setq world-clock-list
-	'(
-	  ("America/Chicago" "Oklahoma City")
-	  ("America/Los_Angeles" "Seattle")
-	  ("Pacific/Honolulu" "Honolulu")
-	  ("America/New_York" "New York")
-	  ("Etc/UTC" "UTC")))
+(use-package calendar
+  :ensure nil
+  :custom
+  (calendar-location-name "Norman, OK")
+  (calendar-latitude 35.24371)
+  (calendar-longitude -97.416797)
+  (calendar-mark-holidays-flag t)
+  (holiday-bahai-holidays nil)
+  (holiday-islamic-holidays nil)
+  (holiday-hebrew-holidays nil)
+  :hook
+  ('calendar-today-visible-hook . 'calendar-mark-today)
+  :bind
+  ("<f8>" . calendar)
+  ("S-<right>" . calendar-forward-month)
+  ("S-<left>" . calendar-backward-month))
 
-(setq world-clock-time-format "%a, %d %b %R %Z")
-
-(setq calendar-location-name "Norman, OK"
-	calendar-latitude 35.24371
-	calendar-longitude -97.416797
-	calendar-mark-holidays-flag t        ;colorize holidays in the calendar
-	holiday-bahai-holidays nil           ;these religions have MANY holidays
-	holiday-islamic-holidays nil         ;... that I don't get off
-	holiday-hebrew-holidays nil         ;... that I don't get off
-	)
-
-(global-set-key (kbd "<f8>") #'calendar)
+(use-package time
+  :ensure nil
+  :custom
+  (world-clock-list
+   '(("America/Chicago"    "Oklahoma City")
+     ("America/Los_Angeles" "Seattle")
+     ("Pacific/Honolulu"   "Honolulu")
+     ("America/New_York"   "New York")
+     ("Etc/UTC"            "UTC")))
+  (world-clock-time-format "%a, %d %b %R %Z"))
 
 (line-number-mode)
 (column-number-mode)
@@ -1440,16 +1447,16 @@ and convert it to Org using the pandoc utility."
     (user-error "ox-typst is not available; please install it"))
 
   (let* ((org-file (buffer-file-name))
-         (typst-file (concat (file-name-sans-extension org-file) ".typ"))
-         (buf-name (format "*typst-watch: %s*"
-                           (file-name-nondirectory typst-file))))
+	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+	   (buf-name (format "*typst-watch: %s*"
+			     (file-name-nondirectory typst-file))))
 
     ;; Kill any existing watcher for this file
     (rlr/org-typst-stop-watch org-file)
 
     ;; Initial export
     (message "Exporting %s → %s..." (file-name-nondirectory org-file)
-             (file-name-nondirectory typst-file))
+	       (file-name-nondirectory typst-file))
     (org-typst-export-to-typst)
 
     ;; Start typst watch in a dedicated buffer
@@ -1473,8 +1480,8 @@ and convert it to Org using the pandoc utility."
 (defun rlr/org-typst--on-save ()
   "Re-export the current org buffer to Typst on save."
   (when (and (derived-mode-p 'org-mode)
-             (buffer-file-name)
-             (gethash (buffer-file-name) rlr/org-typst-watch-processes))
+	       (buffer-file-name)
+	       (gethash (buffer-file-name) rlr/org-typst-watch-processes))
     (org-typst-export-to-typst)
     (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
 
@@ -1482,10 +1489,10 @@ and convert it to Org using the pandoc utility."
   "Stop the typst watch process for ORG-FILE (default: current buffer)."
   (interactive)
   (let* ((file (or org-file (buffer-file-name)))
-         (proc (gethash file rlr/org-typst-watch-processes)))
+	   (proc (gethash file rlr/org-typst-watch-processes)))
     (when (process-live-p proc)
-      (delete-process proc)
-      (message "Stopped typst watch for %s" (file-name-nondirectory file)))
+	(delete-process proc)
+	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
     (remhash file rlr/org-typst-watch-processes)
     (remove-hook 'after-save-hook #'rlr/org-typst--on-save t)))
 
@@ -1493,16 +1500,16 @@ and convert it to Org using the pandoc utility."
   "Show all active typst watch processes."
   (interactive)
   (if (hash-table-empty-p rlr/org-typst-watch-processes)
-      (message "No active typst watch processes.")
+	(message "No active typst watch processes.")
     (with-current-buffer (get-buffer-create "*typst-watches*")
-      (erase-buffer)
-      (insert "Active typst watch processes:\n\n")
-      (maphash (lambda (file proc)
-                 (insert (format "  %-50s [%s]\n"
-                                 (file-name-nondirectory file)
-                                 (process-status proc))))
-               rlr/org-typst-watch-processes)
-      (display-buffer (current-buffer)))))
+	(erase-buffer)
+	(insert "Active typst watch processes:\n\n")
+	(maphash (lambda (file proc)
+		   (insert (format "  %-50s [%s]\n"
+				   (file-name-nondirectory file)
+				   (process-status proc))))
+		 rlr/org-typst-watch-processes)
+	(display-buffer (current-buffer)))))
 
 (use-package org-auto-tangle
   :hook (org-mode . org-auto-tangle-mode))
@@ -2394,15 +2401,15 @@ and convert it to Org using the pandoc utility."
 (with-eval-after-load 'eglot
 (with-eval-after-load 'typst-ts-mode
   (add-to-list 'eglot-server-programs
-               `((typst-ts-mode) .
-                 ,(eglot-alternatives '("tinymist"
-                                        "typst-lsp"))))))
+		 `((typst-ts-mode) .
+		   ,(eglot-alternatives '("tinymist"
+					  "typst-lsp"))))))
 
 (add-hook 'compilation-finish-functions
-          (lambda (buf status)
-            (when (string-match-p "^finished" status)
-              ;; Closes the window pane but preserves the buffer history
-              (delete-windows-on buf))))
+	  (lambda (buf status)
+	    (when (string-match-p "^finished" status)
+	      ;; Closes the window pane but preserves the buffer history
+	      (delete-windows-on buf))))
 
 (use-package ox-typst
   :after org)

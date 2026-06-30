@@ -690,28 +690,61 @@ Open links in default Mac browser.
 
 World clock settings.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (setq world-clock-list
-	'(
-	  ("America/Chicago" "Oklahoma City")
-	  ("America/Los_Angeles" "Seattle")
-	  ("Pacific/Honolulu" "Honolulu")
-	  ("America/New_York" "New York")
-	  ("Etc/UTC" "UTC")))
+	    '(
+	      ("America/Chicago" "Oklahoma City")
+	      ("America/Los_Angeles" "Seattle")
+	      ("Pacific/Honolulu" "Honolulu")
+	      ("America/New_York" "New York")
+	      ("Etc/UTC" "UTC")))
 
   (setq world-clock-time-format "%a, %d %b %R %Z")
 
   (setq calendar-location-name "Norman, OK"
-	calendar-latitude 35.24371
-	calendar-longitude -97.416797
-	calendar-mark-holidays-flag t        ;colorize holidays in the calendar
-	holiday-bahai-holidays nil           ;these religions have MANY holidays
-	holiday-islamic-holidays nil         ;... that I don't get off
-	holiday-hebrew-holidays nil         ;... that I don't get off
-	)
+	    calendar-latitude 35.24371
+	    calendar-longitude -97.416797
+	    calendar-mark-holidays-flag t        ;colorize holidays in the calendar
+	    holiday-bahai-holidays nil           ;these religions have MANY holidays
+	    holiday-islamic-holidays nil         ;... that I don't get off
+	    holiday-hebrew-holidays nil         ;... that I don't get off
+	    )
 
+  (add-hook 'calendar-today-visible-hook 'calendar-mark-today)
   (global-set-key (kbd "<f8>") #'calendar)
 
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package calendar
+    :ensure nil
+    :custom
+    (calendar-location-name "Norman, OK")
+    (calendar-latitude 35.24371)
+    (calendar-longitude -97.416797)
+    (calendar-mark-holidays-flag t)
+    (holiday-bahai-holidays nil)
+    (holiday-islamic-holidays nil)
+    (holiday-hebrew-holidays nil)
+    :hook
+    ('calendar-today-visible-hook . 'calendar-mark-today)
+    :bind
+    ("<f8>" . calendar)
+    ("S-<right>" . calendar-forward-month)
+    ("S-<left>" . calendar-backward-month))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package time
+  :ensure nil
+  :custom
+  (world-clock-list
+   '(("America/Chicago"    "Oklahoma City")
+     ("America/Los_Angeles" "Seattle")
+     ("Pacific/Honolulu"   "Honolulu")
+     ("America/New_York"   "New York")
+     ("Etc/UTC"            "UTC")))
+  (world-clock-time-format "%a, %d %b %R %Z"))
 #+end_src
 
 Display line and column numbers in the modeline.
@@ -865,7 +898,7 @@ Smoother scrolling.
 
 Hide warnings.
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   (setq warning-minimum-level :emergency)
 #+end_src
 
@@ -1165,18 +1198,18 @@ Kills all open buffers except scratch, dashboard, Mu4e, and messages. From https
 #+begin_src emacs-lisp
   (defun nuke-all-buffers ()
     "Kill all the open buffers except the current one.
-  	      Leave *scratch*, *dashboard* and *Messages* alone too."
+	      Leave *scratch*, *dashboard* and *Messages* alone too."
     (interactive)
     (mapc
      (lambda (buffer)
        (unless (or
-  		(string= (buffer-name buffer) "*scratch*")
-  		(string= (buffer-name buffer) "*Org Agenda*")
-  		(string= (buffer-name buffer) "*Messages*")
-  		(string= (buffer-name buffer) "*mu4e-main*")
-  		(string= (buffer-name buffer) "*Dashboard*")
-  		)
-  	 (kill-buffer buffer)))
+		(string= (buffer-name buffer) "*scratch*")
+		(string= (buffer-name buffer) "*Org Agenda*")
+		(string= (buffer-name buffer) "*Messages*")
+		(string= (buffer-name buffer) "*mu4e-main*")
+		(string= (buffer-name buffer) "*Dashboard*")
+		)
+	 (kill-buffer buffer)))
      (buffer-list))
     (delete-other-windows)
     (tab-bar-close-other-tabs)
@@ -2256,7 +2289,7 @@ Display suggestions in grid.
 
 #+begin_src emacs-lisp
 (setq treesit-auto-install-grammar 'always)
-(setq treesit-enabled-modes t) 
+(setq treesit-enabled-modes t)
 #+end_src
 
 ** Vundo
@@ -2643,16 +2676,16 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
       (user-error "ox-typst is not available; please install it"))
 
     (let* ((org-file (buffer-file-name))
-           (typst-file (concat (file-name-sans-extension org-file) ".typ"))
-           (buf-name (format "*typst-watch: %s*"
-                             (file-name-nondirectory typst-file))))
+	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+	   (buf-name (format "*typst-watch: %s*"
+			     (file-name-nondirectory typst-file))))
 
       ;; Kill any existing watcher for this file
       (rlr/org-typst-stop-watch org-file)
 
       ;; Initial export
       (message "Exporting %s → %s..." (file-name-nondirectory org-file)
-               (file-name-nondirectory typst-file))
+	       (file-name-nondirectory typst-file))
       (org-typst-export-to-typst)
 
       ;; Start typst watch in a dedicated buffer
@@ -2676,8 +2709,8 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
   (defun rlr/org-typst--on-save ()
     "Re-export the current org buffer to Typst on save."
     (when (and (derived-mode-p 'org-mode)
-               (buffer-file-name)
-               (gethash (buffer-file-name) rlr/org-typst-watch-processes))
+	       (buffer-file-name)
+	       (gethash (buffer-file-name) rlr/org-typst-watch-processes))
       (org-typst-export-to-typst)
       (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
 
@@ -2685,10 +2718,10 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
     "Stop the typst watch process for ORG-FILE (default: current buffer)."
     (interactive)
     (let* ((file (or org-file (buffer-file-name)))
-           (proc (gethash file rlr/org-typst-watch-processes)))
+	   (proc (gethash file rlr/org-typst-watch-processes)))
       (when (process-live-p proc)
-        (delete-process proc)
-        (message "Stopped typst watch for %s" (file-name-nondirectory file)))
+	(delete-process proc)
+	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
       (remhash file rlr/org-typst-watch-processes)
       (remove-hook 'after-save-hook #'rlr/org-typst--on-save t)))
 
@@ -2696,16 +2729,16 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
     "Show all active typst watch processes."
     (interactive)
     (if (hash-table-empty-p rlr/org-typst-watch-processes)
-        (message "No active typst watch processes.")
+	(message "No active typst watch processes.")
       (with-current-buffer (get-buffer-create "*typst-watches*")
-        (erase-buffer)
-        (insert "Active typst watch processes:\n\n")
-        (maphash (lambda (file proc)
-                   (insert (format "  %-50s [%s]\n"
-                                   (file-name-nondirectory file)
-                                   (process-status proc))))
-                 rlr/org-typst-watch-processes)
-        (display-buffer (current-buffer)))))
+	(erase-buffer)
+	(insert "Active typst watch processes:\n\n")
+	(maphash (lambda (file proc)
+		   (insert (format "  %-50s [%s]\n"
+				   (file-name-nondirectory file)
+				   (process-status proc))))
+		 rlr/org-typst-watch-processes)
+	(display-buffer (current-buffer)))))
 #+end_src
 
 ** Org Auto Tangle
@@ -2771,32 +2804,32 @@ Sort org buffer when saving. Add the following to the beginning of the buffer: "
     :after org
     :config
     (setq org-agenda-skip-timestamp-if-done t
-  	  org-agenda-skip-scheduled-if-done t
-  	  org-agenda-skip-deadline-if-done t
-  	  org-agenda-skip-scheduled-if-deadline-is-shown t
-  	  org-agenda-skip-timestamp-if-deadline-is-shown t
-  	  org-agenda-skip-deadline-prewarning-if-scheduled t
-  	  org-agenda-include-deadlines t
-  	  org-deadline-warning-days 1
-  	  org-agenda-block-separator nil
-  	  org-agenda-compact-blocks t
-  	  org-agenda-start-day nil ;; i.e. today
-  	  org-agenda-span 1
-  	  org-agenda-window-setup "current-window"
-  	  org-agenda-include-diary nil
-  	  org-agenda-start-on-weekday nil)
+	  org-agenda-skip-scheduled-if-done t
+	  org-agenda-skip-deadline-if-done t
+	  org-agenda-skip-scheduled-if-deadline-is-shown t
+	  org-agenda-skip-timestamp-if-deadline-is-shown t
+	  org-agenda-skip-deadline-prewarning-if-scheduled t
+	  org-agenda-include-deadlines t
+	  org-deadline-warning-days 1
+	  org-agenda-block-separator nil
+	  org-agenda-compact-blocks t
+	  org-agenda-start-day nil ;; i.e. today
+	  org-agenda-span 1
+	  org-agenda-window-setup "current-window"
+	  org-agenda-include-diary nil
+	  org-agenda-start-on-weekday nil)
     (setq org-agenda-hide-tags-regexp (regexp-opt '("iCloud" "Calendar" "Randy" "home")))
     (setq org-agenda-prefix-format
-  	  '((agenda . " %i  %?-12t% s"))
-  	  ;; (todo . " %i %-12:c")
-  	  ;; (tags . " %i %-12:c")
-  	  ;; (search . " %i %-12:c")
-  	  )
+	  '((agenda . " %i  %?-12t% s"))
+	  ;; (todo . " %i %-12:c")
+	  ;; (tags . " %i %-12:c")
+	  ;; (search . " %i %-12:c")
+	  )
     (setq org-agenda-time-grid
-  	  '((daily today remove-match)
-  	    ()
-  	    "......"
-  	    ""))
+	  '((daily today remove-match)
+	    ()
+	    "......"
+	    ""))
     (org-super-agenda-mode))
 #+end_src
 
@@ -3875,19 +3908,19 @@ Remove multiple choice questions and save them to the kill ring.
   (with-eval-after-load 'eglot
   (with-eval-after-load 'typst-ts-mode
     (add-to-list 'eglot-server-programs
-                 `((typst-ts-mode) .
-                   ,(eglot-alternatives '("tinymist"
-                                          "typst-lsp"))))))
+		 `((typst-ts-mode) .
+		   ,(eglot-alternatives '("tinymist"
+					  "typst-lsp"))))))
 #+end_src
 
 Close compilation window after successful compile.
 
 #+begin_src emacs-lisp
 (add-hook 'compilation-finish-functions
-          (lambda (buf status)
-            (when (string-match-p "^finished" status)
-              ;; Closes the window pane but preserves the buffer history
-              (delete-windows-on buf))))
+	  (lambda (buf status)
+	    (when (string-match-p "^finished" status)
+	      ;; Closes the window pane but preserves the buffer history
+	      (delete-windows-on buf))))
 #+end_src
 
 #+begin_src emacs-lisp
