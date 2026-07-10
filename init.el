@@ -401,7 +401,7 @@
 
 (use-package spacious-padding
   :demand
-  :after modus-themes doom-modeline
+  :after modus-themes
   :init
   (setq spacious-padding-subtle-mode-line t)
   (setq spacious-padding-widths
@@ -1395,7 +1395,7 @@ and convert it to Org using the pandoc utility."
 (defun rlr/org-open-pdf ()
   "Open PDF in background with default viewer."
   (interactive)
-  (async-shell-command-no-window (concat "open -g " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))) " 2>/dev/null")))
+  (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))) " 2>/dev/null")))
 
 (defun rlr/org-mklua ()
   "Make PDF with lua latexmk."
@@ -1758,12 +1758,31 @@ and convert it to Org using the pandoc utility."
   (org-web-tools-read-url-as-org rlr-org-url)
   (write-file (concat "~/icloud/web-saves/" rlr-org-title ".org")))
 
+(require 'rlr-teaching)
+(require 'rlr-argument-functions)
+
 (defvar rlrt-filename)
 
 (defun rlrt-make-filename (string)
   (s-downcase  (s-join "-" (s-split " " (replace-regexp-in-string "\\bthe \\b\\|\\band \\b\\|\\b[a-z]\\b \\|\\b[a-z][a-z]\\b \\|[[:punct:]]" "" string)))))
 
-(defun rlrt-new-handout (rlrt-title)
+(defun rlrt-new-tex-handout (rlrt-title)
+  (interactive "sTitle: ")
+
+  ;; Make filename
+  (setq rlrt-filename (rlrt-make-filename rlrt-title))
+
+  ;; Create directory
+  (make-directory rlrt-filename)
+
+  ;; Create main org file
+  (find-file (s-concat rlrt-filename "/" rlrt-filename "-handout.org"))
+  (insert (s-concat "#+TITLE: " rlrt-title) ?\n"#+AUTHOR: Dr. Randy Ridenour" ?\n "#+DATE: "(format-time-string "%B %e, %Y") ?\n)
+  (insert-file-contents "~/.config/emacs/teaching-templates/handout/handout.org")
+  (goto-char (point-max))
+  (save-buffer))
+
+(defun rlrt-new-typst-handout (rlrt-title)
   (interactive "sTitle: ")
 
   ;; Make filename
@@ -2119,54 +2138,40 @@ and convert it to Org using the pandoc utility."
 
 (major-mode-hydra-define org-mode
   (:quit-key "q")
-  ("Export"
-   (
-    ("m" rlr/org-mklua "Make PDF with LuaLaTeX")
-    ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-    ("o" rlr/org-open-pdf "View PDF")
-    ("t" rlr/org-mktypst "Make PDF with Typst")
-    ("h" make-html "HTML")
-    ("el" org-latex-export-to-latex "Org to LaTeX")
-    ("eb" org-beamer-export-to-pdf "Org to Beamer-PDF")
-    ("eB" org-beamer-export-to-latex "Org to Beamer-LaTeX")
-    ("s" lecture-slides "Lecture slides")
-    ("n" lecture-notes "Lecture notes")
-    ("ep" present "Present slides")
-    ("ec" canvas-copy "Copy HTML for Canvas")
-    ("es" canvas-notes "HTML Canvas notes")
-    ("eS" make-syllabus "Syllabus")
-    ("eh" make-handout "Handout")
-    ("c" tex-clean "clean aux")
-    ("C" tex-clean-all "clean all"))
-   "Edit"
+  ("Edit"
    (("dd" org-deadline "deadline")
-    ("ds" org-schedule "schedule")
-    ("r" org-refile "refile")
-    ("du" rlr/org-date "update date stamp")
-    ;; ("fn" org-footnote-new "insert footnote")
-    ("ff" org-footnote-action "edit footnote")
-    ("fc" citar-insert-citation "citation")
-    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-    ("is" org-insert-structure-template "insert structure block")
-    ("w" csm/org-word-count "word count")
-    ("y" yankpad-set-category "set yankpad"))
-   "View"
-   (("va" org-appear-mode :toggle t)
-    ("vl" org-toggle-link-display :toggle t)
-    ("vv" visible-mode :toggle t)
-    ("vi" consult-org-heading "iMenu")
-    ("vu" org-toggle-pretty-entities "org-pretty")
-    ("vI" org-toggle-inline-images "Inline images"))
-   "Blog"
-   (("bn" rlrt-new-post "New draft")
-    ("bt" orgblog-add-tag "Add tag")
-    ("bi" orgblog-insert-image "Insert image")
-    ("bp" orgblog-publish-draft "Publish draft")
-    ("bb" orgblog-build "Build site")
-    ("bs" orgblog-serve "Serve site")
-    ("bd" orgblog-push "Push to Github"))
-   "Notes"
-   (("1" denote-link "link to note"))))
+	("ds" org-schedule "schedule")
+	("r" org-refile "refile")
+	("du" rlr/org-date "update date stamp")
+	("ff" org-footnote-action "edit footnote")
+	("fc" citar-insert-citation "citation")
+	("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+	("is" org-insert-structure-template "insert structure block")
+	("vc" csm/org-word-count "word count")
+	("va" org-appear-mode :toggle t)
+	("vl" org-toggle-link-display :toggle t)
+	("vv" visible-mode :toggle t)
+	("1" denote-link "link to note"))
+   "Typst"
+   (("t" rlr/org-mktypst "Make PDF")
+	("ww" rlr/org-typst-export-and-watch "Watch")
+	("wl" rlr/org-typst-list-watches "List Watches")
+	("ws" rlr/org-typst-stop-watch "Stop Watch")
+	("s" rlr/org-mktouying "Make slides"))
+   "LaTeX"
+   (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
+	("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+	("lc" tex-clean "clean aux")
+	("lC" tex-clean-all "clean all")
+	("o" rlr/org-open-pdf "View PDF")
+   ("ls" lecture-slides "Lecture slides")
+   ("ln" lecture-notes "Lecture notes"))
+   "Other"
+   (("h" make-html "HTML")
+   ("ec" canvas-copy "Copy HTML for Canvas")
+   ("es" canvas-notes "HTML Canvas notes")
+   ("eS" make-syllabus "Syllabus")
+   ("eh" make-handout "Handout"))))
 
 (use-package tex
   :ensure auctex
@@ -2235,23 +2240,6 @@ and convert it to Org using the pandoc utility."
 		(call-process "texcount" nil t nil "-brief" this-file)))))
     (string-match "\n$" word-count)
     (message (replace-match "" nil nil word-count))))
-
-(use-package math-delimiters
-  :vc (:url "https://github.com/oantolin/math-delimiters")
-  :defer 3
-  :after (:any org latex)
-  :commands (math-delimiters-no-dollars math-delimiters-mode)
-  :hook ((LaTeX-mode . math-delimiters-mode)
-	   (org-mode . math-delimiters-mode))
-  :config (progn
-	  (setq math-delimiters-compressed-display-math nil)
-	  (define-minor-mode math-delimiters-mode
-		"Math Delimeters"
-		:init-value nil
-		:lighter " MD"
-		:keymap (let ((map (make-sparse-keymap)))
-		    (define-key map (kbd "$")  #'math-delimiters-insert)
-		    map))))
 
 (defalias 'mcq-item
   (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
@@ -2394,16 +2382,17 @@ and convert it to Org using the pandoc utility."
   ((:title (concat (nerd-icons-icon-for-buffer) " Typst Commands"))
    ("Build"
     (("b" typst-ts-compile "Compile")
-     ("p" my/typst-compile-and-preview "Compile and preview"))
+     ("p" my/typst-compile-and-preview "Compile and preview")
+     ("s" compile-typst-lecture "Make lecture slides"))
     "Format"
     (("f" typst-format-buffer "Format")))))
 
 (with-eval-after-load 'eglot
 (with-eval-after-load 'typst-ts-mode
   (add-to-list 'eglot-server-programs
-		 `((typst-ts-mode) .
-		   ,(eglot-alternatives '("tinymist"
-					  "typst-lsp"))))))
+		       `((typst-ts-mode) .
+			 ,(eglot-alternatives '("tinymist"
+						      "typst-lsp"))))))
 
 (add-hook 'compilation-finish-functions
 	  (lambda (buf status)
@@ -2411,8 +2400,19 @@ and convert it to Org using the pandoc utility."
 	      ;; Closes the window pane but preserves the buffer history
 	      (delete-windows-on buf))))
 
+(require 'rlr-touying-scaffold)
+
 (use-package ox-typst
   :after org)
+
+(defun rlr/org-mktouying ()
+    (interactive)
+(rlr/org-export-to-touying-content)
+(compile-typst-lecture))
+
+(use-package markdown-ts-mode
+  :ensure nil
+  :defer t)
 
 (use-package citar
   :bind
@@ -3268,6 +3268,18 @@ and convert it to Org using the pandoc utility."
 
 (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 
+(pretty-hydra-define hydra-blog
+(:color teal :quit-key "q" :title "Blog")
+(" "
+ (("bn" rlrt-new-post "New draft")
+    ("bt" orgblog-add-tag "Add tag")
+    ("bi" orgblog-insert-image "Insert image")
+    ("bp" orgblog-publish-draft "Publish draft")
+    ("bb" orgblog-build "Build site")
+    ("bs" orgblog-serve "Serve site")
+    ("bd" orgblog-push "Push to Github"))
+    ))
+
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
   (" "
@@ -3366,11 +3378,12 @@ and convert it to Org using the pandoc utility."
     ("v" denote-menu-list-notes "view notes")
     ("j" denote-journal-extras-new-or-existing-entry "journal"))
    "Writing"
-   (("b" rlrt-new-post "blog post")
+   (("p" rlrt-new-post "blog post")
     ("a" rlrt-new-article "article"))
    "Teaching"
-   (("l" rlrt-new-lecture "lecture")
-    ("h" rlrt-new-handout "handout")
+   (("b" rlrt-new-lecture "beamer lecture")
+    ("l" rlr/new-touying-presentation "lecture")
+    ("h" rlr/teaching-new-handout "handout")
     ("s" rlrt-new-syllabus "syllabus"))
    ))
 
@@ -3454,6 +3467,7 @@ and convert it to Org using the pandoc utility."
  ("H-t" . hydra-toggle/body)
  ("H-w" . hydra-window/body)
  ("H-b" . hydra-buffer/body)
+ ("H-g" . hydra-blog/body)
  ;; "H-'" . hydra-surround/body
  ("C-x 9" . hydra-logic/body))
 

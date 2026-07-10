@@ -1,15 +1,15 @@
 # -*- mode: snippet -*-
-# name: typarticle
-# group: skeleton
-# key: typarticle
+# name: tarticle
+# group: typst
+# key: tarticle
 # --
-
+:drawer:
 #+TYPST: #set document(title: "$1")
 #+TYPST: #set document(author: "Randy Ridenour")
 #+TYPST: #set page(paper: "us-letter", margin: (x: 1.5in, y: 1.5in))
-#+TYPST: #set text(font: "Libertinus", size: 12pt,)
+#+TYPST: #set text(font: "Libertinus Serif", size: 12pt,)
 #+TYPST: #set heading(numbering: "1.1")
-#+TYPST: #show title: set text(font: "Libertinus", size: 20pt, weight: "regular")
+#+TYPST: #show title: set text(font: "Libertinus Serif", size: 20pt, weight: "regular")
 #+TYPST: #show heading: set text(font: "Libertinus Sans", weight: "regular")
 #+TYPST: #show heading: smallcaps
 #+TYPST: #show heading: set block(above: 2em, below: 1em)
@@ -24,5 +24,6 @@
     #v(.05em)
     `(format-time-string "%B %e, %Y")`]
 #+END_EXPORT
+:end:
 
 $0

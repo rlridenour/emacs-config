@@ -1,0 +1,37 @@
+# -*- mode: snippet -*-
+# name: Argument Function
+# key: argfunction
+# --
+#let argument(numbering-style: "1.", ..items) = {
+  let items = items.pos()
+  let n = items.len()
+
+  let styled = items.enumerate().map(((i, body)) => {
+    if i == n - 2 {
+      context {
+        let w = measure(body).width
+        stack(
+          dir: ttb,
+          spacing: 0.35em,
+          body,
+          line(length: w, stroke: 0.8pt),
+        )
+      }
+    } else {
+      body
+    }
+  })
+
+  enum(
+    numbering: (..nums) => {
+      if nums.pos().first() == n {
+        []
+      } else {
+        numbering(numbering-style, ..nums)
+      }
+    },
+    ..styled
+  )
+}
+
+$0
