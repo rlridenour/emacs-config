@@ -2442,6 +2442,15 @@ Use variable pitch mode in Org and Markdown modes. Toggle with ~C-M-S-s-v~, boun
   (global-set-key (kbd "C-M-S-s-v") #'variable-pitch-mode)
 #+end_src
 
+Prevent electric-pair from adding ">" when using structure block shortcuts
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook
+  (lambda ()
+    (setq-local electric-pair-inhibit-predicate
+      (lambda (c) (if (char-equal c ?<) t (electric-pair-default-inhibit c))))))
+#+end_src
+
 Word count in Org files, ignoring heading and comment lines. From [[https://chrismaiorana.com/summer-productivity-reset-emacs-functions/][Summer Productivity Reset: Emacs functions to streamline your writing workflow - The Daily Macro]]
 
 #+begin_src emacs-lisp
@@ -2650,19 +2659,25 @@ Use [[https://math.nist.gov/~BMiller/LaTeXML/ussage.html][latexml]] to export la
 
 ** Org Typst Export
 
+Use my custom exporter, ox-rlr-typst.
+
+#+begin_src emacs-lisp
+(require 'ox-rlr-typst)
+#+end_src
+
 #+begin_src emacs-lisp
   (defun rlr/org-mktypst ()
     "Make PDF with Typst."
     (interactive)
     (save-buffer)
-    (org-typst-export-to-typst)
+    ;; (org-typst-export-to-typst) ;; ox-typst
+    (org-rlr-typst-export-to-typst) ;; ox-rlr-typst
     (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
-
 #+end_src
 
 This exports the Org file to Typst, starts typst-watch, opens the PDF, then exports again on subsequent saves of the Org file.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defvar rlr/org-typst-watch-processes (make-hash-table :test 'equal)
     "Hash table mapping org file paths to their typst watch processes.")
 
@@ -2739,6 +2754,88 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
 				   (file-name-nondirectory file)
 				   (process-status proc))))
 		 rlr/org-typst-watch-processes)
+	(display-buffer (current-buffer)))))
+#+end_src
+
+Revised to use ox-rlr-typst
+
+#+begin_src emacs-lisp
+  (defvar rlr/org-rlr-typst-watch-processes (make-hash-table :test 'equal)
+    "Hash table mapping org file paths to their typst watch processes.")
+
+  (defun rlr/org-rlr-typst-export-and-watch ()
+    "Export current org buffer to Typst, start `typst watch`, and re-export on save.
+    Subsequent saves of the org file will trigger a fresh Typst export.
+    Calling this again on an already-watched buffer stops the old watcher first."
+    (interactive)
+    (unless (derived-mode-p 'org-mode)
+      (user-error "Not in an org-mode buffer"))
+    (unless (require 'ox-rlr-typst nil t)
+      (user-error "ox-rlr-typst is not available; please install it"))
+
+    (let* ((org-file (buffer-file-name))
+	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+	   (buf-name (format "*typst-watch: %s*"
+			     (file-name-nondirectory typst-file))))
+
+      ;; Kill any existing watcher for this file
+      (rlr/org-rlr-typst-stop-watch org-file)
+
+      ;; Initial export
+      (message "Exporting %s → %s..." (file-name-nondirectory org-file)
+	       (file-name-nondirectory typst-file))
+      (org-rlr-typst-export-to-typst)
+
+      ;; Start typst watch in a dedicated buffer
+      (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
+	(puthash org-file proc rlr/org-rlr-typst-watch-processes)
+	(set-process-sentinel proc
+			(lambda (p _event)
+			(when (memq (process-status p) '(exit signal))
+			  (remhash org-file rlr/org-rlr-typst-watch-processes)
+			  (message "typst watch ended for %s" typst-file))))
+	(message "typst watch started → %s" typst-file))
+
+      ;; Give typst a moment to complete the first compile, then open the PDF
+      (sleep-for 1)
+      (rlr/org-open-pdf)
+
+      ;; Add a buffer-local after-save hook
+      (add-hook 'after-save-hook #'rlr/org-rlr-typst--on-save nil t)
+      (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
+
+  (defun rlr/org-rlr-typst--on-save ()
+    "Re-export the current org buffer to Typst on save."
+    (when (and (derived-mode-p 'org-mode)
+	       (buffer-file-name)
+	       (gethash (buffer-file-name) rlr/org-rlr-typst-watch-processes))
+      (org-rlr-typst-export-to-typst)
+      (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
+
+  (defun rlr/org-rlr-typst-stop-watch (&optional org-file)
+    "Stop the typst watch process for ORG-FILE (default: current buffer)."
+    (interactive)
+    (let* ((file (or org-file (buffer-file-name)))
+	   (proc (gethash file rlr/org-rlr-typst-watch-processes)))
+      (when (process-live-p proc)
+	(delete-process proc)
+	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
+      (remhash file rlr/org-rlr-typst-watch-processes)
+      (remove-hook 'after-save-hook #'rlr/org-rlr-typst--on-save t)))
+
+  (defun rlr/org-rlr-typst-list-watches ()
+    "Show all active typst watch processes."
+    (interactive)
+    (if (hash-table-empty-p rlr/org-rlr-typst-watch-processes)
+	(message "No active typst watch processes.")
+      (with-current-buffer (get-buffer-create "*typst-watches*")
+	(erase-buffer)
+	(insert "Active typst watch processes:\n\n")
+	(maphash (lambda (file proc)
+		   (insert (format "  %-50s [%s]\n"
+				   (file-name-nondirectory file)
+				   (process-status proc))))
+		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
 #+end_src
 
@@ -3127,8 +3224,6 @@ Use Emacs appointment system for notifications.
   (require 'rlr-argument-functions)
 
 #+end_src
-
-
 
 Set initial filename variable.
 
@@ -3583,9 +3678,6 @@ Create attendance sheet.
     (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
 #+end_src
 
-
-
-
 ** Copy Org Rich Text
 
 From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mode-text-from-Emacs-to-other-applications/][Copy formatted org-mode text from Emacs to other applications]]
@@ -3628,9 +3720,9 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 	("1" denote-link "link to note"))
        "Typst"
        (("t" rlr/org-mktypst "Make PDF")
-	("ww" rlr/org-typst-export-and-watch "Watch")
-	("wl" rlr/org-typst-list-watches "List Watches")
-	("ws" rlr/org-typst-stop-watch "Stop Watch")
+	("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+	("wl" rlr/org-rlr-typst-list-watches "List Watches")
+	("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
 	("s" rlr/org-mktouying "Make slides"))
        "LaTeX"
        (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
@@ -3944,7 +4036,7 @@ Close compilation window after successful compile.
 (require 'rlr-touying-scaffold)
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package ox-typst
   :after org)
 #+end_src

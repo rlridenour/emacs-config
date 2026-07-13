@@ -14,6 +14,7 @@
 ;;     config.typ, not by this exporter.
 ;;   - #+begin_speakernote ... #+end_speakernote -> #speaker-note[...]
 ;;   - #+begin_handoutnote ... #+end_handoutnote -> #handout-note[...]
+;;   - #+begin_center ... #+end_center -> #align(center)[...]
 ;;   - @@typst:...@@ export snippets pass through raw -- use
 ;;     @@typst:#pause@@ for a progressive reveal.
 ;;   - #+begin_statement ... #+end_statement -> big centered text: both
@@ -92,11 +93,25 @@ this derives from silently strips control characters from output.")
   "Transcode a PLAIN-LIST element, passing its items through."
   contents)
 
+(defun rlr/touying--item-depth (item)
+  "Return ITEM's nesting depth, 0 for a top-level list item.
+Typst list items nest by leading indentation rather than by an explicit
+parent/child structure, so the exporter needs to know how many
+ancestor items ITEM is nested under."
+  (let ((depth 0)
+        (node (org-export-get-parent item)))
+    (while node
+      (when (eq (org-element-type node) 'item)
+        (setq depth (1+ depth)))
+      (setq node (org-export-get-parent node)))
+    depth))
+
 (defun rlr/touying-item (item contents _info)
-  "Transcode an ITEM element into a Typst list item."
-  (let ((ordered (eq (org-element-property :type (org-export-get-parent item))
-                      'ordered)))
-    (format "%s %s\n" (if ordered "+" "-") (string-trim (or contents "")))))
+  "Transcode an ITEM element into a Typst list item, indented by depth."
+  (let* ((ordered (eq (org-element-property :type (org-export-get-parent item))
+                       'ordered))
+         (indent (make-string (* 2 (rlr/touying--item-depth item)) ?\s)))
+    (format "%s%s %s\n" indent (if ordered "+" "-") (string-trim (or contents "")))))
 
 (defun rlr/touying--attr-typst-string (value)
   "Format VALUE from an ATTR_TOUYING attribute as a Typst string.
@@ -189,6 +204,13 @@ container in Typst, not of `image()' itself."
         (format "#full-slide[\n%s\n]\n\n" trimmed))))
      (t contents))))
 
+(defun rlr/touying-center-block (_center-block contents _info)
+  "Transcode a CENTER-BLOCK element into a horizontally centered Typst block.
+`#+begin_center'/`#+end_center' produces Org's own `center-block' element
+type, distinct from the generic `special-block' used by speakernote/
+handoutnote/etc, so it needs its own entry here."
+  (format "#align(center)[\n%s\n]\n\n" (string-trim-right (or contents ""))))
+
 (defun rlr/touying-section (_section contents _info)
   "Transcode a SECTION element, passing its content through."
   contents)
@@ -234,6 +256,7 @@ container in Typst, not of `image()' itself."
 (org-export-define-derived-backend 'touying 'ascii
   :translate-alist
   '((bold . rlr/touying-bold)
+    (center-block . rlr/touying-center-block)
     (code . rlr/touying-code)
     (export-snippet . rlr/touying-export-snippet)
     (headline . rlr/touying-headline)

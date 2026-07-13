@@ -30,14 +30,6 @@ Words of two letters or fewer, and words in
   "Return today's date formatted as \"Month Day, Year\"."
   (format-time-string "%B %-d, %Y"))
 
-(defun rlr/teaching--document-header (title)
-  "Return the standard org header block for TITLE."
-  (format "#+TITLE: %s
-#+AUTHOR: Dr. Randy Ridenour
-#+DATE: %s
-"
-          title (rlr/teaching--today)))
-
 (defun rlr/teaching--handout-template (title)
   "Return the org template string for a handout named TITLE."
   (format "#+TITLE: %s
@@ -69,8 +61,51 @@ Words of two letters or fewer, and words in
           title title (rlr/teaching--today)))
 
 (defun rlr/teaching--syllabus-template (title)
-  "Return the org template string for a syllabus named TITLE."
-  (rlr/teaching--document-header title))
+  "Return the org template string for a syllabus named TITLE.
+Styling (header, footer, colors, fonts) comes from the
+@local/obu-syllabus Typst package."
+  (format "#+TITLE: %s
+#+AUTHOR: Dr. Randy Ridenour
+# #+DATE: %s
+#+OPTIONS: toc:nil
+#+OPTIONS: title:nil
+#+TYPST: #import \"@local/obu-syllabus:0.1.1\": *
+#+TYPST: #show: syllabus.with(title: \"%s\")
+#+HTML_DOCTYPE: html5
+#+OPTIONS: html-style:nil
+#+OPTIONS: num:nil
+#+HTML_HEAD: <link rel=\"stylesheet\" type=\"text/css\" href=\"https://randyridenour.net/css/canvas-handout.css\"/>
+"
+          title (rlr/teaching--today) title))
+
+(defun rlr/teaching--article-template (title)
+  "Return the org template string for an article named TITLE."
+  (format "#+TITLE: %s
+:drawer:
+#+TYPST: #set document(title: \"%s\")
+#+TYPST: #set document(author: \"Randy Ridenour\")
+#+TYPST: #set page(paper: \"us-letter\", margin: (x: 1.5in, y: 1.5in))
+#+TYPST: #set text(font: \"Libertinus Serif\", size: 12pt,)
+#+TYPST: #set heading(numbering: \"1.1\")
+#+TYPST: #show title: set text(font: \"Libertinus Serif\", size: 20pt, weight: \"regular\")
+#+TYPST: #show heading: set text(font: \"Libertinus Sans\", weight: \"regular\")
+#+TYPST: #show math.equation: set text(font: \"Libertinus Math\")
+#+TYPST: #show heading: smallcaps
+#+TYPST: #show heading: set block(above: 2em, below: 1em)
+#+OPTIONS: toc:nil
+
+#+BEGIN_EXPORT typst
+#align(center)[
+#title()
+#v(1em)
+#set text(14pt)
+Randy Ridenour
+#v(.05em)
+%s]
+#+END_EXPORT
+:end:
+"
+          title title (rlr/teaching--today)))
 
 (defun rlr/teaching--new-document (base-dir title template-fn)
   "Create a new document under BASE-DIR named after TITLE.
@@ -108,6 +143,16 @@ containing a new org file populated with the syllabus template."
    (list (read-directory-name "Directory: " default-directory nil t)
          (read-string "Title: ")))
   (rlr/teaching--new-document base-dir title #'rlr/teaching--syllabus-template))
+
+(defun rlr/teaching-new-article (base-dir title)
+  "Create a new article document.
+Prompts for BASE-DIR (defaulting to the current directory) and
+TITLE, then creates a slugified subdirectory of BASE-DIR
+containing a new org file populated with the article template."
+  (interactive
+   (list (read-directory-name "Directory: " default-directory nil t)
+         (read-string "Title: ")))
+  (rlr/teaching--new-document base-dir title #'rlr/teaching--article-template))
 
 (provide 'rlr-teaching)
 ;;; rlr-teaching.el ends here

@@ -1247,6 +1247,11 @@
 (add-hook 'markdown-mode-hook #'variable-pitch-mode)
 (global-set-key (kbd "C-M-S-s-v") #'variable-pitch-mode)
 
+(add-hook 'org-mode-hook
+  (lambda ()
+    (setq-local electric-pair-inhibit-predicate
+      (lambda (c) (if (char-equal c ?<) t (electric-pair-default-inhibit c))))))
+
 (defun csm/org-word-count ()
   "Count words in region/buffer, estimate pages, and reading time.
 Excludes lines beginning with * or #. Prints result in echo area."
@@ -1426,25 +1431,28 @@ and convert it to Org using the pandoc utility."
  org-latex-to-html-convert-command "latexmlc literal:%i --profile=math 2>/dev/null"
  org-html-with-latex 'html)
 
+(require 'ox-rlr-typst)
+
 (defun rlr/org-mktypst ()
   "Make PDF with Typst."
   (interactive)
   (save-buffer)
-  (org-typst-export-to-typst)
+  ;; (org-typst-export-to-typst) ;; ox-typst
+  (org-rlr-typst-export-to-typst) ;; ox-rlr-typst
   (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
 
-(defvar rlr/org-typst-watch-processes (make-hash-table :test 'equal)
+(defvar rlr/org-rlr-typst-watch-processes (make-hash-table :test 'equal)
   "Hash table mapping org file paths to their typst watch processes.")
 
-(defun rlr/org-typst-export-and-watch ()
+(defun rlr/org-rlr-typst-export-and-watch ()
   "Export current org buffer to Typst, start `typst watch`, and re-export on save.
   Subsequent saves of the org file will trigger a fresh Typst export.
   Calling this again on an already-watched buffer stops the old watcher first."
   (interactive)
   (unless (derived-mode-p 'org-mode)
     (user-error "Not in an org-mode buffer"))
-  (unless (require 'ox-typst nil t)
-    (user-error "ox-typst is not available; please install it"))
+  (unless (require 'ox-rlr-typst nil t)
+    (user-error "ox-rlr-typst is not available; please install it"))
 
   (let* ((org-file (buffer-file-name))
 	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
@@ -1452,20 +1460,20 @@ and convert it to Org using the pandoc utility."
 			     (file-name-nondirectory typst-file))))
 
     ;; Kill any existing watcher for this file
-    (rlr/org-typst-stop-watch org-file)
+    (rlr/org-rlr-typst-stop-watch org-file)
 
     ;; Initial export
     (message "Exporting %s → %s..." (file-name-nondirectory org-file)
 	       (file-name-nondirectory typst-file))
-    (org-typst-export-to-typst)
+    (org-rlr-typst-export-to-typst)
 
     ;; Start typst watch in a dedicated buffer
     (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
-	(puthash org-file proc rlr/org-typst-watch-processes)
+	(puthash org-file proc rlr/org-rlr-typst-watch-processes)
 	(set-process-sentinel proc
 			(lambda (p _event)
 			(when (memq (process-status p) '(exit signal))
-			  (remhash org-file rlr/org-typst-watch-processes)
+			  (remhash org-file rlr/org-rlr-typst-watch-processes)
 			  (message "typst watch ended for %s" typst-file))))
 	(message "typst watch started → %s" typst-file))
 
@@ -1474,32 +1482,32 @@ and convert it to Org using the pandoc utility."
     (rlr/org-open-pdf)
 
     ;; Add a buffer-local after-save hook
-    (add-hook 'after-save-hook #'rlr/org-typst--on-save nil t)
+    (add-hook 'after-save-hook #'rlr/org-rlr-typst--on-save nil t)
     (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
 
-(defun rlr/org-typst--on-save ()
+(defun rlr/org-rlr-typst--on-save ()
   "Re-export the current org buffer to Typst on save."
   (when (and (derived-mode-p 'org-mode)
 	       (buffer-file-name)
-	       (gethash (buffer-file-name) rlr/org-typst-watch-processes))
-    (org-typst-export-to-typst)
+	       (gethash (buffer-file-name) rlr/org-rlr-typst-watch-processes))
+    (org-rlr-typst-export-to-typst)
     (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
 
-(defun rlr/org-typst-stop-watch (&optional org-file)
+(defun rlr/org-rlr-typst-stop-watch (&optional org-file)
   "Stop the typst watch process for ORG-FILE (default: current buffer)."
   (interactive)
   (let* ((file (or org-file (buffer-file-name)))
-	   (proc (gethash file rlr/org-typst-watch-processes)))
+	   (proc (gethash file rlr/org-rlr-typst-watch-processes)))
     (when (process-live-p proc)
 	(delete-process proc)
 	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
-    (remhash file rlr/org-typst-watch-processes)
-    (remove-hook 'after-save-hook #'rlr/org-typst--on-save t)))
+    (remhash file rlr/org-rlr-typst-watch-processes)
+    (remove-hook 'after-save-hook #'rlr/org-rlr-typst--on-save t)))
 
-(defun rlr/org-typst-list-watches ()
+(defun rlr/org-rlr-typst-list-watches ()
   "Show all active typst watch processes."
   (interactive)
-  (if (hash-table-empty-p rlr/org-typst-watch-processes)
+  (if (hash-table-empty-p rlr/org-rlr-typst-watch-processes)
 	(message "No active typst watch processes.")
     (with-current-buffer (get-buffer-create "*typst-watches*")
 	(erase-buffer)
@@ -1508,7 +1516,7 @@ and convert it to Org using the pandoc utility."
 		   (insert (format "  %-50s [%s]\n"
 				   (file-name-nondirectory file)
 				   (process-status proc))))
-		 rlr/org-typst-watch-processes)
+		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
 
 (use-package org-auto-tangle
@@ -2154,9 +2162,9 @@ and convert it to Org using the pandoc utility."
 	("1" denote-link "link to note"))
    "Typst"
    (("t" rlr/org-mktypst "Make PDF")
-	("ww" rlr/org-typst-export-and-watch "Watch")
-	("wl" rlr/org-typst-list-watches "List Watches")
-	("ws" rlr/org-typst-stop-watch "Stop Watch")
+	("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+	("wl" rlr/org-rlr-typst-list-watches "List Watches")
+	("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
 	("s" rlr/org-mktouying "Make slides"))
    "LaTeX"
    (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
@@ -2401,9 +2409,6 @@ and convert it to Org using the pandoc utility."
 	      (delete-windows-on buf))))
 
 (require 'rlr-touying-scaffold)
-
-(use-package ox-typst
-  :after org)
 
 (defun rlr/org-mktouying ()
     (interactive)

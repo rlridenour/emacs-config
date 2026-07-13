@@ -1,7 +1,9 @@
 ;;; rlr-touying-scaffold.el --- Scaffold a new Touying presentation -*- lexical-binding: t; -*-
 
 ;; Creates a new Touying presentation directory containing config.typ,
-;; talk.org, a live slide deck, and a flowing handout, following the
+;; a slug-prefixed talk.org (e.g. my-talk-talk.org, so it's findable by
+;; name alone rather than being one of many identically-named talk.org
+;; files), a live slide deck, and a flowing handout, following the
 ;; config.typ / content.typ / slides.typ / handout.typ pattern where the
 ;; slide deck and handout are the two things you actually compile.
 ;; content.typ itself is generated from talk.org via ox-touying.el (if
@@ -308,12 +310,15 @@ Falls back to a minimal static template if ox-touying.el isn't loaded
   "Scaffold a new Touying presentation called TITLE inside DIR.
 
 Creates a subdirectory of DIR (named after a slug derived from TITLE)
-containing config.typ, talk.org, a slides/handout pair whose filenames
-are prefixed with that slug (e.g. \"my-talk-slides.typ\" and
-\"my-talk-handout.typ\"), and content.typ -- generated from talk.org via
-ox-touying.el (see `rlr/touying--generate-content-file'). The slug is
-TITLE lower-cased, hyphenated, with the words \"the\" and \"and\", and
-any two-letter-or-shorter words, removed."
+containing config.typ, a talk.org whose filename is also prefixed with
+that slug (e.g. \"my-talk-talk.org\", so it's identifiable by name
+alone when searching across many presentation directories that would
+otherwise all just be called \"talk.org\"), a slides/handout pair with
+the same slug prefix (e.g. \"my-talk-slides.typ\" and
+\"my-talk-handout.typ\"), and content.typ -- generated from talk.org
+via ox-touying.el (see `rlr/touying--generate-content-file'). The slug
+is TITLE lower-cased, hyphenated, with the words \"the\" and \"and\",
+and any two-letter-or-shorter words, removed."
   (interactive
    (list (read-string "Presentation title: ")
          (read-directory-name "Create in directory: " default-directory)))
@@ -322,7 +327,7 @@ any two-letter-or-shorter words, removed."
       (user-error "Title \"%s\" has no usable words for a filename" title))
     (let* ((project-dir (expand-file-name slug dir))
            (config-file (expand-file-name "config.typ" project-dir))
-           (org-file (expand-file-name "talk.org" project-dir))
+           (org-file (expand-file-name (concat slug "-talk.org") project-dir))
            (content-file (expand-file-name "content.typ" project-dir))
            (slides-file (expand-file-name (concat slug "-slides.typ") project-dir))
            (handout-file (expand-file-name (concat slug "-handout.typ") project-dir)))
