@@ -1739,7 +1739,7 @@ and convert it to Org using the pandoc utility."
  ("s-b" . (lambda () (interactive) (my/org-toggle-emphasis ?*)))
  ("C-c e e" . (lambda () (interactive) (my/org-toggle-emphasis ?~)))
  ("C-c e =" . (lambda () (interactive) (my/org-toggle-emphasis ?=)))
- ("C-c e _" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
+ ("s-u" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
  ("C-c e +" . (lambda () (interactive) (my/org-toggle-emphasis ?+))))
 
 (use-package org-people
