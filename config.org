@@ -2864,6 +2864,12 @@ Revised to use ox-rlr-typst
 	(display-buffer (current-buffer)))))
 #+end_src
 
+Export exam data files to Typst
+
+#+begin_src emacs-lisp
+(require 'ox-exam)
+#+end_src
+
 ** Citations
 
 #+begin_src emacs-lisp

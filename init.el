@@ -1560,6 +1560,8 @@ and convert it to Org using the pandoc utility."
 		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
 
+(require 'ox-exam)
+
 (use-package oc
   :ensure nil
   :after org
