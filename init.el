@@ -207,6 +207,24 @@
   :custom
   (consult-spotlight-stderr "/dev/null"))
 
+(use-package embark
+  :bind
+  (("C-." . embark-act)
+   ("C-S-a" . embark-act)
+   ("C-;" . embark-dwim)
+   ("C-h B" . embark-bindings))
+  :custom
+  (prefix-help-command #'embark-prefix-help-command)
+  :config
+  (add-to-list 'display-buffer-alist
+		 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+		   nil
+		   (window-parameters (mode-line-format . none)))))
+
+(use-package embark-consult
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 (use-package corfu
   :defer 1
 :custom
@@ -1136,6 +1154,8 @@
   (setq titlecase-style "chicago")
   :commands titlecase-dwim)
 
+;; (setq treesit-language-source-alist
+;;  '((yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml")))
 (setq treesit-auto-install-grammar 'always)
 (setq treesit-enabled-modes t)
 
@@ -1304,6 +1324,27 @@ and convert it to Org using the pandoc utility."
 	       (markdown
 		(org-export-string-as region 'md t '(:with-toc nil))))
 	  (gui-set-selection 'CLIPBOARD markdown))))
+
+(defun my-org-insert-quote-template ()
+    "Surround region in #+begin_quote/#+end_quote."
+    (interactive)
+    (org-insert-structure-template "quote"))
+
+  (defun my-org-insert-src-template ()
+    "Surround region in #+begin_src/#+end_src.
+  Uses `language-detection-string' to guess language."
+    (interactive)
+    (let* ((str (buffer-substring-no-properties (region-beginning) (region-end)))
+	   (lang (and (require 'language-detection)
+		(language-detection-string str))))
+      (org-insert-structure-template "src")
+      (when lang
+	(save-excursion
+	  (goto-char (line-end-position))
+	  (insert (format "%s" lang))))))
+
+;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
+;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
 
 (use-package org-appear
   :after org
@@ -1518,6 +1559,14 @@ and convert it to Org using the pandoc utility."
 				   (process-status proc))))
 		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
+
+(use-package oc
+  :ensure nil
+  :after org
+  :config
+  (require 'oc-csl)
+  (setq org-cite-csl-styles-dir (expand-file-name "~/.config/emacs/styles/"))
+  (setq org-cite-export-processors '((t csl "chicago-author-date.csl"))))
 
 (use-package org-auto-tangle
   :hook (org-mode . org-auto-tangle-mode))
@@ -1767,7 +1816,7 @@ and convert it to Org using the pandoc utility."
   (write-file (concat "~/icloud/web-saves/" rlr-org-title ".org")))
 
 (require 'rlr-teaching)
-(require 'rlr-argument-functions)
+(require 'rlr-org-standard-form)
 
 (defvar rlrt-filename)
 
@@ -2165,7 +2214,8 @@ and convert it to Org using the pandoc utility."
 	("ww" rlr/org-rlr-typst-export-and-watch "Watch")
 	("wl" rlr/org-rlr-typst-list-watches "List Watches")
 	("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
-	("s" rlr/org-mktouying "Make slides"))
+	("s" rlr/org-mktouying "Make slides")
+	("eb" rlr-create-typst-bib "Create bib file"))
    "LaTeX"
    (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
 	("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
@@ -2391,16 +2441,22 @@ and convert it to Org using the pandoc utility."
    ("Build"
     (("b" typst-ts-compile "Compile")
      ("p" my/typst-compile-and-preview "Compile and preview")
-     ("s" compile-typst-lecture "Make lecture slides"))
+     ("s" compile-typst-lecture "Make lecture slides")
+     ("w" typst-ts-watch-start "Start watch")
+     ("W" typst-ts-watch-stop "Stop watch"))
+    "Edit"
+    (("ec" citar-insert-citation "Insert citation")
+     ("eb" rlr-create-typst-bib "Create bib file")
+     )
     "Format"
     (("f" typst-format-buffer "Format")))))
 
 (with-eval-after-load 'eglot
 (with-eval-after-load 'typst-ts-mode
   (add-to-list 'eglot-server-programs
-		       `((typst-ts-mode) .
-			 ,(eglot-alternatives '("tinymist"
-						      "typst-lsp"))))))
+			     `((typst-ts-mode) .
+				 ,(eglot-alternatives '("tinymist"
+								    "typst-lsp"))))))
 
 (add-hook 'compilation-finish-functions
 	  (lambda (buf status)
@@ -2425,14 +2481,23 @@ and convert it to Org using the pandoc utility."
    :map minibuffer-local-map
    ("M-b" . citar-insert-preset))
   :custom
-  (org-cite-global-bibliography '("~/Dropbox/bibtex/rlr.bib"))
-  (citar-bibliography '("~/Dropbox/bibtex/rlr.bib"))
+  (org-cite-global-bibliography '("~/github/rlr-bib/rlr.bib"))
+  (citar-bibliography '("~/github/rlr-bib/rlr.bib"))
   (org-cite-csl-styles-dir "/usr/local/texlive/2025/texmf-dist/tex/latex/citation-style-language/styles")
   (org-cite-export-processors
    '((md . (csl "chicago-author-date.csl"))
      (latex biblatex)
      (odt . (csl "chicago-author-date.csl"))
      (t . (csl "chicago-author-date.csl")))))
+
+(use-package citar-typst
+  :config
+  (citar-typst-mode))
+
+(use-package citar-embark
+  :after (citar embark)
+  :no-require
+  :config (citar-embark-mode))
 
 (use-package ebib
   :commands (ebib)
@@ -2442,7 +2507,9 @@ and convert it to Org using the pandoc utility."
   ;;(evil-set-initial-state 'ebib-entry-mode 'emacs)
   ;;(evil-set-initial-state 'ebib-log-mode 'emacs)
   :custom
-  (ebib-preload-bib-files '("~/Dropbox/bibtex/rlr.bib")))
+  (ebib-preload-bib-files '("~/github/rlr-bib/rlr.bib")))
+
+(require 'rlr-create-typst-bib)
 
 (use-package denote
   :config
@@ -3230,6 +3297,8 @@ and convert it to Org using the pandoc utility."
   (let ((browse-url-browser-function  browse-url-secondary-browser-function))
     (link-hint-open-link)))
 
+(use-package language-detection)
+
 (use-package fish-mode
   :defer t
   :mode "\\.fish\\'")
@@ -3383,13 +3452,14 @@ and convert it to Org using the pandoc utility."
     ("v" denote-menu-list-notes "view notes")
     ("j" denote-journal-extras-new-or-existing-entry "journal"))
    "Writing"
-   (("p" rlrt-new-post "blog post")
-    ("a" rlrt-new-article "article"))
+   (("a" rlr/teaching-new-article "typst article")
+    ("p" rlrt-new-post "blog post")
+    ("ta" rlrt-new-article "latex article"))
    "Teaching"
-   (("b" rlrt-new-lecture "beamer lecture")
+   (("tb" rlrt-new-lecture "beamer lecture")
     ("l" rlr/new-touying-presentation "lecture")
     ("h" rlr/teaching-new-handout "handout")
-    ("s" rlrt-new-syllabus "syllabus"))
+    ("ts" rlrt-new-syllabus "syllabus"))
    ))
 
 (pretty-hydra-define hydra-logic

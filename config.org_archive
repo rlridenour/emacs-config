@@ -1,0 +1,190 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /Users/rlridenour/.config/emacs/config.org
+
+
+* Org Settings
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-07-14 Tue 19:07
+:ARCHIVE_FILE: ~/.config/emacs/config.org
+:ARCHIVE_OLPATH: Org Mode
+:ARCHIVE_CATEGORY: config
+:END:
+
+#+begin_src emacs-lisp
+    (use-package org
+      :init
+      ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+      (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+      :config
+      (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
+      (setq org-list-allow-alphabetical t)
+      (setq org-highlight-latex-and-related '(latex script entities))
+      (setq org-startup-indented nil)
+      (setq org-adapt-indentation nil)
+      (setq org-hide-leading-stars nil)
+      (setq org-hide-emphasis-markers t)
+      (setq org-list-indent-offset 2)
+      (setq org-use-speed-commands t)
+
+      (setq org-deadline-warning-days 1)
+
+      ;; Hide drawers
+      (setopt org-cycle-hide-drawer-startup t)
+      (setopt org-startup-folded 'nofold)
+
+      (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+      (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+
+      ;; Make the document title a bit bigger
+      (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
+
+      ;; Make LaTeX previews larger.
+      (plist-put org-format-latex-options :scale 1.5)
+
+      ;; (setq org-support-shift-select t)
+      (setq org-special-ctrl-a/e t)
+      ;; (setq org-footnote-section nil)
+      (setq org-html-validation-link nil)
+      (setq org-time-stamp-rounding-minutes '(0 15))
+      (setq org-log-done t)
+      (setq org-todo-keyword-faces
+	  '(("DONE" . "green4") ("TODO" . org-warning)))
+      (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+      (setq org-agenda-start-on-weekday nil)
+      (setq org-agenda-window-setup 'current-window)
+      (setq org-link-frame-setup
+	  '((vm . vm-visit-folder-other-frame)
+	(vm-imap . vm-visit-imap-folder-other-frame)
+	(gnus . org-gnus-no-new-news)
+	(file . find-file)
+	(wl . wl-other-frame)))
+      (require 'org-tempo)
+      ;; Open directory links in Dired.
+      (add-to-list 'org-file-apps '(directory . emacs))
+      :bind
+  ("C-c a" . org-agenda)
+  ("C-c c" . org-capture)
+      )
+#+end_src
+
+Add markdown export
+
+#+begin_src emacs-lisp
+  (setq org-export-backends '(ascii html icalendar latex odt md))
+  (require `ox-md)
+#+end_src
+
+Use variable pitch mode in Org and Markdown modes. Toggle with ~C-M-S-s-v~, bound to ~<Caps-Lock>-V~.
+
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook #'variable-pitch-mode)
+  (add-hook 'markdown-mode-hook #'variable-pitch-mode)
+  (global-set-key (kbd "C-M-S-s-v") #'variable-pitch-mode)
+#+end_src
+
+Prevent electric-pair from adding ">" when using structure block shortcuts
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook
+  (lambda ()
+    (setq-local electric-pair-inhibit-predicate
+      (lambda (c) (if (char-equal c ?<) t (electric-pair-default-inhibit c))))))
+#+end_src
+
+Word count in Org files, ignoring heading and comment lines. From [[https://chrismaiorana.com/summer-productivity-reset-emacs-functions/][Summer Productivity Reset: Emacs functions to streamline your writing workflow - The Daily Macro]]
+
+#+begin_src emacs-lisp
+  (defun csm/org-word-count ()
+    "Count words in region/buffer, estimate pages, and reading time.
+  Excludes lines beginning with * or #. Prints result in echo area."
+    (interactive)
+    (let* ((start (if (use-region-p) (region-beginning) (point-min)))
+	   (end (if (use-region-p) (region-end) (point-max)))
+	   (word-count
+	    (save-excursion
+	      (goto-char start)
+	      (let ((count 0)
+		    (inhibit-field-text-motion t))
+		(while (< (point) end)
+		  (beginning-of-line)
+		  (unless (looking-at-p "^[*#<]")
+		    (let ((line-end (line-end-position)))
+		      (while (re-search-forward "\\w+\\W*" line-end t)
+			(setq count (1+ count)))))
+		  (forward-line 1))
+		count)))
+	   (words-per-page 400)
+	   (reading-speed 215)
+	   (page-count (/ (+ word-count words-per-page -1) words-per-page))
+	   (reading-time (/ (+ word-count reading-speed -1) reading-speed)))
+      (message "%d words, ~%d pages, ~%d min read"
+	       word-count page-count reading-time)))
+#+end_src
+
+Convert Markdown to Org mode
+
+#+begin_src emacs-lisp
+  (defun cc/yank-markdown-as-org ()
+    "Yank Markdown text as Org.
+
+  This command will convert Markdown text in the top of the `kill-ring'
+  and convert it to Org using the pandoc utility."
+    (interactive)
+    (save-excursion
+      (with-temp-buffer
+	(yank)
+	(shell-command-on-region
+	 (point-min) (point-max)
+	 "pandoc -f markdown -t org --wrap=preserve" t t)
+	(kill-region (point-min) (point-max)))
+      (yank)))
+#+end_src
+
+Convert Org mode to Markdown
+
+#+begin_src emacs-lisp
+  (defun mb/org-copy-region-as-markdown ()
+    "Copy the region (in Org) to the system clipboard as Markdown."
+    (interactive)
+    (if (use-region-p)
+	(let* ((region
+		(buffer-substring-no-properties
+		 (region-beginning)
+		 (region-end)))
+	       (markdown
+		(org-export-string-as region 'md t '(:with-toc nil))))
+	  (gui-set-selection 'CLIPBOARD markdown))))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (defun my-org-insert-quote-template ()
+    "Surround region in #+begin_quote/#+end_quote."
+    (interactive)
+    (org-insert-structure-template "quote"))
+
+  (defun my-org-insert-src-template ()
+    "Surround region in #+begin_src/#+end_src.
+  Uses `language-detection-string' to guess language."
+    (interactive)
+    (let* ((str (buffer-substring-no-properties (region-beginning) (region-end)))
+	   (lang (and (require 'language-detection)
+		(language-detection-string str))))
+      (org-insert-structure-template "src")
+      (when lang
+	(save-excursion
+	  (goto-char (line-end-position))
+	  (insert (format "%s" lang))))))
+
+  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
+  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
+#+end_src
+
+

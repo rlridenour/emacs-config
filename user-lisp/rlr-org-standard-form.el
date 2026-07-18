@@ -1,7 +1,13 @@
-;;; rlr-argument-functions.el --- Bracket-join a region into a #argument line -*- lexical-binding: t; -*-
+;;; rlr-org-standard-form.el --- Convert an org list into a standard-form argument -*- lexical-binding: t; -*-
 
-;;; Turn an ordered list into something that will export as a standard-form argument in both Typst and HTML. Typst export requires the standard-form package at https://github.com/rlridenour/typst-standard-form.
+;; Turns the org list at point into two copies: an HTML export block
+;; (an <ol class="org-ol arg"> list) and a Typst export block using
+;; `#standard-form[...]' from the standard-form Typst package.
+;; See: https://github.com/rlridenour/typst-standard-form
 
+;;; Code:
+
+(require 'org-list)
 
 (defun rlr/org-standard-form--item-text (pos struct)
   "Return the trimmed, marker-stripped body text of the item at POS in STRUCT."
@@ -24,7 +30,8 @@
       (when (= (org-list-get-ind pos struct) min-ind)
         (push pos result)))))
 
-(defun rlr/org-make-standard-form ()
+;;;###autoload
+(defun rlr/org-make-standard-form-handout ()
   "Turn the plain list at point into a standard-form argument.
 
 Replaces the list with two copies: the first rewritten as an
@@ -33,7 +40,6 @@ with one <li> per top-level item, and the second wrapped verbatim in
 a \"#+begin_export typst\" block using `#standard-form[...]', for the
 `standard-form' Typst package."
   (interactive)
-  (require 'org-list)
   (unless (org-in-item-p)
     (user-error "Point is not inside an org list"))
   (let* ((struct (org-list-struct))
@@ -59,5 +65,28 @@ a \"#+begin_export typst\" block using `#standard-form[...]', for the
     (delete-region beg end)
     (insert html-block "\n" typst-block)))
 
-(provide 'rlr-argument-functions)
-;;; rlr-argument-functions.el ends here
+;;;###autoload
+(defun rlr/org-make-standard-form-slide ()
+  "Turn the plain list at point into a standard-form argument. Wrap the list verbatim in a \"#+begin_export typst\" block using `#standard-form[...]', for the `standard-form' Typst package."
+  (interactive)
+  (unless (org-in-item-p)
+    (user-error "Point is not inside an org list"))
+  (let* ((struct (org-list-struct))
+         (beg (org-list-get-top-point struct))
+         (end (org-list-get-bottom-point struct))
+         (orig-text (string-trim-right (buffer-substring-no-properties beg end)))
+         (items (mapcar (lambda (pos) (rlr/org-standard-form--item-text pos struct))
+                         (rlr/org-standard-form--top-level-item-positions struct)))
+         (typst-block
+          (concat "#+begin_export typst\n"
+                  "#standard-form[\n"
+                  orig-text "\n"
+                  "]\n"
+                  "#+end_export\n")))
+    (goto-char beg)
+    (delete-region beg end)
+    (insert typst-block)))
+
+
+(provide 'rlr-org-standard-form)
+;;; rlr-org-standard-form.el ends here

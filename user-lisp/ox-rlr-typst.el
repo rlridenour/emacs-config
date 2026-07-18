@@ -46,6 +46,10 @@
 ;;     `:CUSTOM_ID:' property or is the target of an internal link, so
 ;;     `[[#some-id]]'-style links resolve to `#link(<some-id>)[...]' or
 ;;     bare `@some-id' references.
+;;   - Org Cite citations (`[cite:@key]' and friends) become native
+;;     `#cite(<key>, ...)' calls rather than being pre-rendered by an
+;;     `org-cite' export processor -- see `org-rlr-typst-citation-reference'
+;;     for the style/variant to `form:' mapping.
 ;;
 ;; Usage: `M-x org-rlr-typst-export-to-typst' exports the current
 ;; buffer to a sibling ".typ" file; `M-x org-rlr-typst-export-as-typst'
@@ -99,6 +103,8 @@ and `:with-latex' is non-nil."
   :translate-alist
   '((bold . org-rlr-typst-bold)
     (center-block . org-rlr-typst-center-block)
+    (citation . org-rlr-typst-citation)
+    (citation-reference . org-rlr-typst-citation-reference)
     (clock . (lambda (&rest _) nil))
     (code . org-rlr-typst-verbatim)
     (comment . (lambda (&rest _) nil))
@@ -143,7 +149,10 @@ and `:with-latex' is non-nil."
     (verbatim . org-rlr-typst-verbatim))
   :options-alist
   '((:rlr-typst-toplevel-hlevel nil nil org-rlr-typst-toplevel-hlevel)
-    (:rlr-typst-mitex-import nil nil org-rlr-typst-mitex-import)))
+    (:rlr-typst-mitex-import nil nil org-rlr-typst-mitex-import)
+    ;; Render citations ourselves (see `org-rlr-typst-citation') instead
+    ;; of having `org-cite' pre-render them with its own export processor.
+    (:with-cite-processors nil nil nil)))
 
 
 ;;; Internal functions
@@ -458,6 +467,60 @@ type alone isn't reliable for mixed runs."
 (defun org-rlr-typst-radio-target (target text info)
   "Transcode a RADIO-TARGET/TARGET object into labelled Typst text."
   (format "%s <%s>" text (org-rlr-typst--label (org-export-get-reference target info))))
+
+
+;;;; Citation, Citation Reference
+
+(defun org-rlr-typst--cite-form (style)
+  "Map an Org Cite STYLE string to a Typst `#cite' FORM argument.
+STYLE is the raw text between `cite/' and `:' in `[cite/style: ...]'
+(nil for plain `[cite: ...]'), e.g. \"text\", \"author\", or \"na/b\"
+for a style with a variant. Only the style itself (before any `/'
+variant) affects the mapping; unrecognized or absent styles fall back
+to \"normal\". The special return value \"none\" denotes Typst's bare
+`none' literal (see `org-rlr-typst-citation-reference'), rather than
+a quoted string."
+  (pcase (and style (car (split-string style "/")))
+    ((or "author" "a") "author")
+    ((or "noauthor" "na") "year")
+    ((or "text" "t") "prose")
+    ((or "bibentry" "b") "full")
+    ((or "nocite" "n") "none")
+    (_ "normal")))
+
+(defun org-rlr-typst-citation (citation contents info)
+  "Transcode a CITATION object into concatenated Typst `#cite(...)' calls.
+Each reference renders its own call via
+`org-rlr-typst-citation-reference'; CONTENTS is their concatenation.
+A common prefix/suffix (only set when a citation has several `;'-separated
+references sharing leading/trailing text) is emitted as surrounding
+plain text."
+  (concat (org-export-data (org-element-property :prefix citation) info)
+          contents
+          (org-export-data (org-element-property :suffix citation) info)))
+
+(defun org-rlr-typst-citation-reference (citation-reference _contents info)
+  "Transcode a CITATION-REFERENCE object into a Typst `#cite(...)' call.
+Any prefix/suffix text attached to this particular reference (e.g. the
+locator in `[cite:@key 27-29]') becomes the call's `supplement:'
+argument; the citation's style (from the parent `citation' object)
+becomes its `form:' argument, via `org-rlr-typst--cite-form'. That
+argument is emitted as the bare `none' literal for `[cite/nocite: ...]'
+citations, and as a quoted string otherwise."
+  (let* ((key (org-element-property :key citation-reference))
+         (style (org-element-property :style (org-export-get-parent citation-reference)))
+         (prefix (org-element-property :prefix citation-reference))
+         (suffix (org-element-property :suffix citation-reference))
+         (form (org-rlr-typst--cite-form style))
+         (supplement (org-string-nw-p
+                      (org-trim
+                       (substring-no-properties
+                        (concat (and prefix (org-export-data prefix info))
+                                (and suffix (org-export-data suffix info))))))))
+    (format "#cite(<%s>%s, form: %s)"
+            key
+            (if supplement (format ", supplement: %S" supplement) "")
+            (if (equal form "none") "none" (format "%S" form)))))
 
 
 ;;;; Footnote Reference
