@@ -37,6 +37,11 @@
 ;; "foo.org" this produces "foo-exam.typ" and "foo-key.typ", each of which
 ;; imports that package and calls its `exam-doc', `section', `mcq', and
 ;; `essay' functions.
+;;
+;; `org-exam-export-versions' (and -to-pdf) instead produce several
+;; independently-shuffled versions of the same exam -- "foo-A-exam.typ",
+;; "foo-A-key.typ", "foo-B-exam.typ", etc. -- with a deterministic,
+;; per-version-label shuffle so re-exporting reproduces the same output.
 
 ;;; Code:
 
@@ -274,6 +279,59 @@ joined with blank lines between paragraphs."
           :exam-name exam-name
           :date date)))
 
+;;; Shuffling for exam versions
+
+(defun org-exam--shuffle (list)
+  "Return a new list with the elements of LIST in random order.
+Draws from Emacs's current global random state (see `random'); callers
+that want a reproducible shuffle should seed it first, e.g. with
+\(random SEED-STRING)."
+  (let ((vec (vconcat list)))
+    (let ((n (length vec)))
+      (dotimes (i (max 0 (1- n)))
+        (let* ((j (+ i (random (- n i))))
+               (tmp (aref vec i)))
+          (aset vec i (aref vec j))
+          (aset vec j tmp))))
+    (append vec nil)))
+
+(defun org-exam--shuffle-question (q)
+  "Return a copy of question Q with its multiple-choice options (if any)
+shuffled into a new order; :correct is updated to match."
+  (if (not (eq (plist-get q :type) 'mcq))
+      q
+    (let* ((options (plist-get q :options))
+           (correct (plist-get q :correct))
+           (paired (cl-loop for o in options
+                             for i from 0
+                             collect (cons o (= i correct))))
+           (shuffled (org-exam--shuffle paired)))
+      (list :type 'mcq
+            :text (plist-get q :text)
+            :options (mapcar #'car shuffled)
+            :correct (cl-position t shuffled :key #'cdr)))))
+
+(defun org-exam--shuffle-section (sec)
+  "Return a copy of section SEC with its question order shuffled, and
+each multiple-choice question's options shuffled (see
+`org-exam--shuffle-question')."
+  (list :title (plist-get sec :title)
+        :questions (mapcar #'org-exam--shuffle-question
+                            (org-exam--shuffle (plist-get sec :questions)))))
+
+(defun org-exam--version-label (n)
+  "Return the Nth (0-based) version label: A, B, ..., Z, AA, AB, ..."
+  (let ((s "") (k (1+ n)))
+    (while (> k 0)
+      (let ((rem (mod (1- k) 26)))
+        (setq s (concat (char-to-string (+ ?A rem)) s))
+        (setq k (/ (1- k) 26))))
+    s))
+
+(defun org-exam--version-labels (n)
+  "Return a list of N version labels: A, B, C, ..."
+  (cl-loop for i from 0 below n collect (org-exam--version-label i)))
+
 ;;; Rendering Typst source
 
 (defun org-exam--content (typst-markup)
@@ -303,9 +361,10 @@ joined with blank lines between paragraphs."
                  "none")
                (if key-p "true" "false"))))))
 
-(defun org-exam--render (meta sections key-p)
+(defun org-exam--render (meta sections key-p &optional version)
   "Render the full Typst source for exam METADATA and SECTIONS.
-KEY-P non-nil renders the answer key variant."
+KEY-P non-nil renders the answer key variant. VERSION, if non-nil, is
+a version label string (e.g. \"A\") printed in the header."
   (concat
    (format "#import \"%s\": *\n\n" org-exam-typst-import)
    "#show: exam-doc.with(\n"
@@ -313,6 +372,7 @@ KEY-P non-nil renders the answer key variant."
    (format "  course-name: %s,\n" (org-exam--plain-content (plist-get meta :course-name)))
    (format "  exam-name: %s,\n" (org-exam--plain-content (plist-get meta :exam-name)))
    (format "  date: %s,\n" (org-exam--plain-content (plist-get meta :date)))
+   (if version (format "  version: %s,\n" (org-exam--plain-content version)) "")
    (format "  key: %s,\n" (if key-p "true" "false"))
    ")\n\n"
    (mapconcat
@@ -349,6 +409,34 @@ KEY-P non-nil renders the answer key variant."
     (org-exam--write-file key-file (org-exam--render meta sections t))
     (list exam-file key-file)))
 
+(defun org-exam--do-export-versions (n)
+  "Parse the current Org buffer and write N shuffled exam versions.
+Each version LABEL (\"A\", \"B\", ...) gets its own
+<name>-LABEL-exam.typ and <name>-LABEL-key.typ, with question order
+(and, within each multiple-choice question, option order) shuffled
+independently per version. The shuffle is seeded from the file name
+and version label, so re-running this on the same file reproduces the
+same versions. Return the list of file paths written."
+  (unless (derived-mode-p 'org-mode)
+    (user-error "Not in an Org buffer"))
+  (unless (and (integerp n) (>= n 1))
+    (user-error "Number of versions must be a positive integer"))
+  (let* ((tree (org-element-parse-buffer))
+         (meta (org-exam--collect-metadata tree))
+         (sections (org-exam--collect-sections tree))
+         (base (file-name-sans-extension (org-exam--source-file)))
+         (files '()))
+    (dolist (label (org-exam--version-labels n))
+      (random (format "%s::%s" base label))
+      (let* ((shuffled (mapcar #'org-exam--shuffle-section sections))
+             (exam-file (format "%s-%s-exam.typ" base label))
+             (key-file (format "%s-%s-key.typ" base label)))
+        (org-exam--write-file exam-file (org-exam--render meta shuffled nil label))
+        (org-exam--write-file key-file (org-exam--render meta shuffled t label))
+        (push exam-file files)
+        (push key-file files)))
+    (nreverse files)))
+
 (defun org-exam--typst-compile (typ-file)
   "Compile TYP-FILE to PDF with the `typst' command line tool."
   (unless (executable-find "typst")
@@ -362,19 +450,47 @@ KEY-P non-nil renders the answer key variant."
     (concat (file-name-sans-extension typ-file) ".pdf")))
 
 ;;;###autoload
-(defun org-exam-export-to-typst (&optional _async _subtreep _visible-only)
+(defun org-exam-export-to-typst (&rest _ignore)
   "Export the current Org exam buffer to Typst source.
-Writes <name>-exam.typ and <name>-key.typ next to the Org file."
+Writes <name>-exam.typ and <name>-key.typ next to the Org file.
+
+Takes no meaningful arguments; the dispatcher (`org-export-dispatch')
+calls export actions with (ASYNC SUBTREEP VISIBLE-ONLY BODY-ONLY), none
+of which apply here, so they are all ignored."
   (interactive)
   (let ((files (org-exam--do-export)))
     (message "org-exam: wrote %s" (mapconcat #'file-name-nondirectory files ", "))
     files))
 
 ;;;###autoload
-(defun org-exam-export-to-pdf (&optional _async _subtreep _visible-only)
-  "Export the current Org exam buffer to Typst source and compile it to PDF."
+(defun org-exam-export-to-pdf (&rest _ignore)
+  "Export the current Org exam buffer to Typst source and compile it to PDF.
+
+Takes no meaningful arguments; see `org-exam-export-to-typst' for why."
   (interactive)
   (let* ((typ-files (org-exam--do-export))
+         (pdf-files (mapcar #'org-exam--typst-compile typ-files)))
+    (message "org-exam: wrote %s" (mapconcat #'file-name-nondirectory pdf-files ", "))
+    pdf-files))
+
+;;;###autoload
+(defun org-exam-export-versions (&rest _ignore)
+  "Export shuffled versions of the current Org exam to Typst source.
+Prompts for how many versions. See `org-exam--do-export-versions'.
+
+Takes no meaningful arguments; see `org-exam-export-to-typst' for why."
+  (interactive)
+  (let* ((n (read-number "Number of shuffled versions: " 2))
+         (files (org-exam--do-export-versions n)))
+    (message "org-exam: wrote %s" (mapconcat #'file-name-nondirectory files ", "))
+    files))
+
+;;;###autoload
+(defun org-exam-export-versions-to-pdf (&rest _ignore)
+  "Like `org-exam-export-versions', but also compiles each file to PDF."
+  (interactive)
+  (let* ((n (read-number "Number of shuffled versions: " 2))
+         (typ-files (org-exam--do-export-versions n))
          (pdf-files (mapcar #'org-exam--typst-compile typ-files)))
     (message "org-exam: wrote %s" (mapconcat #'file-name-nondirectory pdf-files ", "))
     pdf-files))
@@ -387,7 +503,9 @@ Writes <name>-exam.typ and <name>-key.typ next to the Org file."
   :menu-entry
   '(?X "Export to exam (Typst)"
        ((?t "As Typst source (.typ)" org-exam-export-to-typst)
-        (?p "As Typst source, compiled to PDF" org-exam-export-to-pdf))))
+        (?p "As Typst source, compiled to PDF" org-exam-export-to-pdf)
+        (?v "Shuffled versions (.typ)" org-exam-export-versions)
+        (?V "Shuffled versions, compiled to PDF" org-exam-export-versions-to-pdf))))
 
 (provide 'ox-exam)
 ;;; ox-exam.el ends here

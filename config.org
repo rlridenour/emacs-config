@@ -1890,7 +1890,7 @@ Use ~C-c d d~ to insert Month, Day Year and ~C-c d s~ to insert YYYYMMDD date st
   (defun insert-standard-date ()
     "Inserts standard date time string."
     (interactive)
-    (insert (format-time-string "%B%e, %Y")))
+    (insert (format-time-string "%B %e, %Y")))
 
   (defun insert-blog-date ()
     (interactive)

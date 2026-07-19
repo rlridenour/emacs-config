@@ -928,7 +928,7 @@
 (defun insert-standard-date ()
   "Inserts standard date time string."
   (interactive)
-  (insert (format-time-string "%B%e, %Y")))
+  (insert (format-time-string "%B %e, %Y")))
 
 (defun insert-blog-date ()
   (interactive)
