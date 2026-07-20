@@ -58,11 +58,16 @@
 ;;     with Org's own `\\' markup to keep it on its own line -- a plain
 ;;     newline between verse lines is otherwise just soft wrap space in
 ;;     Typst, not a break.
-;;   - An Org table -> #table(columns: N, [cell], [cell], ...). The
-;;     header row (the row group before the table's first hline, if
-;;     any) is rendered in bold. Column widths, alignment, and other
-;;     exotic constructs (footnotes, etc.) aren't specially handled --
-;;     touch those up by hand in content.typ afterward.
+;;   - An Org table -> #table(columns: N, [cell], [cell], ...), with
+;;     `stroke: none' by default (only hlines actually present in the
+;;     source table are kept, via `table.hline()'). No automatic
+;;     header-row bolding -- bold a header cell by hand in the Org
+;;     source (e.g. `*X*') if wanted. A preceding `#+ATTR_TYPST: :key
+;;     value ...' overrides or adds #table(...) arguments verbatim,
+;;     e.g. `#+ATTR_TYPST: :stroke none :columns (auto, 3em, 3em,
+;;     3em)' or `#+ATTR_TYPST: :align (left, center, center)'.
+;;     Footnotes and other exotic constructs aren't specially handled
+;;     -- touch those up by hand in content.typ afterward.
 ;;
 ;; Usage: open the presentation's talk.org (in the same directory as
 ;; config.typ/content.typ), M-x rlr/org-export-to-touying-content --
@@ -151,16 +156,11 @@ ancestor items ITEM is nested under."
          (indent (make-string (* 2 (rlr/touying--item-depth item)) ?\s)))
     (format "%s%s %s\n" indent (if ordered "+" "-") (string-trim (or contents "")))))
 
-(defun rlr/touying-table-cell (table-cell contents info)
+(defun rlr/touying-table-cell (_table-cell contents _info)
   "Transcode a TABLE-CELL element into a Typst table cell literal.
-Cells in the table's header row (the first row group, delimited by an
-hline) are rendered in bold."
-  (let ((text (string-trim (or contents ""))))
-    (format "[%s], "
-            (if (org-export-table-row-in-header-p
-                 (org-export-get-parent table-cell) info)
-                (format "*%s*" text)
-              text))))
+No automatic header-row bolding -- bold a header cell by hand in the
+Org source (e.g. `*X*') if wanted."
+  (format "[%s], " (string-trim (or contents ""))))
 
 (defun rlr/touying-table-row (table-row contents _info)
   "Transcode a TABLE-ROW element into one line of Typst table cells.
@@ -172,13 +172,45 @@ an hline actually present in the source Org table is kept."
       "table.hline(),\n"
     (concat (string-trim-right contents) "\n")))
 
+(defun rlr/touying--attr-plist-to-alist (attrs)
+  "Convert ATTRS (a plist from `org-export-read-attribute') into an
+ordered alist of (KEY-STRING . VALUE-STRING), dropping any key with a
+nil value and stripping each key's leading colon."
+  (let (result)
+    (while attrs
+      (let ((key (substring (symbol-name (car attrs)) 1))
+            (value (cadr attrs)))
+        (when value (push (cons key value) result)))
+      (setq attrs (cddr attrs)))
+    (nreverse result)))
+
+(defun rlr/touying--merge-table-args (defaults overrides)
+  "Merge OVERRIDES into DEFAULTS, both alists of (KEY . VALUE) strings.
+A key present in both keeps DEFAULTS' position but OVERRIDES' value;
+a key only in OVERRIDES is appended afterward, in its given order."
+  (append
+   (mapcar (lambda (kv) (or (assoc (car kv) overrides) kv)) defaults)
+   (seq-remove (lambda (kv) (assoc (car kv) defaults)) overrides)))
+
 (defun rlr/touying-table (table contents info)
   "Transcode a TABLE element into a Typst #table(...) call.
-Column count comes from the table's own dimensions. Per-cell borders
-are dropped (`stroke: none'); only hlines present in the source Org
-table are kept, via `table.hline()' in `rlr/touying-table-row'."
-  (let ((columns (cdr (org-export-table-dimensions table info))))
-    (format "#table(\n  columns: %d,\n  stroke: none,\n%s)\n\n" (max columns 1) contents)))
+Column count comes from the table's own dimensions and per-cell
+borders are dropped (`stroke: none') by default; only hlines present
+in the source Org table are kept, via `table.hline()' in
+`rlr/touying-table-row'. A preceding `#+ATTR_TYPST: :key value ...'
+keyword overrides or adds #table(...) arguments verbatim, e.g.
+`#+ATTR_TYPST: :stroke none :columns (auto, 3em, 3em, 3em)' ->
+`#table(columns: (auto, 3em, 3em, 3em), stroke: none, ...)' -- any
+key not already defaulted (e.g. `:align') is passed through as-is."
+  (let* ((columns (max (cdr (org-export-table-dimensions table info)) 1))
+         (defaults (list (cons "columns" (number-to-string columns))
+                          (cons "stroke" "none")))
+         (overrides (rlr/touying--attr-plist-to-alist
+                     (org-export-read-attribute :attr_typst table)))
+         (args (rlr/touying--merge-table-args defaults overrides)))
+    (format "#table(\n%s\n%s)\n\n"
+            (mapconcat (lambda (kv) (format "  %s: %s," (car kv) (cdr kv))) args "\n")
+            contents)))
 
 (defun rlr/touying--attr-typst-string (value)
   "Format VALUE from an ATTR_TOUYING attribute as a Typst string.

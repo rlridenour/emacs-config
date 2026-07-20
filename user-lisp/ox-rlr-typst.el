@@ -36,7 +36,11 @@
 ;;   - Tables become native `#table(...)' calls, with a leading row
 ;;     group wrapped in `table.header(...)' when the Org table has one,
 ;;     and per-column alignment carried over from Org's alignment
-;;     cookies.
+;;     cookies.  A `#+ATTR_TYPST: :key value ...' line above the table
+;;     passes each pair straight through as a `#table(...)' argument
+;;     (e.g. `:stroke none' or `:column-gutter 1em'), overriding the
+;;     auto-computed `columns'/`align' when those keys are given
+;;     explicitly.
 ;;   - Footnotes are inlined at their first reference as
 ;;     `#footnote[...] <fn-LABEL>'; later references to the same
 ;;     labelled footnote become `#footnote(<fn-LABEL>)'. Anonymous
@@ -577,13 +581,27 @@ functions can be invoked directly from Org."
                          (eql (org-export-table-row-group table-row info) 1))))
       (concat (if header-p "H" "D") "\x1" contents "\n"))))
 
+(defun org-rlr-typst--table-attrs (table)
+  "Return TABLE's `#+ATTR_TYPST' attributes as an alist of (KEY . VALUE) strings.
+KEY has its leading colon stripped (e.g. \"column-gutter\"); VALUE is
+emitted verbatim (unquoted) into the `#table(...)' call, so bare Typst
+literals like `none', `red', or `1em' work directly -- write
+`:fill \"red\"' in the ATTR line if you actually want a Typst string."
+  (let ((plist (org-export-read-attribute :attr_typst table))
+        pairs)
+    (while plist
+      (push (cons (substring (symbol-name (car plist)) 1) (cadr plist)) pairs)
+      (setq plist (cddr plist)))
+    (nreverse pairs)))
+
 (defun org-rlr-typst-table (table contents info)
   "Transcode a TABLE element into a Typst `#table(...)' call."
   (if (eq (org-element-property :type table) 'table.el)
       ;; table.el tables aren't supported; fall back to a raw block.
       (format "```\n%s```\n\n"
               (org-trim (org-export-format-code-default table info)))
-    (let* ((cols (cdr (org-export-table-dimensions table info)))
+    (let* ((attrs (org-rlr-typst--table-attrs table))
+           (cols (cdr (org-export-table-dimensions table info)))
            (first-row (org-element-map table 'table-row #'identity info t))
            (aligns (and first-row
                         (org-element-map first-row 'table-cell
@@ -597,8 +615,10 @@ functions can be invoked directly from Org."
            (strip (lambda (l) (substring l 2))))
       (concat
        "#table(\n"
-       (format "  columns: %d,\n" (max 1 cols))
-       (if aligns (format "  align: (%s),\n" (mapconcat #'identity aligns ", ")) "")
+       (unless (assoc "columns" attrs) (format "  columns: %d,\n" (max 1 cols)))
+       (when (and aligns (not (assoc "align" attrs)))
+         (format "  align: (%s),\n" (mapconcat #'identity aligns ", ")))
+       (mapconcat (lambda (kv) (format "  %s: %s,\n" (car kv) (cdr kv))) attrs "")
        (when header-lines
          (concat "  table.header(\n"
                  (mapconcat (lambda (l) (concat "    " (funcall strip l) ",")) header-lines "\n")
