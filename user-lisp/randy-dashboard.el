@@ -30,7 +30,11 @@
 (defvar randy-dashboard-recent-files-count 5
   "Number of recent files to list in the Recent Files section.")
 
-(defvar randy-dashboard-refresh-interval 60
+(defvar randy-dashboard-recent-files-exclude nil
+  "List of regexps matched against file paths to omit from Recent Files.
+A file is excluded if any regexp in this list matches its full path.")
+
+(defvar randy-dashboard-refresh-interval nil
   "Seconds between automatic dashboard refreshes, or nil to disable.")
 
 ;;; Internal implementation
@@ -182,11 +186,17 @@ Optional HINT is displayed in comment face after the label."
                          'face 'randy-dashboard-hint-face))))
   (insert "\n"))
 
+(defun randy-dashboard--recent-file-excluded-p (path)
+  "Return non-nil if PATH matches any regexp in `randy-dashboard-recent-files-exclude'."
+  (seq-some (lambda (regexp) (string-match-p regexp path))
+            randy-dashboard-recent-files-exclude))
+
 (defun randy-dashboard--recent-files ()
   "Return up to `randy-dashboard-recent-files-count' recent file paths."
   (require 'recentf)
   (unless recentf-mode (recentf-mode 1))
-  (seq-take (seq-filter #'stringp recentf-list)
+  (seq-take (seq-remove #'randy-dashboard--recent-file-excluded-p
+                        (seq-filter #'stringp recentf-list))
             randy-dashboard-recent-files-count))
 
 (defun randy-dashboard--insert-recent-files ()

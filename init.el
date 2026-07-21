@@ -131,6 +131,9 @@
   :bind
   ("s-m" . major-mode-hydra))
 
+(use-package context-clues
+  :bind ("H-c" . context-clues))
+
 (use-package emacs
   :config
   (require 'bookmark)
@@ -347,6 +350,8 @@
 (pixel-scroll-precision-mode 1)
 
 (setq warning-minimum-level :emergency)
+
+(define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
 
 (use-package modus-themes
   :demand t
@@ -1085,9 +1090,10 @@
    ("C-c r" . crux-rename-file-and-buffer)
    ("<S-return>" . crux-smart-open-line)
    ("<C-S-return>" . crux-smart-open-line-above)
-   ("<escape>" . crux-keyboard-quit-dwim)))
+   ;; ("<escape>" . crux-keyboard-quit-dwim)
+   ))
 
-(define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+;; (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 
 (use-package expand-region
   :bind
@@ -2199,31 +2205,31 @@ and convert it to Org using the pandoc utility."
   (:quit-key "q")
   ("Edit"
    (("dd" org-deadline "deadline")
-	("ds" org-schedule "schedule")
-	("r" org-refile "refile")
-	("du" rlr/org-date "update date stamp")
-	("ff" org-footnote-action "edit footnote")
-	("fc" citar-insert-citation "citation")
-	("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-	("is" org-insert-structure-template "insert structure block")
-	("vc" csm/org-word-count "word count")
-	("va" org-appear-mode :toggle t)
-	("vl" org-toggle-link-display :toggle t)
-	("vv" visible-mode :toggle t)
-	("1" denote-link "link to note"))
+	    ("ds" org-schedule "schedule")
+	    ("r" org-refile "refile")
+	    ("du" rlr/org-date "update date stamp")
+	    ("ff" org-footnote-action "edit footnote")
+	    ("fc" citar-insert-citation "citation")
+	    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+	    ("is" org-insert-structure-template "insert structure block")
+	    ("vc" csm/org-word-count "word count")
+	    ("va" org-appear-mode :toggle t)
+	    ("vl" org-toggle-link-display :toggle t)
+	    ("vv" visible-mode :toggle t)
+	    ("1" denote-link "link to note"))
    "Typst"
    (("t" rlr/org-mktypst "Make PDF")
-	("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-	("wl" rlr/org-rlr-typst-list-watches "List Watches")
-	("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
-	("s" rlr/org-mktouying "Make slides")
-	("eb" rlr-create-typst-bib "Create bib file"))
+	    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+	    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
+	    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+	    ("s" rlr/org-mktouying "Make slides")
+	    ("eb" rlr-create-typst-bib "Create bib file"))
    "LaTeX"
    (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-	("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-	("lc" tex-clean "clean aux")
-	("lC" tex-clean-all "clean all")
-	("o" rlr/org-open-pdf "View PDF")
+	    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+	    ("lc" tex-clean "clean aux")
+	    ("lC" tex-clean-all "clean all")
+	    ("o" rlr/org-open-pdf "View PDF")
    ("ls" lecture-slides "Lecture slides")
    ("ln" lecture-notes "Lecture notes"))
    "Other"
@@ -2456,9 +2462,9 @@ and convert it to Org using the pandoc utility."
 (with-eval-after-load 'eglot
 (with-eval-after-load 'typst-ts-mode
   (add-to-list 'eglot-server-programs
-			     `((typst-ts-mode) .
-				 ,(eglot-alternatives '("tinymist"
-								    "typst-lsp"))))))
+				     `((typst-ts-mode) .
+					   ,(eglot-alternatives '("tinymist"
+										      "typst-lsp"))))))
 
 (add-hook 'compilation-finish-functions
 	  (lambda (buf status)
@@ -3334,9 +3340,12 @@ and convert it to Org using the pandoc utility."
   "Major mode for dashboard buffer.")
 
 (require 'randy-dashboard)
-  ;; Open on startup:
-  ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
-  (bind-key "s-d" 'randy-dashboard-open)
+;; Open on startup:
+;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+(bind-key "s-d" 'randy-dashboard-open)
+
+(setq randy-dashboard-recent-files-exclude
+	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index"))
 
 (defun dashboard-startup ()
   (randy-dashboard-open)

@@ -399,6 +399,13 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
     ("s-m" . major-mode-hydra))
 #+end_src
 
+*** Context Clues
+
+#+begin_src emacs-lisp
+(use-package context-clues
+  :bind ("H-c" . context-clues))
+#+end_src
+
 ** Bookmarks
 
 #+begin_src emacs-lisp
@@ -900,6 +907,12 @@ Hide warnings.
 
 #+begin_src emacs-lisp
   (setq warning-minimum-level :emergency)
+#+end_src
+
+Use escape for keyboard-quit
+
+#+begin_src emacs-lisp
+  (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
 #+end_src
 
 ** Appearance
@@ -2109,9 +2122,10 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
      ("C-c r" . crux-rename-file-and-buffer)
      ("<S-return>" . crux-smart-open-line)
      ("<C-S-return>" . crux-smart-open-line-above)
-     ("<escape>" . crux-keyboard-quit-dwim)))
+     ;; ("<escape>" . crux-keyboard-quit-dwim)
+     ))
 
-  (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+  ;; (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 #+end_src
 
 ** Expand-region
@@ -3749,31 +3763,31 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
       (:quit-key "q")
       ("Edit"
        (("dd" org-deadline "deadline")
-  	("ds" org-schedule "schedule")
-  	("r" org-refile "refile")
-  	("du" rlr/org-date "update date stamp")
-  	("ff" org-footnote-action "edit footnote")
-  	("fc" citar-insert-citation "citation")
-  	("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-  	("is" org-insert-structure-template "insert structure block")
-  	("vc" csm/org-word-count "word count")
-  	("va" org-appear-mode :toggle t)
-  	("vl" org-toggle-link-display :toggle t)
-  	("vv" visible-mode :toggle t)
-  	("1" denote-link "link to note"))
+	    ("ds" org-schedule "schedule")
+	    ("r" org-refile "refile")
+	    ("du" rlr/org-date "update date stamp")
+	    ("ff" org-footnote-action "edit footnote")
+	    ("fc" citar-insert-citation "citation")
+	    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+	    ("is" org-insert-structure-template "insert structure block")
+	    ("vc" csm/org-word-count "word count")
+	    ("va" org-appear-mode :toggle t)
+	    ("vl" org-toggle-link-display :toggle t)
+	    ("vv" visible-mode :toggle t)
+	    ("1" denote-link "link to note"))
        "Typst"
        (("t" rlr/org-mktypst "Make PDF")
-  	("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-  	("wl" rlr/org-rlr-typst-list-watches "List Watches")
-  	("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
-  	("s" rlr/org-mktouying "Make slides")
-  	("eb" rlr-create-typst-bib "Create bib file"))
+	    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+	    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
+	    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+	    ("s" rlr/org-mktouying "Make slides")
+	    ("eb" rlr-create-typst-bib "Create bib file"))
        "LaTeX"
        (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-  	("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-  	("lc" tex-clean "clean aux")
-  	("lC" tex-clean-all "clean all")
-  	("o" rlr/org-open-pdf "View PDF")
+	    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+	    ("lc" tex-clean "clean aux")
+	    ("lC" tex-clean-all "clean all")
+	    ("o" rlr/org-open-pdf "View PDF")
        ("ls" lecture-slides "Lecture slides")
        ("ln" lecture-notes "Lecture notes"))
        "Other"
@@ -4067,9 +4081,9 @@ Remove multiple choice questions and save them to the kill ring.
   (with-eval-after-load 'eglot
   (with-eval-after-load 'typst-ts-mode
     (add-to-list 'eglot-server-programs
-  			     `((typst-ts-mode) .
-  				 ,(eglot-alternatives '("tinymist"
-  								    "typst-lsp"))))))
+				     `((typst-ts-mode) .
+					   ,(eglot-alternatives '("tinymist"
+										      "typst-lsp"))))))
 #+end_src
 
 Close compilation window after successful compile.
@@ -5335,10 +5349,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 #+end_src
 
 #+begin_src emacs-lisp
-    (require 'randy-dashboard)
-    ;; Open on startup:
-    ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
-    (bind-key "s-d" 'randy-dashboard-open)
+  (require 'randy-dashboard)
+  ;; Open on startup:
+  ;; (add-hook 'emacs-startup-hook #'randy-dashboard-open)
+  (bind-key "s-d" 'randy-dashboard-open)
+
+  (setq randy-dashboard-recent-files-exclude
+	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)

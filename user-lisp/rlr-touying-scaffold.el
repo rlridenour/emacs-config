@@ -134,11 +134,16 @@ SLUG names the corresponding slides/handout files in the comments."
 // all. Headings (section, and frame, and subsection if slide-level: 3
 // is used) render plainly with their own numbering (1, 1.1, 1.2, ...)
 // -- there's no box, so a frame heading doesn't need special hiding/
-// relocation the way it did when its title had to be pulled inside one.
-#let handout-project(body) = {
+// relocation the way it did when its title had to be pulled inside
+// one. The frame-title level itself (slide-level, 2 here to match
+// `project`'s default above -- keep the two in sync if you change it)
+// is left unnumbered, matching the live deck's own unnumbered frame
+// title.
+#let handout-project(slide-level: 2, body) = {
   set page(paper: \"us-letter\")
   set text(size: 12pt)
   set heading(numbering: \"1.1\")
+  show heading.where(level: slide-level): set heading(numbering: none)
   body
 }
 
