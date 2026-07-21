@@ -351,7 +351,7 @@
 
 (setq warning-minimum-level :emergency)
 
-(define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
+;; (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
 
 (use-package modus-themes
   :demand t
@@ -477,8 +477,8 @@
 (save-place-mode)
 ;; Center the page after the restore.
 (advice-add 'save-place-find-file-hook :after
-	    (lambda (&rest _)
-	      (when buffer-file-name (ignore-errors (recenter)))))
+	      (lambda (&rest _)
+		(when buffer-file-name (ignore-errors (recenter)))))
 
 (require 'uniquify)
 
@@ -554,13 +554,13 @@
 (add-hook 'write-file-hooks 'time-stamp) ; Update when saving.
 
 (bind-keys
-  ("C-x C-b" . ibuffer)
-  ("s-o" . find-file)
-  ("s-k" . kill-current-buffer)
-  ("M-s-k" . kill-buffer-and-window)
-  ("C-c w" . kill-buffer-and-window)
-  ("s-K".  nuke-all-buffers)
-  ("C-c k" . rlr/kill-other-buffers))
+ ("C-x C-b" . ibuffer)
+ ("s-o" . find-file)
+ ("s-k" . kill-current-buffer)
+ ("M-s-k" . kill-buffer-and-window)
+ ("C-c w" . kill-buffer-and-window)
+ ("s-K".  nuke-all-buffers)
+ ("C-c k" . rlr/kill-other-buffers))
 
 (setq initial-major-mode 'org-mode)
 
@@ -597,9 +597,9 @@
 (use-package emacs
   :hook
   (special-mode . (lambda ()
-	    (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
-	      (when (member "*Warnings*" buffer-name-list)
-		(pop-to-buffer "*Warnings*"))))))
+		(let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+		  (when (member "*Warnings*" buffer-name-list)
+		    (pop-to-buffer "*Warnings*"))))))
 
 (use-package ace-window
   :config
@@ -729,24 +729,24 @@
 (bind-key "C-x 1" 'toggle-delete-other-windows)
 
 (bind-keys
-  ("s-0" . delete-window)
-  ("s-1" . delete-other-windows)
-  ("s-2" . rlr/find-file-below)
-  ("s-3" . rlr/find-file-right)
-  ("s-4" . split-window-below-focus)
-  ("s-5" . split-window-right-focus)
-  ("s-6" . toggle-window-split)
-  ("S-C-<left>" . shrink-window-horizontally)
-  ("S-C-<right>" . enlarge-window-horizontally)
-  ("S-C-<down>" . shrink-window)
-  ("S-C-<up>" . enlarge-window)
-  ("C-x w" . delete-frame)
-  ;; ("M-o" . crux-other-window-or-switch-buffer)
-  ("s-\"" . previous-window-any-frame)
-  ("s-T" . tab-new)
-  ("s-t" . rlr/find-file-new-tab)
-  ("s-w" . rlr/delete-tab-or-frame)
-  ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
+ ("s-0" . delete-window)
+ ("s-1" . delete-other-windows)
+ ("s-2" . rlr/find-file-below)
+ ("s-3" . rlr/find-file-right)
+ ("s-4" . split-window-below-focus)
+ ("s-5" . split-window-right-focus)
+ ("s-6" . toggle-window-split)
+ ("S-C-<left>" . shrink-window-horizontally)
+ ("S-C-<right>" . enlarge-window-horizontally)
+ ("S-C-<down>" . shrink-window)
+ ("S-C-<up>" . enlarge-window)
+ ("C-x w" . delete-frame)
+ ;; ("M-o" . crux-other-window-or-switch-buffer)
+ ("s-\"" . previous-window-any-frame)
+ ("s-T" . tab-new)
+ ("s-t" . rlr/find-file-new-tab)
+ ("s-w" . rlr/delete-tab-or-frame)
+ ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
 
 (setq case-replace nil)
 
@@ -846,16 +846,16 @@
   :ensure nil
   :bind
   (:map dired-mode-map
-	      ("M-<RET>" . crux-open-with)
-	      ("j" . rlr/dired-search-and-enter)
-	      ("J" . dired-goto-file)
-	      ("%s" . my-dired-substspaces))
+	  ("M-<RET>" . crux-open-with)
+	  ("j" . rlr/dired-search-and-enter)
+	  ("J" . dired-goto-file)
+	  ("%s" . my-dired-substspaces))
   :config
   (setq dired-clean-confirm-killing-deleted-buffers nil)
   (setq dired-dwim-target t) ;; Make copying and moving files easier.
   (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
   :hook ((dired-mode . dired-hide-details-mode)
-	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 
 (use-package reveal-in-osx-finder
   :bind
@@ -1049,8 +1049,8 @@
   (push-mark (point) t nil)
   (message "Pushed mark to ring"))
 
- (bind-key "C-`" 'push-mark-no-activate)
- (bind-key "M-`" 'consult-mark)
+(bind-key "C-`" 'push-mark-no-activate)
+(bind-key "M-`" 'consult-mark)
 
 ; Don't break out a separate frame for ediff
 (setq ediff-window-setup-function 'ediff-setup-windows-plain)
@@ -1090,10 +1090,10 @@
    ("C-c r" . crux-rename-file-and-buffer)
    ("<S-return>" . crux-smart-open-line)
    ("<C-S-return>" . crux-smart-open-line-above)
-   ;; ("<escape>" . crux-keyboard-quit-dwim)
+   ("<escape>" . crux-keyboard-quit-dwim)
    ))
 
-;; (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+(define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 
 (use-package expand-region
   :bind
@@ -1565,6 +1565,18 @@ and convert it to Org using the pandoc utility."
 				   (process-status proc))))
 		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
+
+(defun make-typst-handout ()
+  "publish org data file as LaTeX handout and Canvas HTML"
+  (interactive)
+  (save-buffer)
+  ;; (find-file "*-handout.org" t)
+  (rlr/org-mktypst)
+  ;; (kill-buffer)
+  ;; (shell-command "canvas-notes")
+  ;; (find-file "canvas.org" t)
+  (org-html-export-to-html)
+  (shell-command "canvas-handout"))
 
 (require 'ox-exam)
 
@@ -2205,39 +2217,41 @@ and convert it to Org using the pandoc utility."
   (:quit-key "q")
   ("Edit"
    (("dd" org-deadline "deadline")
-	    ("ds" org-schedule "schedule")
-	    ("r" org-refile "refile")
-	    ("du" rlr/org-date "update date stamp")
-	    ("ff" org-footnote-action "edit footnote")
-	    ("fc" citar-insert-citation "citation")
-	    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-	    ("is" org-insert-structure-template "insert structure block")
-	    ("vc" csm/org-word-count "word count")
-	    ("va" org-appear-mode :toggle t)
-	    ("vl" org-toggle-link-display :toggle t)
-	    ("vv" visible-mode :toggle t)
-	    ("1" denote-link "link to note"))
+    ("ds" org-schedule "schedule")
+    ("r" org-refile "refile")
+    ("du" rlr/org-date "update date stamp")
+    ("ff" org-footnote-action "edit footnote")
+    ("fc" citar-insert-citation "citation")
+    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+    ("is" org-insert-structure-template "insert structure block")
+    ("vc" csm/org-word-count "word count")
+    ("va" org-appear-mode :toggle t)
+    ("vl" org-toggle-link-display :toggle t)
+    ("vv" visible-mode :toggle t)
+    ("1" denote-link "link to note"))
    "Typst"
    (("t" rlr/org-mktypst "Make PDF")
-	    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-	    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
-	    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
-	    ("s" rlr/org-mktouying "Make slides")
-	    ("eb" rlr-create-typst-bib "Create bib file"))
+    ("s" rlr/org-mktouying "Make slides")
+    ("h" make-typst-handout "Make handout")
+    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
+    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+    ("eb" rlr-create-typst-bib "Create bib file"))
    "LaTeX"
    (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-	    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-	    ("lc" tex-clean "clean aux")
-	    ("lC" tex-clean-all "clean all")
-	    ("o" rlr/org-open-pdf "View PDF")
-   ("ls" lecture-slides "Lecture slides")
-   ("ln" lecture-notes "Lecture notes"))
+    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+    ("lc" tex-clean "clean aux")
+    ("lC" tex-clean-all "clean all")
+    ("o" rlr/org-open-pdf "View PDF")
+    ("ls" lecture-slides "Lecture slides")
+    ("ln" lecture-notes "Lecture notes"))
    "Other"
-   (("h" make-html "HTML")
-   ("ec" canvas-copy "Copy HTML for Canvas")
-   ("es" canvas-notes "HTML Canvas notes")
-   ("eS" make-syllabus "Syllabus")
-   ("eh" make-handout "Handout"))))
+   (("H" make-html "HTML")
+    ("ec" canvas-copy "Copy HTML for Canvas")
+    ("es" canvas-notes "HTML Canvas notes")
+    ("eS" make-syllabus "Syllabus")
+    ("eh" make-handout "Handout")
+    )))
 
 (use-package tex
   :ensure auctex

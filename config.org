@@ -912,7 +912,7 @@ Hide warnings.
 Use escape for keyboard-quit
 
 #+begin_src emacs-lisp
-  (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
+  ;; (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
 #+end_src
 
 ** Appearance
@@ -1011,7 +1011,7 @@ Toggle light and dark theme. From [[https://takeonrules.com/2025/12/05/managing-
 Click on the ellipsis to reveal minor modes. Can also be used with a list to hide only certain modes.
 
 #+begin_src emacs-lisp
-(setq mode-line-collapse-minor-modes '(not))
+  (setq mode-line-collapse-minor-modes '(not))
 #+end_src
 
 *** Spacious-Padding
@@ -1093,7 +1093,7 @@ Disable changing text size with mouse and trackpad
 
 #+begin_src emacs-lisp :tangle no
   (use-package ultra-scroll
-:vc (:url "https://github.com/jdtsmith/ultra-scroll")
+    :vc (:url "https://github.com/jdtsmith/ultra-scroll")
     :init
     (setq scroll-conservatively 3 ; or whatever value you prefer, since v0.4
 	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
@@ -1124,8 +1124,8 @@ Open files to the last edited position.
   (save-place-mode)
   ;; Center the page after the restore.
   (advice-add 'save-place-find-file-hook :after
-	    (lambda (&rest _)
-	      (when buffer-file-name (ignore-errors (recenter)))))
+	      (lambda (&rest _)
+		(when buffer-file-name (ignore-errors (recenter)))))
 #+end_src
 
 Give buffers uniquely numbered names.
@@ -1278,13 +1278,13 @@ Keybindings for files and buffers.
 
 #+begin_src emacs-lisp
   (bind-keys
-    ("C-x C-b" . ibuffer)
-    ("s-o" . find-file)
-    ("s-k" . kill-current-buffer)
-    ("M-s-k" . kill-buffer-and-window)
-    ("C-c w" . kill-buffer-and-window)
-    ("s-K".  nuke-all-buffers)
-    ("C-c k" . rlr/kill-other-buffers))
+   ("C-x C-b" . ibuffer)
+   ("s-o" . find-file)
+   ("s-k" . kill-current-buffer)
+   ("M-s-k" . kill-buffer-and-window)
+   ("C-c w" . kill-buffer-and-window)
+   ("s-K".  nuke-all-buffers)
+   ("C-c k" . rlr/kill-other-buffers))
 #+end_src
 
 ** Scratch
@@ -1352,9 +1352,9 @@ Auto-select warning windows so they can be dismissed with =q=.
   (use-package emacs
     :hook
     (special-mode . (lambda ()
-	    (let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
-	      (when (member "*Warnings*" buffer-name-list)
-		(pop-to-buffer "*Warnings*"))))))
+		(let ((buffer-name-list (mapcar 'buffer-name (buffer-list))))
+		  (when (member "*Warnings*" buffer-name-list)
+		    (pop-to-buffer "*Warnings*"))))))
 #+end_src
 
 *** Ace Window
@@ -1519,25 +1519,25 @@ Reversible C-x 1
 *** Window and Tab Keybindings
 
 #+begin_src emacs-lisp
-(bind-keys
-  ("s-0" . delete-window)
-  ("s-1" . delete-other-windows)
-  ("s-2" . rlr/find-file-below)
-  ("s-3" . rlr/find-file-right)
-  ("s-4" . split-window-below-focus)
-  ("s-5" . split-window-right-focus)
-  ("s-6" . toggle-window-split)
-  ("S-C-<left>" . shrink-window-horizontally)
-  ("S-C-<right>" . enlarge-window-horizontally)
-  ("S-C-<down>" . shrink-window)
-  ("S-C-<up>" . enlarge-window)
-  ("C-x w" . delete-frame)
-  ;; ("M-o" . crux-other-window-or-switch-buffer)
-  ("s-\"" . previous-window-any-frame)
-  ("s-T" . tab-new)
-  ("s-t" . rlr/find-file-new-tab)
-  ("s-w" . rlr/delete-tab-or-frame)
-  ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
+  (bind-keys
+   ("s-0" . delete-window)
+   ("s-1" . delete-other-windows)
+   ("s-2" . rlr/find-file-below)
+   ("s-3" . rlr/find-file-right)
+   ("s-4" . split-window-below-focus)
+   ("s-5" . split-window-right-focus)
+   ("s-6" . toggle-window-split)
+   ("S-C-<left>" . shrink-window-horizontally)
+   ("S-C-<right>" . enlarge-window-horizontally)
+   ("S-C-<down>" . shrink-window)
+   ("S-C-<up>" . enlarge-window)
+   ("C-x w" . delete-frame)
+   ;; ("M-o" . crux-other-window-or-switch-buffer)
+   ("s-\"" . previous-window-any-frame)
+   ("s-T" . tab-new)
+   ("s-t" . rlr/find-file-new-tab)
+   ("s-w" . rlr/delete-tab-or-frame)
+   ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
 #+end_src
 
 ** Search
@@ -1682,7 +1682,7 @@ Add some color with diredfl.
 For some reason, adding the dired-omit-mode hook in the use-package declaration isn't working. This sets it after Emacs starts.
 
 #+begin_src emacs-lisp
-   (add-hook 'dired-mode-hook #'dired-omit-mode)
+  (add-hook 'dired-mode-hook #'dired-omit-mode)
 #+end_src
 
 Search for line and open directly. From [[https://macowners.club/posts/custom-functions-3-dired/][Aimé Bertrand]]. Use =dired-find-file= to keep old Dired buffers.
@@ -1712,16 +1712,16 @@ Replace spaces in file names with hyphens using "%s" in dired.
     :ensure nil
     :bind
     (:map dired-mode-map
-	      ("M-<RET>" . crux-open-with)
-	      ("j" . rlr/dired-search-and-enter)
-	      ("J" . dired-goto-file)
-	      ("%s" . my-dired-substspaces))
+	  ("M-<RET>" . crux-open-with)
+	  ("j" . rlr/dired-search-and-enter)
+	  ("J" . dired-goto-file)
+	  ("%s" . my-dired-substspaces))
     :config
     (setq dired-clean-confirm-killing-deleted-buffers nil)
     (setq dired-dwim-target t) ;; Make copying and moving files easier.
     (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
     :hook ((dired-mode . dired-hide-details-mode)
-	       (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 *** Reveal in Finder
@@ -1783,9 +1783,9 @@ https://github.com/amno1/emacs-term-toggle
     :vc (:url "https://github.com/amno1/emacs-term-toggle")
     :config
     (setq term-toggle-no-confirm-exit t)
-     ;; (defun term-toggle-eat ()
-     ;;  "Toggle `term'."
-     ;;  (interactive) (term-toggle 'eat))
+    ;; (defun term-toggle-eat ()
+    ;;  "Toggle `term'."
+    ;;  (interactive) (term-toggle 'eat))
     (defun term-toggle-ghostel ()
       "Toggle `term'."
       (interactive) (term-toggle 'ghostel))
@@ -2047,8 +2047,8 @@ Set the mark at a location without highlighting anything with =C-`=. This is use
     (push-mark (point) t nil)
     (message "Pushed mark to ring"))
 
-   (bind-key "C-`" 'push-mark-no-activate)
-   (bind-key "M-`" 'consult-mark)
+  (bind-key "C-`" 'push-mark-no-activate)
+  (bind-key "M-`" 'consult-mark)
 #+end_src
 
 Ediff settings.
@@ -2122,10 +2122,10 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
      ("C-c r" . crux-rename-file-and-buffer)
      ("<S-return>" . crux-smart-open-line)
      ("<C-S-return>" . crux-smart-open-line-above)
-     ;; ("<escape>" . crux-keyboard-quit-dwim)
+     ("<escape>" . crux-keyboard-quit-dwim)
      ))
 
-  ;; (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+  (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 #+end_src
 
 ** Expand-region
@@ -2714,89 +2714,7 @@ Use my custom exporter, ox-rlr-typst.
     (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
 #+end_src
 
-This exports the Org file to Typst, starts typst-watch, opens the PDF, then exports again on subsequent saves of the Org file.
-
-#+begin_src emacs-lisp :tangle no
-  (defvar rlr/org-typst-watch-processes (make-hash-table :test 'equal)
-    "Hash table mapping org file paths to their typst watch processes.")
-
-  (defun rlr/org-typst-export-and-watch ()
-    "Export current org buffer to Typst, start `typst watch`, and re-export on save.
-    Subsequent saves of the org file will trigger a fresh Typst export.
-    Calling this again on an already-watched buffer stops the old watcher first."
-    (interactive)
-    (unless (derived-mode-p 'org-mode)
-      (user-error "Not in an org-mode buffer"))
-    (unless (require 'ox-typst nil t)
-      (user-error "ox-typst is not available; please install it"))
-
-    (let* ((org-file (buffer-file-name))
-	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
-	   (buf-name (format "*typst-watch: %s*"
-			     (file-name-nondirectory typst-file))))
-
-      ;; Kill any existing watcher for this file
-      (rlr/org-typst-stop-watch org-file)
-
-      ;; Initial export
-      (message "Exporting %s → %s..." (file-name-nondirectory org-file)
-	       (file-name-nondirectory typst-file))
-      (org-typst-export-to-typst)
-
-      ;; Start typst watch in a dedicated buffer
-      (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
-	(puthash org-file proc rlr/org-typst-watch-processes)
-	(set-process-sentinel proc
-			(lambda (p _event)
-			(when (memq (process-status p) '(exit signal))
-			  (remhash org-file rlr/org-typst-watch-processes)
-			  (message "typst watch ended for %s" typst-file))))
-	(message "typst watch started → %s" typst-file))
-
-      ;; Give typst a moment to complete the first compile, then open the PDF
-      (sleep-for 1)
-      (rlr/org-open-pdf)
-
-      ;; Add a buffer-local after-save hook
-      (add-hook 'after-save-hook #'rlr/org-typst--on-save nil t)
-      (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
-
-  (defun rlr/org-typst--on-save ()
-    "Re-export the current org buffer to Typst on save."
-    (when (and (derived-mode-p 'org-mode)
-	       (buffer-file-name)
-	       (gethash (buffer-file-name) rlr/org-typst-watch-processes))
-      (org-typst-export-to-typst)
-      (message "Re-exported %s to Typst" (file-name-nondirectory (buffer-file-name)))))
-
-  (defun rlr/org-typst-stop-watch (&optional org-file)
-    "Stop the typst watch process for ORG-FILE (default: current buffer)."
-    (interactive)
-    (let* ((file (or org-file (buffer-file-name)))
-	   (proc (gethash file rlr/org-typst-watch-processes)))
-      (when (process-live-p proc)
-	(delete-process proc)
-	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
-      (remhash file rlr/org-typst-watch-processes)
-      (remove-hook 'after-save-hook #'rlr/org-typst--on-save t)))
-
-  (defun rlr/org-typst-list-watches ()
-    "Show all active typst watch processes."
-    (interactive)
-    (if (hash-table-empty-p rlr/org-typst-watch-processes)
-	(message "No active typst watch processes.")
-      (with-current-buffer (get-buffer-create "*typst-watches*")
-	(erase-buffer)
-	(insert "Active typst watch processes:\n\n")
-	(maphash (lambda (file proc)
-		   (insert (format "  %-50s [%s]\n"
-				   (file-name-nondirectory file)
-				   (process-status proc))))
-		 rlr/org-typst-watch-processes)
-	(display-buffer (current-buffer)))))
-#+end_src
-
-Revised to use ox-rlr-typst
+This exports the Org file to Typst, starts typst-watch, opens the PDF, then exports again on subsequent saves of the Org file. Uses ox-rlr-typst for export.
 
 #+begin_src emacs-lisp
   (defvar rlr/org-rlr-typst-watch-processes (make-hash-table :test 'equal)
@@ -2877,6 +2795,22 @@ Revised to use ox-rlr-typst
 		 rlr/org-rlr-typst-watch-processes)
 	(display-buffer (current-buffer)))))
 #+end_src
+
+#+begin_src emacs-lisp
+  (defun make-typst-handout ()
+    "publish org data file as LaTeX handout and Canvas HTML"
+    (interactive)
+    (save-buffer)
+    ;; (find-file "*-handout.org" t)
+    (rlr/org-mktypst)
+    ;; (kill-buffer)
+    ;; (shell-command "canvas-notes")
+    ;; (find-file "canvas.org" t)
+    (org-html-export-to-html)
+    (shell-command "canvas-handout"))
+#+end_src
+
+
 
 Export exam data files to Typst
 
@@ -3759,43 +3693,45 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 ** Org Mode Hydra
 
 #+begin_src emacs-lisp
-    (major-mode-hydra-define org-mode
-      (:quit-key "q")
-      ("Edit"
-       (("dd" org-deadline "deadline")
-	    ("ds" org-schedule "schedule")
-	    ("r" org-refile "refile")
-	    ("du" rlr/org-date "update date stamp")
-	    ("ff" org-footnote-action "edit footnote")
-	    ("fc" citar-insert-citation "citation")
-	    ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
-	    ("is" org-insert-structure-template "insert structure block")
-	    ("vc" csm/org-word-count "word count")
-	    ("va" org-appear-mode :toggle t)
-	    ("vl" org-toggle-link-display :toggle t)
-	    ("vv" visible-mode :toggle t)
-	    ("1" denote-link "link to note"))
-       "Typst"
-       (("t" rlr/org-mktypst "Make PDF")
-	    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-	    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
-	    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
-	    ("s" rlr/org-mktouying "Make slides")
-	    ("eb" rlr-create-typst-bib "Create bib file"))
-       "LaTeX"
-       (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-	    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-	    ("lc" tex-clean "clean aux")
-	    ("lC" tex-clean-all "clean all")
-	    ("o" rlr/org-open-pdf "View PDF")
-       ("ls" lecture-slides "Lecture slides")
-       ("ln" lecture-notes "Lecture notes"))
-       "Other"
-       (("h" make-html "HTML")
-       ("ec" canvas-copy "Copy HTML for Canvas")
-       ("es" canvas-notes "HTML Canvas notes")
-       ("eS" make-syllabus "Syllabus")
-       ("eh" make-handout "Handout"))))
+  (major-mode-hydra-define org-mode
+    (:quit-key "q")
+    ("Edit"
+     (("dd" org-deadline "deadline")
+      ("ds" org-schedule "schedule")
+      ("r" org-refile "refile")
+      ("du" rlr/org-date "update date stamp")
+      ("ff" org-footnote-action "edit footnote")
+      ("fc" citar-insert-citation "citation")
+      ("il" org-mac-link-safari-insert-frontmost-url "insert safari link")
+      ("is" org-insert-structure-template "insert structure block")
+      ("vc" csm/org-word-count "word count")
+      ("va" org-appear-mode :toggle t)
+      ("vl" org-toggle-link-display :toggle t)
+      ("vv" visible-mode :toggle t)
+      ("1" denote-link "link to note"))
+     "Typst"
+     (("t" rlr/org-mktypst "Make PDF")
+      ("s" rlr/org-mktouying "Make slides")
+      ("h" make-typst-handout "Make handout")
+      ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
+      ("wl" rlr/org-rlr-typst-list-watches "List Watches")
+      ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+      ("eb" rlr-create-typst-bib "Create bib file"))
+     "LaTeX"
+     (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("lc" tex-clean "clean aux")
+      ("lC" tex-clean-all "clean all")
+      ("o" rlr/org-open-pdf "View PDF")
+      ("ls" lecture-slides "Lecture slides")
+      ("ln" lecture-notes "Lecture notes"))
+     "Other"
+     (("H" make-html "HTML")
+      ("ec" canvas-copy "Copy HTML for Canvas")
+      ("es" canvas-notes "HTML Canvas notes")
+      ("eS" make-syllabus "Syllabus")
+      ("eh" make-handout "Handout")
+      )))
 #+end_src
 
 * LaTeX
