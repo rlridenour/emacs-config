@@ -2444,6 +2444,10 @@ and convert it to Org using the pandoc utility."
 	(kill-region start end)))
   (org-list-repair))
 
+(require 'canvas-quiz)
+(setq canvas-quiz-domain "myschool.instructure.com")
+(setq canvas-quiz-default-course-id 21895) ; optional, pre-fills the prompt
+
 (use-package reformatter
   :defer t)
 

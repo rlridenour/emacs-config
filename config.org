@@ -3980,6 +3980,14 @@ Remove multiple choice questions and save them to the kill ring.
     (org-list-repair))
 #+end_src
 
+Settings for Canvas API
+
+#+begin_src emacs-lisp
+  (require 'canvas-quiz)
+  (setq canvas-quiz-domain "myschool.instructure.com")
+  (setq canvas-quiz-default-course-id 21895) ; optional, pre-fills the prompt
+#+end_src
+
 * Typst
 
 #+begin_src emacs-lisp
