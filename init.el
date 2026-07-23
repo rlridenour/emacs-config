@@ -228,6 +228,27 @@
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
+(use-package cape
+  :commands (cape-file)
+  :bind
+  (("M-p p" . completion-at-point) ;; capf
+   ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
+   ("M-p a" . cape-abbrev)
+   ("M-p w" . cape-dict)
+   ("M-p \\" . cape-tex)
+   ("M-p _" . cape-tex)
+   ("M-p ^" . cape-tex))
+  :init
+  ;; Add to the global default value of `completion-at-point-functions' which is
+  ;; used by `completion-at-point'.  The order of the functions matters, the
+  ;; first function returning a result wins.  Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-elisp-block)
+  (add-hook 'completion-at-point-functions #'cape-history)
+  )
+
 (use-package corfu
   :defer 1
 :custom
@@ -1130,6 +1151,11 @@
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
 		 '(text-mode . ("harper-ls" "--stdio"))))
+
+(with-eval-after-load 'jinx
+  (set-face-attribute
+   'jinx-misspelled nil
+   :underline '(:style wave :color "#ff0000")))
 
 (use-package osx-dictionary
   :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
@@ -2427,6 +2453,8 @@ and convert it to Org using the pandoc utility."
 	  (goto-char (point-max))
 	  (insert text)))))
 
+(bind-key "H-q" #'rlr/copy-mcq-to-scratch)
+
 (defun rlr/delete-mcq-at-point ()
   "Delete the multiple choice question at point, including all its choices."
   (interactive)
@@ -2445,8 +2473,8 @@ and convert it to Org using the pandoc utility."
   (org-list-repair))
 
 (require 'canvas-quiz)
-(setq canvas-quiz-domain "myschool.instructure.com")
-(setq canvas-quiz-default-course-id 21895) ; optional, pre-fills the prompt
+(setq canvas-quiz-domain "okbu.instructure.com")
+(setq canvas-quiz-default-course-id 22154) ; optional, pre-fills the prompt
 
 (use-package reformatter
   :defer t)
@@ -2631,7 +2659,7 @@ and convert it to Org using the pandoc utility."
   (setq mail-user-agent 'mu4e-user-agent)
   (setq mu4e-maildir "~/.maildir/")
   (setq mu4e-get-mail-command "mbsync -a")
-  (setq mu4e-update-interval 300) ;; update every 5 minutes
+  (setq mu4e-update-interval 1800) ;; update every 5 minutes
   (setq mu4e-read-option-use-builtin nil
 	  mu4e-completing-read-function 'completing-read)
   (setq mu4e-split-view 'horizontal)

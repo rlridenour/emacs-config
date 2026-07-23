@@ -564,7 +564,7 @@ Enrich existing commands with completion annotations
 
 ** Cape
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package cape
     :commands (cape-file)
     :bind
@@ -2203,6 +2203,16 @@ Display suggestions in grid.
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs
 		 '(text-mode . ("harper-ls" "--stdio"))))
+#+end_src
+
+
+Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Small Jinx Tweak | Irreal]]
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'jinx
+    (set-face-attribute
+     'jinx-misspelled nil
+     :underline '(:style wave :color "#ff0000")))
 #+end_src
 
 ** OSX Dictionary
@@ -3941,22 +3951,24 @@ Copy multiple choice questions to the scratch buffer.
     (interactive)
     (save-excursion
       (let* ((question-start
-	      (progn
-		(end-of-line)
-		(if (re-search-backward "^[0-9]+\\." nil t)
-		    (point)
-		  (error "No question found at point"))))
-	     (question-end
-	      (progn
-		(goto-char question-start)
-		(forward-line 1)
-		(if (re-search-forward "^[0-9]+\\." nil t)
-		    (match-beginning 0)
-		  (point-max))))
-	     (text (buffer-substring-no-properties question-start question-end)))
-	(with-current-buffer (get-buffer-create "*scratch*")
-	  (goto-char (point-max))
-	  (insert text)))))
+  	      (progn
+  		(end-of-line)
+  		(if (re-search-backward "^[0-9]+\\." nil t)
+  		    (point)
+  		  (error "No question found at point"))))
+  	     (question-end
+  	      (progn
+  		(goto-char question-start)
+  		(forward-line 1)
+  		(if (re-search-forward "^[0-9]+\\." nil t)
+  		    (match-beginning 0)
+  		  (point-max))))
+  	     (text (buffer-substring-no-properties question-start question-end)))
+  	(with-current-buffer (get-buffer-create "*scratch*")
+  	  (goto-char (point-max))
+  	  (insert text)))))
+
+  (bind-key "H-q" #'rlr/copy-mcq-to-scratch)
 #+end_src
 
 Remove multiple choice questions and save them to the kill ring.
@@ -3984,8 +3996,8 @@ Settings for Canvas API
 
 #+begin_src emacs-lisp
   (require 'canvas-quiz)
-  (setq canvas-quiz-domain "myschool.instructure.com")
-  (setq canvas-quiz-default-course-id 21895) ; optional, pre-fills the prompt
+  (setq canvas-quiz-domain "okbu.instructure.com")
+  (setq canvas-quiz-default-course-id 22154) ; optional, pre-fills the prompt
 #+end_src
 
 * Typst
@@ -4290,7 +4302,7 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
     (setq mail-user-agent 'mu4e-user-agent)
     (setq mu4e-maildir "~/.maildir/")
     (setq mu4e-get-mail-command "mbsync -a")
-    (setq mu4e-update-interval 300) ;; update every 5 minutes
+    (setq mu4e-update-interval 1800) ;; update every 5 minutes
     (setq mu4e-read-option-use-builtin nil
 	  mu4e-completing-read-function 'completing-read)
     (setq mu4e-split-view 'horizontal)
