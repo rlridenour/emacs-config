@@ -2224,6 +2224,8 @@ and convert it to Org using the pandoc utility."
   (goto-char (point-min))
   (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
 
+(require 'org-mcq-to-lisp)
+
 (defun formatted-copy ()
   "Export region to HTML, and copy it to the clipboard."
   (interactive)
@@ -3356,6 +3358,8 @@ and convert it to Org using the pandoc utility."
 (use-package fish-mode
   :defer t
   :mode "\\.fish\\'")
+
+(use-package json-mode)
 
 (use-package pdf-tools
   :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))

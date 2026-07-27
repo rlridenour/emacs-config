@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: text-only block
+# key: label
+# --
+((:type . :text-only)
+ (:question-text . "$1"))$0

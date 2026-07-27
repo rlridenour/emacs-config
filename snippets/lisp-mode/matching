@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: matching question
+# key: matching
+# --
+((:type . :matching)
+ (:question-name . "$1")
+ (:question-text . "$2")
+ (:points . ${3:1})
+ (:pairs . (((:left . "$4") (:right . "$5"))
+            ((:left . "$6") (:right . "$7"))
+            ((:left . "$8") (:right . "$9"))))
+ (:distractors . ("$10")))$0

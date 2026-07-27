@@ -1,0 +1,27 @@
+# -*- mode: snippet -*-
+# name: Quiz JSON
+# key: quiz
+# --
+// quiz_type: assignment, practice_quiz, graded_survey, survey
+// time_limit: minutes; omit for no limit
+// allowed_attempts: -1 for unlimited
+// scoring_policy: keep_highest, keep_latest, keep_average
+
+{
+  "quiz": {
+    "title": "$1",
+    "description": "<p>$2</p>",
+    "quiz_type": "assignment",
+    // "time_limit": 30,
+    "allowed_attempts": 1,
+    "scoring_policy": "keep_highest",
+    "shuffle_answers": false,
+    "one_question_at_a_time": false,
+    "published": false
+  },
+  "questions": [
+
+  $0
+    
+  ]
+}

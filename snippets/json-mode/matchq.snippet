@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# name: Matching Question
+# key: matchq
+# --
+{
+      "type": "matching",
+      "question_name": "$1",
+      "question_text": "$2",
+      "points": {${3:3}},
+      "pairs": [
+        {"left": "$4", "right": "$10"},
+        {"left": "$6", "right": "$12"},
+        {"left": "$8", "right": "$14"}
+      ],
+      "distractors": ["$15"]
+    },
+$0

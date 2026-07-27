@@ -1,0 +1,18 @@
+# -*- mode: snippet -*-
+# name: quiz header + questions skeleton
+# key: quiz
+# --
+(:quiz
+ (:title . "$1")
+ (:description . "$2")
+ (:quiz-type . "${3:assignment}")          ; assignment | practice_quiz | graded_survey | survey
+ (:time-limit . ${4:30})                   ; minutes; omit for no limit
+ (:allowed-attempts . ${5:1})              ; -1 for unlimited
+ (:scoring-policy . "${6:keep_highest}")   ; keep_highest | keep_latest | keep_average
+ (:shuffle-answers . ${7:t})
+ (:one-question-at-a-time . ${8:nil})
+ (:published . ${9:nil}))                  ; use --publish on the CLI, or set t here
+
+(:questions
+
+ $0)

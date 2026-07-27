@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# name: Multiple Choice Question
+# key: mcq
+# --
+{
+      "type": "multiple_choice",
+      "question_name": "$1",
+      "question_text": "$2",
+      "points": 1,
+      "answers": [
+        {"text": "$3", "correct": {${4:false}}},
+        {"text": "$5", "correct": {${6:false}}},
+        {"text": "$7", "correct": {${8:false}}},
+        {"text": "$9", "correct": {${10:false}}}
+      ]
+    },
+$0

@@ -19,8 +19,10 @@
 ;; needs no wrapper -- it
 ;; becomes a slide automatically, which keeps content.typ close to a
 ;; plain Org-mode export. The generated handout numbers every heading
-;; (1, 1.1, 1.2, 2, ...) and draws a line above each handout-note, to
-;; mark reader-only text that wasn't part of what the audience saw.
+;; (1, 1.1, 1.2, 2, ...) and boxes each frame (title included) so slide
+;; boundaries stay visible on paper, with handout-notes set outside the
+;; box -- the box edge is what marks reader-only text as not part of
+;; what the audience saw.
 ;;
 ;; Usage: M-x rlr/new-touying-presentation
 
@@ -130,21 +132,74 @@ SLUG names the corresponding slides/handout files in the comments."
 
 // -- Handout: a single flowing document, no slide pagination ---------------
 
+// Group each frame (its title plus the content shown on the live slide)
+// into one stroked block, so the handout shows the same slide
+// boundaries the live deck does. Handout notes are pulled back out and
+// set below the box: they were never on the slide, and the box edge is
+// what says so.
+//
+// Typst has no notion of a heading \"owning\" the content beneath it, so
+// this walks the document body's own children -- flattening nested
+// sequences, since `#content(...)` hands back one -- and splits that
+// flat run at every heading of level <= slide-level. A run starting at
+// exactly slide-level becomes a frame; section/subsection headings and
+// anything before the first frame (the title block) pass through
+// unboxed. The block is `breakable` so a long frame splits across pages
+// rather than overflowing. Drop the framed() call (`out += buf + notes`)
+// to go back to a plain flowing handout.
+#let frame-slides(slide-level: 2, body) = {
+  let seq = [].func()
+  let flatten(c) = if c.func() == seq { c.children.map(flatten).flatten() } else { (c,) }
+
+  let framed(inner) = block(
+    width: 100%%,
+    breakable: true,
+    stroke: 0.5pt + gray,
+    radius: 3pt,
+    inset: (x: 0.9em, y: 0.8em),
+    above: 1.2em,
+    below: 1.2em,
+    inner,
+  )
+
+  let out = []
+  let buf = none // slide content being accumulated, or none outside a frame
+  let notes = [] // this frame's handout notes, emitted after its box
+  for item in flatten(body) {
+    if item.func() == heading and item.depth <= slide-level {
+      if buf != none { out += framed(buf) + notes }
+      buf = if item.depth == slide-level { [] } else { none }
+      notes = []
+    }
+    // handout-note tags its block with <handout-note> precisely so it
+    // can be recognized here and kept outside the box.
+    if buf != none and item.at(\"label\", default: none) == <handout-note> {
+      notes += item
+    } else if buf == none {
+      out += item
+    } else {
+      buf += item
+    }
+  }
+  if buf != none { out += framed(buf) + notes }
+  out
+}
+
 // Portrait US letter, 12pt body text; no theme/pagination machinery at
 // all. Headings (section, and frame, and subsection if slide-level: 3
-// is used) render plainly with their own numbering (1, 1.1, 1.2, ...)
-// -- there's no box, so a frame heading doesn't need special hiding/
-// relocation the way it did when its title had to be pulled inside
-// one. The frame-title level itself (slide-level, 2 here to match
+// is used) render plainly with their own numbering (1, 1.1, 1.2, ...).
+// The frame-title level itself (slide-level, 2 here to match
 // `project`'s default above -- keep the two in sync if you change it)
 // is left unnumbered, matching the live deck's own unnumbered frame
-// title.
+// title; its above-spacing is dropped too, since frame-slides puts it
+// flush at the top of the frame's box.
 #let handout-project(slide-level: 2, body) = {
   set page(paper: \"us-letter\")
   set text(size: 12pt)
   set heading(numbering: \"1.1\")
   show heading.where(level: slide-level): set heading(numbering: none)
-  body
+  show heading.where(level: slide-level): set block(above: 0em, below: 0.65em)
+  frame-slides(slide-level: slide-level, body)
 }
 
 // The document title is not a \"slide\" in the same sense as the others
@@ -201,14 +256,13 @@ SLUG names the corresponding slides/handout files in the comments."
 #let handout-statement(size: 2em, body) = align(center, text(size: size, body))
 
 // A handout note is reader-only context that never appeared on the live
-// slide -- a line above it marks that boundary, so it's clear the text
-// below the line wasn't part of what the audience saw.
-#let handout-note(body) = {
-  v(0.5em)
-  line(length: 100%%, stroke: 0.5pt + gray)
-  v(0.5em)
-  body
-}
+// slide, so it sits outside (just below) its frame's box, indented to
+// the box's own text inset so it still reads as belonging to that
+// slide. The <handout-note> label is what frame-slides matches on to
+// hold it out of the box -- keep it if you restyle this.
+#let handout-note(body) = [
+  #block(inset: (left: 0.9em), above: 0.6em, below: 1.2em, body)<handout-note>
+]
 "
           slug title))
 

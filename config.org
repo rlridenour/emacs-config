@@ -3679,6 +3679,14 @@ Create attendance sheet.
     (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
 #+end_src
 
+For converting simple org mode list quiz questions to the lisp format.
+
+#+begin_src emacs-lisp
+(require 'org-mcq-to-lisp)
+#+end_src
+
+
+
 ** Copy Org Rich Text
 
 From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mode-text-from-Emacs-to-other-applications/][Copy formatted org-mode text from Emacs to other applications]]
@@ -5233,6 +5241,15 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     :defer t
     :mode "\\.fish\\'")
 #+end_src
+
+
+** JSON
+
+#+begin_src emacs-lisp
+(use-package json-mode)
+#+end_src
+
+
 
 ** Yaml
 

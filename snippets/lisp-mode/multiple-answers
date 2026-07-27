@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: multiple-answers question
+# key: multi
+# --
+((:type . :multiple-answers)
+ (:question-name . "$1")
+ (:question-text . "$2")
+ (:points . ${3:1})
+ (:answers . (((:text . "$4") (:correct . t))
+              ((:text . "$5") (:correct . nil))
+              ((:text . "$6") (:correct . t)))))$0

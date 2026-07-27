@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: essay question
+# key: essay
+# --
+((:type . :essay)
+ (:question-name . "$1")
+ (:question-text . "$2")
+ (:points . ${3:5}))$0

@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# name: Multiple Answer Question
+# key: maq
+# --
+{
+      "type": "multiple_answers",
+      "question_name": "$1",
+      "question_text": "$2",
+      "points": {${3:2}},
+      "answers": [
+        {"text": "5", "correct": {${6:false}}},
+        {"text": "7", "correct": {${8:false}}},
+        {"text": "9", "correct": {${10:false}}},
+        {"text": "11", "correct": {${12:false}}}
+      ]
+    },
+$0

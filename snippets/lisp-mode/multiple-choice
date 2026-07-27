@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: multiple-choice question
+# key: mcq
+# --
+((:type . :multiple-choice)
+ (:question-name . "$1")
+ (:question-text . "$2")
+ (:points . ${3:1})
+ (:answers . (((:text . "$4") (:correct . nil))
+              ((:text . "$5") (:correct . t))
+              ((:text . "$6") (:correct . nil)))))$0
