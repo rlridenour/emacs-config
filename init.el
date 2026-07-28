@@ -3395,7 +3395,7 @@ and convert it to Org using the pandoc utility."
 (bind-key "s-d" 'randy-dashboard-open)
 
 (setq randy-dashboard-recent-files-exclude
-	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el"))
+	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
 
 (defun dashboard-startup ()
   (randy-dashboard-open)
