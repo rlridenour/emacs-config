@@ -100,13 +100,20 @@ SLUG names the corresponding slides/handout files in the comments."
   institution: [Department of Philosophy],
 )
 
-// variant: \"white\" (default), \"black\", or \"gray\".
+// Which heading level is a frame: 2 (default) for a talk with no
+// subsections (`=` section, `==` frame directly), 3 if this talk uses
+// subsections (`=` section, `==` subsection, `===` frame), or 1 for a
+// talk with no sections at all (`=` frame directly).
 //
-// slide-level: 2 (default) for a talk with no subsections (`=`
-// section, `==` frame directly), 3 if this talk uses subsections
-// (`=` section, `==` subsection, `===` frame), or 1 for a talk with no
-// sections at all (`=` frame directly).
-#let project(variant: \"white\", slide-level: 2, body) = {
+// Change it here and nowhere else -- the live deck and the handout both
+// read this one constant. They have to agree: the handout decides what
+// to box, and what to leave unnumbered, by this level, so a handout
+// still set to 2 while the deck is at 3 boxes whole subsections and
+// numbers the frame titles.
+#let slide-level = 2
+
+// variant: \"white\" (default), \"black\", or \"gray\".
+#let project(variant: \"white\", slide-level: slide-level, body) = {
   show: basic-theme.with(
     aspect-ratio: \"16-9\",
     variant: variant,
@@ -147,7 +154,7 @@ SLUG names the corresponding slides/handout files in the comments."
 // unboxed. The block is `breakable` so a long frame splits across pages
 // rather than overflowing. Drop the framed() call (`out += buf + notes`)
 // to go back to a plain flowing handout.
-#let frame-slides(slide-level: 2, body) = {
+#let frame-slides(slide-level: slide-level, body) = {
   let seq = [].func()
   let flatten(c) = if c.func() == seq { c.children.map(flatten).flatten() } else { (c,) }
 
@@ -186,14 +193,12 @@ SLUG names the corresponding slides/handout files in the comments."
 }
 
 // Portrait US letter, 12pt body text; no theme/pagination machinery at
-// all. Headings (section, and frame, and subsection if slide-level: 3
-// is used) render plainly with their own numbering (1, 1.1, 1.2, ...).
-// The frame-title level itself (slide-level, 2 here to match
-// `project`'s default above -- keep the two in sync if you change it)
-// is left unnumbered, matching the live deck's own unnumbered frame
-// title; its above-spacing is dropped too, since frame-slides puts it
-// flush at the top of the frame's box.
-#let handout-project(slide-level: 2, body) = {
+// all. Headings (section, and frame, and subsection if slide-level is
+// 3) render plainly with their own numbering (1, 1.1, 1.2, ...). The
+// frame-title level itself is left unnumbered, matching the live deck's
+// own unnumbered frame title; its above-spacing is dropped too, since
+// frame-slides puts it flush at the top of the frame's box.
+#let handout-project(slide-level: slide-level, body) = {
   set page(paper: \"us-letter\")
   set text(size: 12pt)
   set heading(numbering: \"1.1\")
