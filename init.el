@@ -2433,29 +2433,31 @@ and convert it to Org using the pandoc utility."
 	(delete-region beg end)
 	(insert output))))
 
-(defun rlr/copy-mcq-to-scratch ()
-  "Copy the multiple choice question at point to the *scratch* buffer."
-  (interactive)
-  (save-excursion
-    (let* ((question-start
-	      (progn
-		(end-of-line)
-		(if (re-search-backward "^[0-9]+\\." nil t)
-		    (point)
-		  (error "No question found at point"))))
-	     (question-end
-	      (progn
-		(goto-char question-start)
-		(forward-line 1)
-		(if (re-search-forward "^[0-9]+\\." nil t)
-		    (match-beginning 0)
-		  (point-max))))
-	     (text (buffer-substring-no-properties question-start question-end)))
-	(with-current-buffer (get-buffer-create "*scratch*")
-	  (goto-char (point-max))
-	  (insert text)))))
-
-(bind-key "H-q" #'rlr/copy-mcq-to-scratch)
+(defun rlr/copy-mcq ()
+"Copy the multiple choice question at point to the buffer in the adjacent window."
+(interactive)
+(save-excursion
+  (let* ((question-start
+	    (progn
+	      (end-of-line)
+	      (if (re-search-backward "^[0-9]+\\." nil t)
+		  (point)
+		(error "No question found at point"))))
+	   (question-end
+	    (progn
+	      (goto-char question-start)
+	      (forward-line 1)
+	      (if (re-search-forward "^[0-9]+\\." nil t)
+		  (match-beginning 0)
+		(point-max))))
+	   (text (buffer-substring-no-properties question-start question-end))
+	   (target-window (next-window)))
+    (when (eq target-window (selected-window))
+	(error "No adjacent window found"))
+    (with-selected-window target-window
+	(goto-char (point-max))
+	(insert text)))))
+(bind-key "H-q" #'rlr/copy-mcq)
 
 (defun rlr/delete-mcq-at-point ()
   "Delete the multiple choice question at point, including all its choices."
