@@ -1,5 +1,7 @@
 ;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 
+(require 'transient)
+
 (use-package package
   :ensure nil
   :custom

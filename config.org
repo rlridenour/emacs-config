@@ -191,6 +191,12 @@ Enable lexical bindings in the exported Emacs Lisp file.
 ;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 #+end_src
 
+I got tired of seeing this error: =Error loading autoloads: (void-function transient-define-prefix)=. Requiring transient early fixed it.
+
+#+begin_src emacs-lisp
+(require 'transient)
+#+end_src
+
 #+begin_src emacs-lisp
   (use-package package
     :ensure nil
