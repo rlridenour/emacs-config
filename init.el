@@ -880,6 +880,39 @@
   :hook ((dired-mode . dired-hide-details-mode)
 	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 
+(defun xah-copy-file-path (&optional DirPathOnlyQ)
+  "Copy current buffer file path or dired path.
+Result is full path.
+If `universal-argument' is called first, copy only the dir path.
+
+If in dired, copy the current or marked files.
+
+If a buffer is not file and not dired, copy value of `default-directory'.
+
+URL `http://xahlee.info/emacs/emacs/emacs_copy_file_path.html'
+Created: 2018-06-18
+Version: 2021-09-30"
+  (interactive "P")
+  (let ((xfpath
+	 (if (eq major-mode 'dired-mode)
+	     (progn
+	       (let ((xresult (mapconcat #'identity
+					 (dired-get-marked-files) "\n")))
+		 (if (equal (length xresult) 0)
+		     (progn default-directory )
+		   (progn xresult))))
+	   (if buffer-file-name
+	       buffer-file-name
+	     (expand-file-name default-directory)))))
+    (kill-new
+     (if DirPathOnlyQ
+	 (progn
+	   (message "Directory copied: %s" (file-name-directory xfpath))
+	   (file-name-directory xfpath))
+       (progn
+	 (message "File path copied: %s" xfpath)
+	 xfpath )))))
+
 (use-package reveal-in-osx-finder
   :bind
   ("C-c z" . 'reveal-in-osx-finder))
@@ -2260,45 +2293,43 @@ and convert it to Org using the pandoc utility."
     ("vv" visible-mode :toggle t)
     ("1" denote-link "link to note"))
    "Typst"
-   (("t" rlr/org-mktypst "Make PDF")
-    ("s" rlr/org-mktouying "Make slides")
-    ("h" make-typst-handout "Make handout")
-    ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-    ("wl" rlr/org-rlr-typst-list-watches "List Watches")
-    ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+   (("a" rlr/org-mktypst "Make PDF")
+    ("m" rlr/org-mktouying "Make slides")
+    ("th" make-typst-handout "Make handout")
+    ("tw" rlr/org-rlr-typst-export-and-watch "Watch")
+    ("tl" rlr/org-rlr-typst-list-watches "List Watches")
+    ("ts" rlr/org-rlr-typst-stop-watch "Stop Watch")
     ("eb" rlr-create-typst-bib "Create bib file"))
-   "LaTeX"
-   (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-    ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-    ("lc" tex-clean "clean aux")
-    ("lC" tex-clean-all "clean all")
-    ("o" rlr/org-open-pdf "View PDF")
-    ("ls" lecture-slides "Lecture slides")
-    ("ln" lecture-notes "Lecture notes"))
+   "Slipshow"
+   (("sh" org-rlr-slipshow-export-to-html "Compile HTML")
+    ("sm" org-rlr-slipshow-export-to-slipshow "Make slp")
+    ("sw" org-rlr-slipshow-watch "Start watch")
+    ("sk" org-rlr-slipshow-unwatch "Kill watch")
+    ("so" org-rlr-slipshow-export-to-html-and-open "Compile and open"))
    "Other"
-   (("H" make-html "HTML")
+   (("l" orglatex/body "LaTeX")
+    ("H" make-html "HTML")
     ("ec" canvas-copy "Copy HTML for Canvas")
     ("es" canvas-notes "HTML Canvas notes")
     ("eS" make-syllabus "Syllabus")
-    ("eh" make-handout "Handout")
-    )))
+    ("eh" make-handout "Handout"))))
 
 (use-package tex
   :ensure auctex
   :init
   (setq TeX-parse-self t
-	      TeX-auto-save t
-	      TeX-electric-math nil
-	      LaTeX-electric-left-right-brace nil
-	      TeX-electric-sub-and-superscript nil
-	      LaTeX-item-indent 0
-	      TeX-quote-after-quote nil
-	      TeX-clean-confirm nil
-	      TeX-source-correlate-mode t
-	      TeX-source-correlate-method 'synctex
-	      TeX-view-program-selection '((output-pdf "PDF Viewer"))
-	      TeX-view-program-list
-	      '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+	  TeX-auto-save t
+	  TeX-electric-math nil
+	  LaTeX-electric-left-right-brace nil
+	  TeX-electric-sub-and-superscript nil
+	  LaTeX-item-indent 0
+	  TeX-quote-after-quote nil
+	  TeX-clean-confirm nil
+	  TeX-source-correlate-mode t
+	  TeX-source-correlate-method 'synctex
+	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
+	  TeX-view-program-list
+	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
   :bind
   ("C-c g p" . pdf-sync-forward-search))
 
@@ -2436,29 +2467,29 @@ and convert it to Org using the pandoc utility."
 	(insert output))))
 
 (defun rlr/copy-mcq ()
-"Copy the multiple choice question at point to the buffer in the adjacent window."
-(interactive)
-(save-excursion
-  (let* ((question-start
-	    (progn
-	      (end-of-line)
-	      (if (re-search-backward "^[0-9]+\\." nil t)
-		  (point)
-		(error "No question found at point"))))
-	   (question-end
-	    (progn
-	      (goto-char question-start)
-	      (forward-line 1)
-	      (if (re-search-forward "^[0-9]+\\." nil t)
-		  (match-beginning 0)
-		(point-max))))
-	   (text (buffer-substring-no-properties question-start question-end))
-	   (target-window (next-window)))
-    (when (eq target-window (selected-window))
-	(error "No adjacent window found"))
-    (with-selected-window target-window
-	(goto-char (point-max))
-	(insert text)))))
+  "Copy the multiple choice question at point to the buffer in the adjacent window."
+  (interactive)
+  (save-excursion
+    (let* ((question-start
+	      (progn
+		(end-of-line)
+		(if (re-search-backward "^[0-9]+\\." nil t)
+		    (point)
+		  (error "No question found at point"))))
+	 (question-end
+	      (progn
+		(goto-char question-start)
+		(forward-line 1)
+		(if (re-search-forward "^[0-9]+\\." nil t)
+		    (match-beginning 0)
+		  (point-max))))
+	 (text (buffer-substring-no-properties question-start question-end))
+	 (target-window (next-window)))
+	(when (eq target-window (selected-window))
+	  (error "No adjacent window found"))
+	(with-selected-window target-window
+	  (goto-char (point-max))
+	  (insert text)))))
 (bind-key "H-q" #'rlr/copy-mcq)
 
 (defun rlr/delete-mcq-at-point ()
@@ -2486,9 +2517,9 @@ and convert it to Org using the pandoc utility."
   :defer t)
 
 (reformatter-define typst-format
-    :program "typstyle")
+  :program "typstyle")
 
-  (defun my/typst-compile-and-preview ()
+(defun my/typst-compile-and-preview ()
   "Compile and preview PDF for the current buffer."
   (interactive)
   (typst-ts-compile t))
@@ -2512,28 +2543,30 @@ and convert it to Org using the pandoc utility."
     (("f" typst-format-buffer "Format")))))
 
 (with-eval-after-load 'eglot
-(with-eval-after-load 'typst-ts-mode
-  (add-to-list 'eglot-server-programs
-				     `((typst-ts-mode) .
-					   ,(eglot-alternatives '("tinymist"
-										      "typst-lsp"))))))
+  (with-eval-after-load 'typst-ts-mode
+    (add-to-list 'eglot-server-programs
+		   `((typst-ts-mode) .
+		     ,(eglot-alternatives '("tinymist"
+					    "typst-lsp"))))))
 
 (add-hook 'compilation-finish-functions
-	  (lambda (buf status)
-	    (when (string-match-p "^finished" status)
-	      ;; Closes the window pane but preserves the buffer history
-	      (delete-windows-on buf))))
+	    (lambda (buf status)
+	      (when (string-match-p "^finished" status)
+		;; Closes the window pane but preserves the buffer history
+		(delete-windows-on buf))))
 
 (require 'rlr-touying-scaffold)
 
 (defun rlr/org-mktouying ()
-    (interactive)
-(rlr/org-export-to-touying-content)
-(compile-typst-lecture))
+  (interactive)
+  (rlr/org-export-to-touying-content)
+  (compile-typst-lecture))
 
 (use-package markdown-ts-mode
-  :ensure nil
-  :defer t)
+  :defer t
+  :commands (markdown-ts-mode))
+
+(require 'ox-rlr-slipshow)
 
 (use-package citar
   :bind
@@ -2772,7 +2805,7 @@ and convert it to Org using the pandoc utility."
 
 (add-hook 'mu4e-view-mode-hook
 	    (lambda () (setq-local bidi-display-reordering nil)))
-  (add-hook 'mu4e-headers-mode-hook
+(add-hook 'mu4e-headers-mode-hook
 	    (lambda () (setq-local bidi-display-reordering nil)))
 
 (defun my-confirm-empty-subject ()
@@ -3056,14 +3089,14 @@ and convert it to Org using the pandoc utility."
     (eval-buffer)
     (org-publish-all)
     ;; (webfeeder-build "atom.xml"
-    ;;		       "./docs"
-    ;;		       "https://randyridenour.net/"
-    ;;		       (let ((default-directory (expand-file-name "./docs")))
-    ;;			 (remove "posts/index.html"
-    ;;				 (directory-files-recursively "posts"
-    ;;							      ".*\\.html$")))
-    ;;		       :title "Randy Ridenour"
-    ;;		       :description "Blog posts by Randy Ridenour")
+    ;;                       "./docs"
+    ;;                       "https://randyridenour.net/"
+    ;;                       (let ((default-directory (expand-file-name "./docs")))
+    ;;                         (remove "posts/index.html"
+    ;;                                 (directory-files-recursively "posts"
+    ;;                                                              ".*\\.html$")))
+    ;;                       :title "Randy Ridenour"
+    ;;                       :description "Blog posts by Randy Ridenour")
     (kill-buffer))
   (message "Build complete!"))
 
@@ -3408,16 +3441,28 @@ and convert it to Org using the pandoc utility."
 (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 
 (pretty-hydra-define hydra-blog
-(:color teal :quit-key "q" :title "Blog")
-(" "
- (("bn" rlrt-new-post "New draft")
+  (:color teal :quit-key "q" :title "Blog")
+  (" "
+   (("bn" rlrt-new-post "New draft")
     ("bt" orgblog-add-tag "Add tag")
     ("bi" orgblog-insert-image "Insert image")
     ("bp" orgblog-publish-draft "Publish draft")
     ("bb" orgblog-build "Build site")
     ("bs" orgblog-serve "Serve site")
     ("bd" orgblog-push "Push to Github"))
-    ))
+   ))
+
+(pretty-hydra-define orglatex
+    (:color teal :quit-key "q" :title "Org LaTeX")
+    (" "
+     (("l" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all")
+      ("o" rlr/org-open-pdf "View PDF")
+      ("s" lecture-slides "Lecture slides")
+      ("n" lecture-notes "Lecture notes"))
+     ))
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
@@ -3627,6 +3672,16 @@ and convert it to Org using the pandoc utility."
    "Exams"
    (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
    ))
+
+(major-mode-hydra-define dired-mode
+  (:quit-key "q")
+  ("Tools"
+   (("d" crux-open-with "Open in default program")
+    ("." dired-omit-mode "Show hidden files")
+    ("p" xah-copy-file-path "Copy filename and path")
+    ("n" dired-toggle-read-only "edit Filenames")
+    ("c" tex-clean "clean aux")
+    ("C" tex-clean-all "clean all"))))
 
 (major-mode-hydra-define mu4e-main-mode
   (:quit-key "q")

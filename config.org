@@ -1730,6 +1730,43 @@ Replace spaces in file names with hyphens using "%s" in dired.
 	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
+Copy path of current buffer or dired entry.From [[http://xahlee.info/emacs/emacs/emacs_copy_file_path.html][Emacs: Copy File Path of Current Buffer]]
+
+#+begin_src emacs-lisp
+(defun xah-copy-file-path (&optional DirPathOnlyQ)
+  "Copy current buffer file path or dired path.
+Result is full path.
+If `universal-argument' is called first, copy only the dir path.
+
+If in dired, copy the current or marked files.
+
+If a buffer is not file and not dired, copy value of `default-directory'.
+
+URL `http://xahlee.info/emacs/emacs/emacs_copy_file_path.html'
+Created: 2018-06-18
+Version: 2021-09-30"
+  (interactive "P")
+  (let ((xfpath
+	 (if (eq major-mode 'dired-mode)
+	     (progn
+	       (let ((xresult (mapconcat #'identity
+					 (dired-get-marked-files) "\n")))
+		 (if (equal (length xresult) 0)
+		     (progn default-directory )
+		   (progn xresult))))
+	   (if buffer-file-name
+	       buffer-file-name
+	     (expand-file-name default-directory)))))
+    (kill-new
+     (if DirPathOnlyQ
+	 (progn
+	   (message "Directory copied: %s" (file-name-directory xfpath))
+	   (file-name-directory xfpath))
+       (progn
+	 (message "File path copied: %s" xfpath)
+	 xfpath )))))
+#+end_src
+
 *** Reveal in Finder
 
 #+begin_src emacs-lisp
@@ -3734,28 +3771,26 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
       ("vv" visible-mode :toggle t)
       ("1" denote-link "link to note"))
      "Typst"
-     (("t" rlr/org-mktypst "Make PDF")
-      ("s" rlr/org-mktouying "Make slides")
-      ("h" make-typst-handout "Make handout")
-      ("ww" rlr/org-rlr-typst-export-and-watch "Watch")
-      ("wl" rlr/org-rlr-typst-list-watches "List Watches")
-      ("ws" rlr/org-rlr-typst-stop-watch "Stop Watch")
+     (("a" rlr/org-mktypst "Make PDF")
+      ("m" rlr/org-mktouying "Make slides")
+      ("th" make-typst-handout "Make handout")
+      ("tw" rlr/org-rlr-typst-export-and-watch "Watch")
+      ("tl" rlr/org-rlr-typst-list-watches "List Watches")
+      ("ts" rlr/org-rlr-typst-stop-watch "Stop Watch")
       ("eb" rlr-create-typst-bib "Create bib file"))
-     "LaTeX"
-     (("ll" rlr/org-mklua "Make PDF with LuaLaTeX")
-      ("lp" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-      ("lc" tex-clean "clean aux")
-      ("lC" tex-clean-all "clean all")
-      ("o" rlr/org-open-pdf "View PDF")
-      ("ls" lecture-slides "Lecture slides")
-      ("ln" lecture-notes "Lecture notes"))
+     "Slipshow"
+     (("sh" org-rlr-slipshow-export-to-html "Compile HTML")
+      ("sm" org-rlr-slipshow-export-to-slipshow "Make slp")
+      ("sw" org-rlr-slipshow-watch "Start watch")
+      ("sk" org-rlr-slipshow-unwatch "Kill watch")
+      ("so" org-rlr-slipshow-export-to-html-and-open "Compile and open"))
      "Other"
-     (("H" make-html "HTML")
+     (("l" orglatex/body "LaTeX")
+      ("H" make-html "HTML")
       ("ec" canvas-copy "Copy HTML for Canvas")
       ("es" canvas-notes "HTML Canvas notes")
       ("eS" make-syllabus "Syllabus")
-      ("eh" make-handout "Handout")
-      )))
+      ("eh" make-handout "Handout"))))
 #+end_src
 
 * LaTeX
@@ -3765,18 +3800,18 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
     :ensure auctex
     :init
     (setq TeX-parse-self t
-	      TeX-auto-save t
-	      TeX-electric-math nil
-	      LaTeX-electric-left-right-brace nil
-	      TeX-electric-sub-and-superscript nil
-	      LaTeX-item-indent 0
-	      TeX-quote-after-quote nil
-	      TeX-clean-confirm nil
-	      TeX-source-correlate-mode t
-	      TeX-source-correlate-method 'synctex
-	      TeX-view-program-selection '((output-pdf "PDF Viewer"))
-	      TeX-view-program-list
-	      '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+	  TeX-auto-save t
+	  TeX-electric-math nil
+	  LaTeX-electric-left-right-brace nil
+	  TeX-electric-sub-and-superscript nil
+	  LaTeX-item-indent 0
+	  TeX-quote-after-quote nil
+	  TeX-clean-confirm nil
+	  TeX-source-correlate-mode t
+	  TeX-source-correlate-method 'synctex
+	  TeX-view-program-selection '((output-pdf "PDF Viewer"))
+	  TeX-view-program-list
+	  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
     :bind
     ("C-c g p" . pdf-sync-forward-search))
 #+end_src
@@ -3961,29 +3996,29 @@ Copy multiple choice questions to the adjacent buffer.
 
 #+begin_src emacs-lisp
   (defun rlr/copy-mcq ()
-  "Copy the multiple choice question at point to the buffer in the adjacent window."
-  (interactive)
-  (save-excursion
-    (let* ((question-start
-	    (progn
-	      (end-of-line)
-	      (if (re-search-backward "^[0-9]+\\." nil t)
-		  (point)
-		(error "No question found at point"))))
-	   (question-end
-	    (progn
-	      (goto-char question-start)
-	      (forward-line 1)
-	      (if (re-search-forward "^[0-9]+\\." nil t)
-		  (match-beginning 0)
-		(point-max))))
-	   (text (buffer-substring-no-properties question-start question-end))
-	   (target-window (next-window)))
-      (when (eq target-window (selected-window))
-	(error "No adjacent window found"))
-      (with-selected-window target-window
-	(goto-char (point-max))
-	(insert text)))))
+    "Copy the multiple choice question at point to the buffer in the adjacent window."
+    (interactive)
+    (save-excursion
+      (let* ((question-start
+	      (progn
+		(end-of-line)
+		(if (re-search-backward "^[0-9]+\\." nil t)
+		    (point)
+		  (error "No question found at point"))))
+	 (question-end
+	      (progn
+		(goto-char question-start)
+		(forward-line 1)
+		(if (re-search-forward "^[0-9]+\\." nil t)
+		    (match-beginning 0)
+		  (point-max))))
+	 (text (buffer-substring-no-properties question-start question-end))
+	 (target-window (next-window)))
+	(when (eq target-window (selected-window))
+	  (error "No adjacent window found"))
+	(with-selected-window target-window
+	  (goto-char (point-max))
+	  (insert text)))))
   (bind-key "H-q" #'rlr/copy-mcq)
 #+end_src
 
@@ -4024,10 +4059,10 @@ Settings for Canvas API
 #+end_src
 
 #+begin_src emacs-lisp
-    (reformatter-define typst-format
-      :program "typstyle")
+  (reformatter-define typst-format
+    :program "typstyle")
 
-    (defun my/typst-compile-and-preview ()
+  (defun my/typst-compile-and-preview ()
     "Compile and preview PDF for the current buffer."
     (interactive)
     (typst-ts-compile t))
@@ -4051,47 +4086,53 @@ Settings for Canvas API
       (("f" typst-format-buffer "Format")))))
 
   (with-eval-after-load 'eglot
-  (with-eval-after-load 'typst-ts-mode
-    (add-to-list 'eglot-server-programs
-				     `((typst-ts-mode) .
-					   ,(eglot-alternatives '("tinymist"
-										      "typst-lsp"))))))
+    (with-eval-after-load 'typst-ts-mode
+      (add-to-list 'eglot-server-programs
+		   `((typst-ts-mode) .
+		     ,(eglot-alternatives '("tinymist"
+					    "typst-lsp"))))))
 #+end_src
 
 Close compilation window after successful compile.
 
 #+begin_src emacs-lisp
-(add-hook 'compilation-finish-functions
-	  (lambda (buf status)
-	    (when (string-match-p "^finished" status)
-	      ;; Closes the window pane but preserves the buffer history
-	      (delete-windows-on buf))))
+  (add-hook 'compilation-finish-functions
+	    (lambda (buf status)
+	      (when (string-match-p "^finished" status)
+		;; Closes the window pane but preserves the buffer history
+		(delete-windows-on buf))))
 #+end_src
 
 #+begin_src emacs-lisp
-(require 'rlr-touying-scaffold)
+  (require 'rlr-touying-scaffold)
 #+end_src
 
 #+begin_src emacs-lisp :tangle no
-(use-package ox-typst
-  :after org)
+  (use-package ox-typst
+    :after org)
 #+end_src
 
 Export presentation from Org to Typst, compile, and open PDF's.
 
 #+begin_src emacs-lisp
   (defun rlr/org-mktouying ()
-      (interactive)
-  (rlr/org-export-to-touying-content)
-  (compile-typst-lecture))
+    (interactive)
+    (rlr/org-export-to-touying-content)
+    (compile-typst-lecture))
 #+end_src
 
 * Markdown
 
 #+begin_src emacs-lisp
-(use-package markdown-ts-mode
-  :ensure nil
-  :defer t)
+  (use-package markdown-ts-mode
+    :defer t
+    :commands (markdown-ts-mode))
+#+end_src
+
+* Slipshow
+
+#+begin_src emacs-lisp
+  (require 'ox-rlr-slipshow)
 #+end_src
 
 * Citations
@@ -4116,16 +4157,16 @@ Export presentation from Org to Typst, compile, and open PDF's.
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package citar-typst
-  :config
-  (citar-typst-mode))
+  (use-package citar-typst
+    :config
+    (citar-typst-mode))
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package citar-embark
-  :after (citar embark)
-  :no-require
-  :config (citar-embark-mode))
+  (use-package citar-embark
+    :after (citar embark)
+    :no-require
+    :config (citar-embark-mode))
 #+end_src
 
 ** Ebib
@@ -4147,7 +4188,7 @@ Export presentation from Org to Typst, compile, and open PDF's.
 Typst only uses files in the current directory. This scans the current Org or Typst file and copies BibTeX records from my main bib file to a local sources.bib file
 
 #+begin_src emacs-lisp
-(require 'rlr-create-typst-bib)
+  (require 'rlr-create-typst-bib)
 #+end_src
 
 * Notes
@@ -4427,7 +4468,7 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
 Claude suggestions to fix crash. Added June 4, 2026
 
 #+begin_src emacs-lisp
-(add-hook 'mu4e-view-mode-hook
+  (add-hook 'mu4e-view-mode-hook
 	    (lambda () (setq-local bidi-display-reordering nil)))
   (add-hook 'mu4e-headers-mode-hook
 	    (lambda () (setq-local bidi-display-reordering nil)))
@@ -4861,14 +4902,14 @@ Publish source to public directory.
       (eval-buffer)
       (org-publish-all)
       ;; (webfeeder-build "atom.xml"
-      ;;		       "./docs"
-      ;;		       "https://randyridenour.net/"
-      ;;		       (let ((default-directory (expand-file-name "./docs")))
-      ;;			 (remove "posts/index.html"
-      ;;				 (directory-files-recursively "posts"
-      ;;							      ".*\\.html$")))
-      ;;		       :title "Randy Ridenour"
-      ;;		       :description "Blog posts by Randy Ridenour")
+      ;;                       "./docs"
+      ;;                       "https://randyridenour.net/"
+      ;;                       (let ((default-directory (expand-file-name "./docs")))
+      ;;                         (remove "posts/index.html"
+      ;;                                 (directory-files-recursively "posts"
+      ;;                                                              ".*\\.html$")))
+      ;;                       :title "Randy Ridenour"
+      ;;                       :description "Blog posts by Randy Ridenour")
       (kill-buffer))
     (message "Build complete!"))
 #+end_src
@@ -5239,7 +5280,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 ** Language Detection
 
 #+begin_src emacs-lisp
-(use-package language-detection)
+  (use-package language-detection)
 #+end_src
 
 ** Fish
@@ -5254,7 +5295,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 ** JSON
 
 #+begin_src emacs-lisp
-(use-package json-mode)
+  (use-package json-mode)
 #+end_src
 
 
@@ -5324,9 +5365,9 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 * Dashboard
 
 #+begin_src emacs-lisp
-(define-derived-mode dashboard-mode
-  fundamental-mode "Dashboard"
-  "Major mode for dashboard buffer.")
+  (define-derived-mode dashboard-mode
+    fundamental-mode "Dashboard"
+    "Major mode for dashboard buffer.")
 #+end_src
 
 #+begin_src emacs-lisp
@@ -5352,17 +5393,17 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
    :map dashboard-mode-map
    ("g" . randy-dashboard-open)
    ("q" . quit-window)
-     ("a" . org-agenda-list)
-  ("f" . link-hint-open-link)
-  ("m" . mu4e)
-  ("e" . rlr/open-elfeed-new-tab)
-  ("n" . forward-button)
-  ("p" . backward-button)
-  ("<TAB>" . forward-button)
-  ("[backtab]" . backward-button)
-  ("<SPC>" . scroll-up-command)
-  ("S-<SPC>" . scroll-down-command)
-  )
+   ("a" . org-agenda-list)
+   ("f" . link-hint-open-link)
+   ("m" . mu4e)
+   ("e" . rlr/open-elfeed-new-tab)
+   ("n" . forward-button)
+   ("p" . backward-button)
+   ("<TAB>" . forward-button)
+   ("[backtab]" . backward-button)
+   ("<SPC>" . scroll-up-command)
+   ("S-<SPC>" . scroll-down-command)
+   )
 #+end_src
 
 * Keybindings
@@ -5372,18 +5413,38 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 *** Hydra Blog
 
 #+begin_src emacs-lisp
-    (pretty-hydra-define hydra-blog
-  (:color teal :quit-key "q" :title "Blog")
-  (" "
-   (("bn" rlrt-new-post "New draft")
+  (pretty-hydra-define hydra-blog
+    (:color teal :quit-key "q" :title "Blog")
+    (" "
+     (("bn" rlrt-new-post "New draft")
       ("bt" orgblog-add-tag "Add tag")
       ("bi" orgblog-insert-image "Insert image")
       ("bp" orgblog-publish-draft "Publish draft")
       ("bb" orgblog-build "Build site")
       ("bs" orgblog-serve "Serve site")
       ("bd" orgblog-push "Push to Github"))
-      ))
+     ))
 #+end_src
+
+
+*** Hydra Org-LaTeX
+
+#+begin_src emacs-lisp
+(pretty-hydra-define orglatex
+    (:color teal :quit-key "q" :title "Org LaTeX")
+    (" "
+     (("l" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all")
+      ("o" rlr/org-open-pdf "View PDF")
+      ("s" lecture-slides "Lecture slides")
+      ("n" lecture-notes "Lecture notes"))
+     ))
+#+end_src
+
+
+
 
 *** Hydra Toggle
 
@@ -5743,27 +5804,16 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 
 *** Dired Mode
 
-#+begin_src emacs-lisp :tangle no
-
+#+begin_src emacs-lisp
   (major-mode-hydra-define dired-mode
     (:quit-key "q")
-    ("New"
-     (("a" rlrt-new-article "article")
-      ("l" rlrt-new-lecture "lecture")
-      ("h" rlrt-new-handout "handout")
-      ("s" rlrt-new-syllabus "syllabus"))
-     "Tools"
+    ("Tools"
      (("d" crux-open-with "Open in default program")
       ("." dired-omit-mode "Show hidden files")
-      ("p" diredp-copy-abs-filenames-as-kill "Copy filename and path")
+      ("p" xah-copy-file-path "Copy filename and path")
       ("n" dired-toggle-read-only "edit Filenames")
       ("c" tex-clean "clean aux")
-      ("C" tex-clean-all "clean all"))
-     "Blog"
-     (("bn" rlrt-new-post "New draft")
-      ("bb" orgblog-build "Build Site")
-      ("bs" orgblog-serve "Serve Site")
-      ("bd" orgblog-push "Push to Github"))))
+      ("C" tex-clean-all "clean all"))))
 #+end_src
 
 *** CSS Mode
