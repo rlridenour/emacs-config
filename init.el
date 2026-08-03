@@ -3436,7 +3436,8 @@ and convert it to Org using the pandoc utility."
 
 (defun dashboard-startup ()
   (randy-dashboard-open)
-  (delete-other-windows))
+  (delete-other-windows)
+  (dashboard-mode))
 
 (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 
@@ -3655,6 +3656,14 @@ and convert it to Org using the pandoc utility."
  ("H-g" . hydra-blog/body)
  ;; "H-'" . hydra-surround/body
  ("C-x 9" . hydra-logic/body))
+
+(major-mode-hydra-define dashboard-mode
+  (:quit-key "q")
+  ("Open"
+   (("m" consult-bookmark "bookmarks")
+    ("a" consult-org-agenda "consult-agenda")
+    ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
+    ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))))
 
 (major-mode-hydra-define LaTeX-mode
   (:quit-key "q")
