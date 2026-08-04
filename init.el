@@ -3437,7 +3437,8 @@ and convert it to Org using the pandoc utility."
 (defun dashboard-startup ()
   (randy-dashboard-open)
   (delete-other-windows)
-  (dashboard-mode))
+  ;; (dashboard-mode)
+  )
 
 (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 

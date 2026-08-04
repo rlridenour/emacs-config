@@ -2361,6 +2361,19 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
   (setq treesit-enabled-modes t)
 #+end_src
 
+
+** Typo
+
+#+begin_src emacs-lisp :tangle no
+  (use-package typo
+    :config
+    (typo-global-mode 1)
+    :hook
+    (text-mode . typo-mode))
+#+end_src
+
+
+
 ** Vundo
 
 #+begin_src emacs-lisp
@@ -5377,12 +5390,13 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (bind-key "s-d" 'randy-dashboard-open)
 
   (setq randy-dashboard-recent-files-exclude
-	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
+  	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)
     (delete-other-windows)
-    (dashboard-mode))
+    ;; (dashboard-mode)
+    )
 #+end_src
 
 #+begin_src emacs-lisp
