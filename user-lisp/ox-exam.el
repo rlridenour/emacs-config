@@ -13,25 +13,38 @@
 ;;   #+DATE: 2026-07-18
 ;;
 ;;   * Multiple Choice
+;;
+;;   Circle the best answer. Two points each.
+;;
 ;;   1. This is the first question
 ;;      1. Incorrect option
 ;;      2. Correct option*
 ;;      3. Incorrect option
 ;;
 ;;   * Short Essay
+;;     :PROPERTIES:
+;;     :PAGEBREAK: t
+;;     :END:
 ;;   1. Explain photosynthesis.
 ;;      :PROPERTIES:
 ;;      :SPACE: 3in
+;;      :PAGEBREAK: t
 ;;      :END:
 ;;      :ANSWER:
 ;;      Sunlight is converted into chemical energy.
 ;;      :END:
 ;;
-;; Each level-1 headline is a section.  Items in its top-level list are
-;; either multiple-choice questions (they contain a nested list of options,
-;; the correct one ending in a literal "*") or essay questions (no nested
-;; list; a :SPACE: property gives the blank space to leave on the exam, and
-;; an :ANSWER: drawer gives the text to print in the key).
+;; Each level-1 headline is a section.  Prose between the headline and its
+;; question list becomes the section's instructions, set in italics under
+;; the heading in both the exam and the key.  Items in the top-level list
+;; are either multiple-choice questions (they contain a nested list of
+;; options, the correct one ending in a literal "*") or essay questions (no
+;; nested list; a :SPACE: property gives the blank space to leave on the
+;; exam, and an :ANSWER: drawer gives the text to print in the key).
+;;
+;; A :PAGEBREAK: t property on a section headline starts that section on a
+;; new page; the same property on an essay question starts that question on
+;; a new page.  Both are honoured in the exam only, not in the key.
 ;;
 ;; Output pairs with the Typst package in ../typst/lib.typ: for
 ;; "foo.org" this produces "foo-exam.typ" and "foo-key.typ", each of which
@@ -78,8 +91,13 @@ when they occur in literal (non-markup) text.")
    str t t))
 
 (defun org-exam--collapse-whitespace (str)
-  "Collapse runs of whitespace (including newlines) in STR to a single space."
-  (string-trim (replace-regexp-in-string "[ \t\n\r]+" " " str)))
+  "Collapse runs of whitespace (including newlines) in STR to a single space.
+Text properties are dropped: strings reaching here came out of the Org
+parse tree, where each carries a :parent property pointing back at the
+whole document, and `user-error' messages that interpolate them with %S
+would otherwise print the entire tree."
+  (substring-no-properties
+   (string-trim (replace-regexp-in-string "[ \t\n\r]+" " " str))))
 
 ;;; Inline markup: Org objects -> Typst markup
 
@@ -187,11 +205,52 @@ Return a plist (:text TYPST-STRING :correct BOOLEAN)."
    ""))
 
 (defun org-exam--drawer-property (drawer key)
-  "Extract the value of \":KEY: value\" from the raw text of DRAWER, or nil."
+  "Extract the value of \":KEY: value\" from the raw text of DRAWER, or nil.
+A property present with no value yields the empty string, not nil, so
+callers can distinguish \"absent\" from \"set but blank\"."
   (when drawer
     (let ((raw (org-exam--drawer-raw-text drawer)))
-      (when (string-match (format ":%s:[ \t]*\\([^\n]+\\)" (regexp-quote key)) raw)
-        (string-trim (match-string 1 raw))))))
+      (when (string-match (format ":%s:[ \t]*\\([^\n]*\\)" (regexp-quote key)) raw)
+        (string-trim (match-string-no-properties 1 raw))))))
+
+(defun org-exam--headline-section (headline)
+  "Return the `section' element holding HEADLINE's body, or nil."
+  (seq-find (lambda (el) (eq (org-element-type el) 'section))
+            (org-element-contents headline)))
+
+(defun org-exam--headline-property (headline key)
+  "Return the value of node property KEY in HEADLINE's property drawer, or nil.
+Walks the parsed tree rather than calling `org-element-property' with an
+arbitrary uppercase keyword, whose behaviour has shifted across Org
+versions.  A property present with no value yields the empty string."
+  (let* ((section (org-exam--headline-section headline))
+         (drawer (and section
+                      (seq-find (lambda (el) (eq (org-element-type el) 'property-drawer))
+                                (org-element-contents section))))
+         (prop (and drawer
+                    (seq-find (lambda (el)
+                                (and (eq (org-element-type el) 'node-property)
+                                     (equal (org-element-property :key el) key)))
+                              (org-element-contents drawer)))))
+    (when prop
+      (string-trim (substring-no-properties (or (org-element-property :value prop) ""))))))
+
+(defconst org-exam--true-values '("" "t" "true" "yes" "y" "on" "1")
+  "Property values meaning true.  A property set with no value counts as true.")
+
+(defconst org-exam--false-values '("nil" "false" "no" "n" "off" "0")
+  "Property values meaning false.")
+
+(defun org-exam--parse-boolean (value prop context)
+  "Interpret property VALUE as a boolean.
+PROP is the property name and CONTEXT describes where it was found; both
+are used only to build the error message for an unrecognized value."
+  (cond
+   ((null value) nil)
+   ((member (downcase value) org-exam--true-values) t)
+   ((member (downcase value) org-exam--false-values) nil)
+   (t (user-error "%s: unrecognized :%s: value %S (expected \"t\" or \"nil\")"
+                  context prop value))))
 
 (defun org-exam--drawer-answer-text (drawer)
   "Convert the paragraph(s) inside ANSWER drawer DRAWER to Typst markup,
@@ -219,6 +278,10 @@ joined with blank lines between paragraphs."
     (list :type 'essay
           :text question-text
           :space space
+          :page-break (org-exam--parse-boolean
+                       (org-exam--drawer-property props "PAGEBREAK")
+                       "PAGEBREAK"
+                       (format "Essay question %S" question-text))
           :answer (org-exam--drawer-answer-text answer-drawer))))
 
 (defun org-exam--parse-item (item)
@@ -235,11 +298,24 @@ joined with blank lines between paragraphs."
 
 (defun org-exam--top-level-list (headline)
   "Return the top-level `plain-list' directly inside HEADLINE's section, or nil."
-  (let ((section (seq-find (lambda (el) (eq (org-element-type el) 'section))
-                            (org-element-contents headline))))
+  (let ((section (org-exam--headline-section headline)))
     (when section
       (seq-find (lambda (el) (eq (org-element-type el) 'plain-list))
                 (org-element-contents section)))))
+
+(defun org-exam--section-instructions (headline)
+  "Return HEADLINE's instruction text as a Typst markup string, or nil.
+Any paragraphs sitting between the headline and its question list are
+the section's instructions; several are joined as separate paragraphs.
+Prose after the list belongs to no question and is ignored."
+  (let* ((section (org-exam--headline-section headline))
+         (before-list (seq-take-while
+                       (lambda (el) (not (eq (org-element-type el) 'plain-list)))
+                       (org-element-contents section)))
+         (paragraphs (seq-filter (lambda (el) (eq (org-element-type el) 'paragraph))
+                                 before-list))
+         (text (mapconcat #'org-exam--paragraph-to-typst paragraphs "\n\n")))
+    (unless (string-empty-p text) text)))
 
 (defun org-exam--collect-sections (tree)
   "Collect all level-1 headlines in TREE as a list of (:title STR :questions LIST)."
@@ -251,6 +327,11 @@ joined with blank lines between paragraphs."
             (user-error "Section %S has no question list"
                         (org-element-property :raw-value hl)))
           (list :title (org-exam--escape-typst (org-element-property :raw-value hl))
+                :instructions (org-exam--section-instructions hl)
+                :page-break (org-exam--parse-boolean
+                             (org-exam--headline-property hl "PAGEBREAK")
+                             "PAGEBREAK"
+                             (format "Section %S" (org-element-property :raw-value hl)))
                 :questions (mapcar #'org-exam--parse-item
                                     (seq-filter (lambda (el) (eq (org-element-type el) 'item))
                                                 (org-element-contents plist)))))))
@@ -316,6 +397,8 @@ shuffled into a new order; :correct is updated to match."
 each multiple-choice question's options shuffled (see
 `org-exam--shuffle-question')."
   (list :title (plist-get sec :title)
+        :instructions (plist-get sec :instructions)
+        :page-break (plist-get sec :page-break)
         :questions (mapcar #'org-exam--shuffle-question
                             (org-exam--shuffle (plist-get sec :questions)))))
 
@@ -342,6 +425,14 @@ each multiple-choice question's options shuffled (see
   "Escape and wrap a plain (non-markup) string as a Typst content literal."
   (org-exam--content (org-exam--escape-typst raw-string)))
 
+(defun org-exam--page-break-arg (plist key-p)
+  "Return the Typst `page-break:' argument for PLIST, or \"\" for none.
+Page breaks exist to leave students room to write, so they are emitted
+for the exam only and suppressed in the key (KEY-P non-nil)."
+  (if (and (plist-get plist :page-break) (not key-p))
+      ", page-break: true"
+    ""))
+
 (defun org-exam--render-question (q key-p)
   "Render question plist Q as a Typst #mcq(...) or #essay(...) call."
   (pcase (plist-get q :type)
@@ -353,13 +444,14 @@ each multiple-choice question's options shuffled (see
              (if key-p "true" "false")))
     ('essay
      (let ((answer (plist-get q :answer)))
-       (format "  #essay(%s, space: %s, answer: %s, key: %s)\n"
+       (format "  #essay(%s, space: %s, answer: %s, key: %s%s)\n"
                (org-exam--content (plist-get q :text))
                (plist-get q :space)
                (if (and answer (not (string-empty-p answer)))
                    (org-exam--content answer)
                  "none")
-               (if key-p "true" "false"))))))
+               (if key-p "true" "false")
+               (org-exam--page-break-arg q key-p))))))
 
 (defun org-exam--render (meta sections key-p &optional version)
   "Render the full Typst source for exam METADATA and SECTIONS.
@@ -378,7 +470,13 @@ a version label string (e.g. \"A\") printed in the header."
    (mapconcat
     (lambda (sec)
       (concat
-       (format "#section(%s)[\n" (org-exam--content (plist-get sec :title)))
+       (format "#section(%s%s%s)[\n"
+               (org-exam--content (plist-get sec :title))
+               (let ((instructions (plist-get sec :instructions)))
+                 (if instructions
+                     (format ", instructions: %s" (org-exam--content instructions))
+                   ""))
+               (org-exam--page-break-arg sec key-p))
        (mapconcat (lambda (q) (org-exam--render-question q key-p))
                    (plist-get sec :questions) "")
        "]\n\n"))

@@ -1,0 +1,23 @@
+# -*- mode: snippet -*-
+# name: mosaic header
+# group: typst
+# key: mosaic
+# --
+#+TITLE: $1
+#+SUBTITLE: $2
+#+AUTHOR: ${3:Dr.} Ridenour
+#+DATE: `(format-time-string "%B %e, %Y")`
+#+MOSAIC_PACKAGE: @local/mosaic:0.0.2
+#+MOSAIC_THEME: default
++MOSAIC_OUTPUT: split
+#+MOSAIC_NOTES: (split-inset: 10mm)
+#+MOSAIC_PREAMBLE: #show label("mosaic-note-body"): set text(size: 16pt, weight: "regular")
+#+MOSAIC_PREAMBLE: #show label("mosaic-note-heading"): set text(size: 16pt)
+
+# #+MOSAIC_OUTPUT: split (double-width pages: slide | notes)
+# #+MOSAIC_OUTPUT: speaker (slide thumbnail above its notes)
+# #+MOSAIC_OUTPUT: notes (notes alone)
+
+
+
+

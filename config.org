@@ -608,6 +608,7 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (set-default 'abbrev-mode t)
+  (setq abbrev-file-name "~/Dropbox/emacs/my-emacs-abbrev.el")
   (load "~/Dropbox/emacs/my-emacs-abbrev")
 #+end_src
 
@@ -640,6 +641,42 @@ https://github.com/joaotavora/yasnippet
 #+end_src
 
 * Settings
+
+* Evil Mode
+
+#+begin_src emacs-lisp
+  (use-package evil
+    :init
+    (defvar evil-mode-buffers nil)
+    (setq evil-default-state 'emacs)
+    (setq evil-want-integration t)
+    (setq evil-want-keybinding nil) ;; Required by evil-collection
+    (setq evil-want-C-u-scroll t)
+    (setq evil-want-C-i-jump t)
+    (setq evil-respect-visual-line-mode t)
+    :config
+    (evil-mode 1))
+#+end_src
+
+This ensures that the Vim navigation keys navigate by visual lines.
+
+#+begin_src emacs-lisp :tangle no
+  (define-key evil-motion-state-map "j" #'evil-next-visual-line)
+  (define-key evil-motion-state-map "k" #'evil-previous-visual-line)
+  (define-key evil-motion-state-map "$" #'evil-end-of-visual-line)
+  (define-key evil-motion-state-map "^" #'evil-first-non-blank-of-visual-line)
+  (define-key evil-motion-state-map "0" #'evil-beginning-of-visual-line)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package evil-leader
+    :config
+    (global-evil-leader-mode)
+    (evil-leader/set-leader "SPC"))
+#+end_src
+
+
+
 
 ** Miscellaneous
 
@@ -2361,19 +2398,6 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
   (setq treesit-enabled-modes t)
 #+end_src
 
-
-** Typo
-
-#+begin_src emacs-lisp :tangle no
-  (use-package typo
-    :config
-    (typo-global-mode 1)
-    :hook
-    (text-mode . typo-mode))
-#+end_src
-
-
-
 ** Vundo
 
 #+begin_src emacs-lisp
@@ -4084,7 +4108,7 @@ Settings for Canvas API
     :config
     (setq typst-ts-watch-auto-display-compilation-error t)
     :mode-hydra
-    ((:title (concat (nerd-icons-icon-for-buffer) " Typst Commands"))
+    ((:title "Typst Commands")
      ("Build"
       (("b" typst-ts-compile "Compile")
        ("p" my/typst-compile-and-preview "Compile and preview")
@@ -4093,8 +4117,7 @@ Settings for Canvas API
        ("W" typst-ts-watch-stop "Stop watch"))
       "Edit"
       (("ec" citar-insert-citation "Insert citation")
-       ("eb" rlr-create-typst-bib "Create bib file")
-       )
+       ("eb" rlr-create-typst-bib "Create bib file"))
       "Format"
       (("f" typst-format-buffer "Format")))))
 
@@ -4132,6 +4155,12 @@ Export presentation from Org to Typst, compile, and open PDF's.
     (interactive)
     (rlr/org-export-to-touying-content)
     (compile-typst-lecture))
+#+end_src
+
+** Mosaic
+
+#+begin_src emacs-lisp
+(require 'ox-rlr-mosaic)
 #+end_src
 
 * Markdown
@@ -5390,7 +5419,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (bind-key "s-d" 'randy-dashboard-open)
 
   (setq randy-dashboard-recent-files-exclude
-  	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)

@@ -15,7 +15,8 @@
 
 (defvar randy-dashboard-project-dirs
   '(("Emacs config" . "~/.config/emacs/")
-    ("Courses"      . "/Users/rlridenour/icloud/teaching"))
+    ("Courses"      . "/Users/rlridenour/icloud/teaching")
+    ("Github" . "~/github"))
   "Alist of (LABEL . PATH) for project directory quick links.")
 
 (defvar randy-dashboard-mu4e-bookmarks

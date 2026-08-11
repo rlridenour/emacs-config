@@ -259,6 +259,7 @@
 (global-corfu-mode))
 
 (set-default 'abbrev-mode t)
+(setq abbrev-file-name "~/Dropbox/emacs/my-emacs-abbrev.el")
 (load "~/Dropbox/emacs/my-emacs-abbrev")
 
 (use-package yasnippet
@@ -267,6 +268,23 @@
   (yas-snippet-dirs '("~/.config/emacs/snippets"))
   :hook
   (after-init . yas-global-mode))
+
+(use-package evil
+  :init
+  (defvar evil-mode-buffers nil)
+  (setq evil-default-state 'emacs)
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil) ;; Required by evil-collection
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump t)
+  (setq evil-respect-visual-line-mode t)
+  :config
+  (evil-mode 1))
+
+(use-package evil-leader
+  :config
+  (global-evil-leader-mode)
+  (evil-leader/set-leader "SPC"))
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -2528,7 +2546,7 @@ and convert it to Org using the pandoc utility."
   :config
   (setq typst-ts-watch-auto-display-compilation-error t)
   :mode-hydra
-  ((:title (concat (nerd-icons-icon-for-buffer) " Typst Commands"))
+  ((:title "Typst Commands")
    ("Build"
     (("b" typst-ts-compile "Compile")
      ("p" my/typst-compile-and-preview "Compile and preview")
@@ -2537,8 +2555,7 @@ and convert it to Org using the pandoc utility."
      ("W" typst-ts-watch-stop "Stop watch"))
     "Edit"
     (("ec" citar-insert-citation "Insert citation")
-     ("eb" rlr-create-typst-bib "Create bib file")
-     )
+     ("eb" rlr-create-typst-bib "Create bib file"))
     "Format"
     (("f" typst-format-buffer "Format")))))
 
@@ -2561,6 +2578,8 @@ and convert it to Org using the pandoc utility."
   (interactive)
   (rlr/org-export-to-touying-content)
   (compile-typst-lecture))
+
+(require 'ox-rlr-mosaic)
 
 (use-package markdown-ts-mode
   :defer t
@@ -3432,7 +3451,7 @@ and convert it to Org using the pandoc utility."
 (bind-key "s-d" 'randy-dashboard-open)
 
 (setq randy-dashboard-recent-files-exclude
-	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
 
 (defun dashboard-startup ()
   (randy-dashboard-open)
