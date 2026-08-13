@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: mosaic image
+# group: mosaic
+# key: mi
+# --
+:PROPERTIES:
+:MOSAIC_LAYOUT: image
+:MOSAIC_VARIANT: ${1:$$(yas-choose-value '("full" "left" "right" "top" "bottom"))}
+:MOSAIC_IMAGE: $2
+:MOSAIC_CAPTION: 
+:MOSAIC_SCOPE: 
+:MOSAIC_TRACKS: 
+:MOSAIC_FIT: ${3:$$(yas-choose-value '("cover" "contain"))}
+:END:

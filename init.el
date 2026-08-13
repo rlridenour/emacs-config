@@ -1526,7 +1526,12 @@ and convert it to Org using the pandoc utility."
 (defun rlr/org-open-pdf ()
   "Open PDF in background with default viewer."
   (interactive)
-  (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))) " 2>/dev/null")))
+  (async-shell-command-no-window (concat "open -g " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
+
+  (defun rlr/org-goto-pdf ()
+  "View PDF with default viewer."
+  (interactive)
+  (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
 
 (defun rlr/org-mklua ()
   "Make PDF with lua latexmk."
@@ -2311,19 +2316,21 @@ and convert it to Org using the pandoc utility."
     ("vv" visible-mode :toggle t)
     ("1" denote-link "link to note"))
    "Typst"
-   (("a" rlr/org-mktypst "Make PDF")
-    ("m" rlr/org-mktouying "Make slides")
+   (("m" rlr/org-mktypst "Make PDF")
+    ("s" rlr/org-mkmosaic "Mosaic")
+    ("o" rlr/org-goto-pdf "View PDF")
+    ("tt" rlr/org-mktouying "Touying")
     ("th" make-typst-handout "Make handout")
     ("tw" rlr/org-rlr-typst-export-and-watch "Watch")
     ("tl" rlr/org-rlr-typst-list-watches "List Watches")
     ("ts" rlr/org-rlr-typst-stop-watch "Stop Watch")
     ("eb" rlr-create-typst-bib "Create bib file"))
    "Slipshow"
-   (("sh" org-rlr-slipshow-export-to-html "Compile HTML")
-    ("sm" org-rlr-slipshow-export-to-slipshow "Make slp")
-    ("sw" org-rlr-slipshow-watch "Start watch")
-    ("sk" org-rlr-slipshow-unwatch "Kill watch")
-    ("so" org-rlr-slipshow-export-to-html-and-open "Compile and open"))
+   (("Sh" org-rlr-slipshow-export-to-html "Compile HTML")
+    ("Sm" org-rlr-slipshow-export-to-slipshow "Make slp")
+    ("Sw" org-rlr-slipshow-watch "Start watch")
+    ("Sk" org-rlr-slipshow-unwatch "Kill watch")
+    ("So" org-rlr-slipshow-export-to-html-and-open "Compile and open"))
    "Other"
    (("l" orglatex/body "LaTeX")
     ("H" make-html "HTML")
@@ -2580,6 +2587,11 @@ and convert it to Org using the pandoc utility."
   (compile-typst-lecture))
 
 (require 'ox-rlr-mosaic)
+
+(defun rlr/org-mkmosaic ()
+  (interactive)
+  (org-rlr-mosaic-export-to-pdf)
+  (rlr/org-open-pdf))
 
 (use-package markdown-ts-mode
   :defer t

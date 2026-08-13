@@ -36,11 +36,18 @@
 ;;   - Tables become native `#table(...)' calls, with a leading row
 ;;     group wrapped in `table.header(...)' when the Org table has one,
 ;;     and per-column alignment carried over from Org's alignment
-;;     cookies.  A `#+ATTR_TYPST: :key value ...' line above the table
-;;     passes each pair straight through as a `#table(...)' argument
-;;     (e.g. `:stroke none' or `:column-gutter 1em'), overriding the
-;;     auto-computed `columns'/`align' when those keys are given
-;;     explicitly.
+;;     cookies.  Horizontal rules (`|---|') become `table.hline()' at
+;;     the same spot, and the table defaults to `stroke: none' so the
+;;     rendered lines match the ones drawn in the Org source instead of
+;;     Typst's default full grid.  A `#+ATTR_TYPST: :key value ...'
+;;     line above the table passes each pair straight through as a
+;;     `#table(...)' argument (e.g. `:stroke 1pt' or
+;;     `:column-gutter 1em'), overriding the auto-computed
+;;     `columns'/`align'/`stroke' when those keys are given explicitly.
+;;     A `#+CAPTION' or `#+NAME' on the table wraps it in
+;;     `#figure(table(...), caption: [...]) <name>', so it is numbered
+;;     and `[[name]]' cross-references resolve to `@name'.  Captioned
+;;     or named images are wrapped the same way.
 ;;   - Footnotes are inlined at their first reference as
 ;;     `#footnote[...] <fn-LABEL>'; later references to the same
 ;;     labelled footnote become `#footnote(<fn-LABEL>)'. Anonymous
@@ -164,6 +171,27 @@ and `:with-latex' is non-nil."
 (defun org-rlr-typst--label (raw)
   "Sanitize RAW into a valid Typst label token."
   (replace-regexp-in-string "[^A-Za-z0-9_-]+" "-" raw))
+
+(defun org-rlr-typst--figure-wrap (body caption label)
+  "Wrap BODY, a Typst block-level `#call(...)', in `#figure(...)'.
+CAPTION is the already-transcoded `#+CAPTION' text and LABEL the
+sanitized `#+NAME'; either may be nil or empty.  A caption needs a
+figure because that is the only construct Typst renders one with, and
+a label needs one too -- Typst refuses to reference a bare table or
+image (\"cannot reference table directly, try putting it into a
+figure\").  With neither, BODY is returned unchanged."
+  (concat
+   (if (not (or (org-string-nw-p caption) label))
+       body
+     (concat "#figure(\n"
+             ;; Inside `#figure(' we are already in code mode, so the inner
+             ;; call sheds its own `#'.
+             (replace-regexp-in-string
+              "^" "  " (string-remove-prefix "#" (org-trim body)))
+             ",\n"
+             (when (org-string-nw-p caption) (format "  caption: [%s],\n" caption))
+             ")"))
+   (when label (format " <%s>" label))))
 
 (defun org-rlr-typst--fence-for (value)
   "Return the shortest backtick fence that can safely enclose VALUE.
@@ -367,6 +395,10 @@ DESC is the description part of the link, or nil."
           (let ((label
                  (org-rlr-typst--label
                   (or (org-string-nw-p (org-element-property :CUSTOM_ID destination))
+                      ;; A `#+NAME'd target labels itself with that name (see
+                      ;; `org-rlr-typst--figure-wrap'), so reference it by name
+                      ;; rather than by an opaque generated id.
+                      (org-string-nw-p (org-element-property :name destination))
                       (org-export-get-reference destination info)))))
             (if (org-string-nw-p desc)
                 (format "#link(<%s>)[%s]" label desc)
@@ -375,10 +407,14 @@ DESC is the description part of the link, or nil."
      ((org-export-inline-image-p link org-html-inline-image-rules)
       (let* ((path (if (string= type "file") raw-path (concat type ":" raw-path)))
              (parent (org-export-get-parent-element link))
-             (caption (org-export-data (org-export-get-caption parent) info)))
-        (if (org-string-nw-p caption)
-            (format "#figure(image(%S), caption: [%s])\n\n" path caption)
-          (format "#image(%S)" path))))
+             (caption (org-export-data (org-export-get-caption parent) info))
+             ;; `#+CAPTION'/`#+NAME' sit on the paragraph wrapping the link.
+             (name (org-element-property :name parent))
+             (label (and (org-string-nw-p name) (org-rlr-typst--label name)))
+             (image (format "#image(%S)" path)))
+        (if (or (org-string-nw-p caption) label)
+            (concat (org-rlr-typst--figure-wrap image caption label) "\n\n")
+          image)))
      ;; Any other link: external URL, mailto, etc.
      (t
       (let ((path (if (member type '("http" "https" "mailto" "ftp")) raw-link
@@ -510,17 +546,25 @@ locator in `[cite:@key 27-29]') becomes the call's `supplement:'
 argument; the citation's style (from the parent `citation' object)
 becomes its `form:' argument, via `org-rlr-typst--cite-form'. That
 argument is emitted as the bare `none' literal for `[cite/nocite: ...]'
-citations, and as a quoted string otherwise."
+citations, and as a quoted string otherwise.
+
+Typst has no separate pre-note, so a reference carrying both affixes
+\(`[cite:see @key for more]') folds them into the one supplement.  Each
+is trimmed before they are joined with a single space, since the affixes
+keep the whitespace that separated them from the key in the Org source
+and would otherwise run together as `see  for more'."
   (let* ((key (org-element-property :key citation-reference))
          (style (org-element-property :style (org-export-get-parent citation-reference)))
-         (prefix (org-element-property :prefix citation-reference))
-         (suffix (org-element-property :suffix citation-reference))
+         (affix (lambda (object)
+                  (and object
+                       (org-string-nw-p
+                        (org-trim (substring-no-properties
+                                   (org-export-data object info)))))))
+         (prefix (funcall affix (org-element-property :prefix citation-reference)))
+         (suffix (funcall affix (org-element-property :suffix citation-reference)))
          (form (org-rlr-typst--cite-form style))
          (supplement (org-string-nw-p
-                      (org-trim
-                       (substring-no-properties
-                        (concat (and prefix (org-export-data prefix info))
-                                (and suffix (org-export-data suffix info))))))))
+                      (mapconcat #'identity (delq nil (list prefix suffix)) " "))))
     (format "#cite(<%s>%s, form: %s)"
             key
             (if supplement (format ", supplement: %S" supplement) "")
@@ -573,13 +617,41 @@ functions can be invoked directly from Org."
           (when (org-export-get-next-element table-cell info) ", ")))
 
 (defun org-rlr-typst-table-row (table-row contents info)
-  "Transcode a TABLE-ROW element, tagging it as header or data for the table."
+  "Transcode a TABLE-ROW element, tagging it for the enclosing table.
+Rule rows (`|---|') are tagged `R' so `org-rlr-typst-table' can turn
+them into `table.hline()' calls; the remaining rows are tagged `H' or
+`D' depending on whether they belong to the header group."
   (if (eq (org-element-property :type table-row) 'rule)
-      ""
+      "R\x1\n"
     (let ((header-p (and (org-export-table-has-header-p
                           (org-export-get-parent-table table-row) info)
                          (eql (org-export-table-row-group table-row info) 1))))
       (concat (if header-p "H" "D") "\x1" contents "\n"))))
+
+(defun org-rlr-typst--table-split-rows (contents)
+  "Split CONTENTS, the transcoded table rows, into a (HEADER . BODY) cons.
+Both halves are lists of `#table(...)' arguments in source order: cell
+rows contribute their bracketed cell list, Org rule rows contribute
+`table.hline()'.  HEADER holds everything up to the last header row,
+plus the rule closing it, so that the line under the header repeats
+along with the header on a page break; BODY holds the rest.  Runs of
+consecutive rules collapse into one, since Typst would otherwise stack
+identical lines at the same position."
+  (let (rows)
+    (dolist (line (split-string contents "\n" t))
+      (let ((tag (aref line 0)))
+        (unless (and (eq tag ?R) (eq (car-safe (car rows)) ?R))
+          (push (cons tag (substring line 2)) rows))))
+    (setq rows (nreverse rows))
+    (let ((last-header (cl-position ?H rows :key #'car :from-end t))
+          (render (lambda (row) (if (eq (car row) ?R) "table.hline()" (cdr row)))))
+      (if (null last-header)
+          (cons nil (mapcar render rows))
+        (let ((split (if (eq (car-safe (nth (1+ last-header) rows)) ?R)
+                         (+ last-header 2)
+                       (1+ last-header))))
+          (cons (mapcar render (seq-take rows split))
+                (mapcar render (seq-drop rows split))))))))
 
 (defun org-rlr-typst--table-attrs (table)
   "Return TABLE's `#+ATTR_TYPST' attributes as an alist of (KEY . VALUE) strings.
@@ -602,29 +674,43 @@ literals like `none', `red', or `1em' work directly -- write
               (org-trim (org-export-format-code-default table info)))
     (let* ((attrs (org-rlr-typst--table-attrs table))
            (cols (cdr (org-export-table-dimensions table info)))
-           (first-row (org-element-map table 'table-row #'identity info t))
+           ;; The first *cell* row: a table opening with `|---|' has a rule
+           ;; row first, and rule rows carry no cells to take alignment from.
+           (first-row (org-element-map table 'table-row
+                        (lambda (row)
+                          (and (eq (org-element-property :type row) 'standard) row))
+                        info t))
            (aligns (and first-row
                         (org-element-map first-row 'table-cell
                           (lambda (cell)
                             (pcase (org-export-table-cell-alignment cell info)
                               ('right "right") ('center "center") (_ "left")))
                           info)))
-           (lines (split-string contents "\n" t))
-           (header-lines (seq-filter (lambda (l) (string-prefix-p "H\x1" l)) lines))
-           (data-lines (seq-filter (lambda (l) (string-prefix-p "D\x1" l)) lines))
-           (strip (lambda (l) (substring l 2))))
+           (rows (org-rlr-typst--table-split-rows contents))
+           (header (car rows))
+           (body (cdr rows))
+           (indent (lambda (pad) (lambda (row) (concat pad row ",\n"))))
+           (name (org-element-property :name table)))
       (concat
-       "#table(\n"
-       (unless (assoc "columns" attrs) (format "  columns: %d,\n" (max 1 cols)))
-       (when (and aligns (not (assoc "align" attrs)))
-         (format "  align: (%s),\n" (mapconcat #'identity aligns ", ")))
-       (mapconcat (lambda (kv) (format "  %s: %s,\n" (car kv) (cdr kv))) attrs "")
-       (when header-lines
-         (concat "  table.header(\n"
-                 (mapconcat (lambda (l) (concat "    " (funcall strip l) ",")) header-lines "\n")
-                 "\n  ),\n"))
-       (mapconcat (lambda (l) (concat "  " (funcall strip l) ",")) data-lines "\n")
-       "\n)\n\n"))))
+       (org-rlr-typst--figure-wrap
+        (concat
+         "#table(\n"
+         (unless (assoc "columns" attrs) (format "  columns: %d,\n" (max 1 cols)))
+         (when (and aligns (not (assoc "align" attrs)))
+           (format "  align: (%s),\n" (mapconcat #'identity aligns ", ")))
+         ;; Org draws rules explicitly, so suppress Typst's default full grid
+         ;; and let the `table.hline()' calls stand in for the `|---|' rows.
+         (unless (assoc "stroke" attrs) "  stroke: none,\n")
+         (mapconcat (lambda (kv) (format "  %s: %s,\n" (car kv) (cdr kv))) attrs "")
+         (when header
+           (concat "  table.header(\n"
+                   (mapconcat (funcall indent "    ") header "")
+                   "  ),\n"))
+         (mapconcat (funcall indent "  ") body "")
+         ")")
+        (org-export-data (org-export-get-caption table) info)
+        (and (org-string-nw-p name) (org-rlr-typst--label name)))
+       "\n\n"))))
 
 
 ;;;; Template

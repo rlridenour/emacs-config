@@ -307,17 +307,19 @@ is passed through unchanged."
      ((member name org-rlr-mosaic--content-fields) (format "[%s]" value))
      (t value))))
 
-(defun org-rlr-mosaic--attribute-args (element)
+(defun org-rlr-mosaic--attribute-args (element &optional exclude)
   "Return ELEMENT's `#+ATTR_MOSAIC' line as a list of Typst argument strings.
 
 Each `:key value' pair becomes \"key: VALUE\", with VALUE coerced by
-`org-rlr-mosaic--field-value' exactly as a headline property would be."
+`org-rlr-mosaic--field-value' exactly as a headline property would be.
+Attribute names in EXCLUDE are skipped, for callers that render those
+themselves."
   (let ((plist (org-export-read-attribute :attr_mosaic element))
         args)
     (while plist
       (let ((name (substring (symbol-name (car plist)) 1))
             (value (cadr plist)))
-        (when value
+        (when (and value (not (member name exclude)))
           (push (format "%s: %s"
                         name
                         (org-rlr-mosaic--field-value
@@ -325,6 +327,12 @@ Each `:key value' pair becomes \"key: VALUE\", with VALUE coerced by
                 args)))
       (setq plist (cddr plist)))
     (nreverse args)))
+
+(defun org-rlr-mosaic--attribute (element name)
+  "Return ELEMENT's `#+ATTR_MOSAIC' attribute NAME as a string, or nil."
+  (let ((value (plist-get (org-export-read-attribute :attr_mosaic element)
+                          (intern (concat ":" name)))))
+    (and value (org-string-nw-p (if (stringp value) value (format "%s" value))))))
 
 (defun org-rlr-mosaic--join-args (args)
   "Join ARGS, a list of Typst argument strings, into an argument list."
@@ -660,6 +668,35 @@ CONTENTS is nil.  INFO is a plist used as a communication channel."
 
 ;;;; Quote Block
 
+(defun org-rlr-mosaic--quote-credit (element)
+  "Return ELEMENT's quote attribution and source as one Typst argument.
+
+Mosaic renders the two on a single line separated by a comma, but joins
+them across a newline in markup, which Typst reads as a space: the
+credit comes out as \"Aristotle , Politics\".  Since Mosaic gives
+`source' no styling of its own and reads it nowhere else -- the two
+share one text span in `component/quote.typ' -- they are joined here
+into a single `attribution' instead, which sets the comma tight and
+leaves each half free to carry its own markup.
+
+Only the pair is affected: either alone renders correctly through
+Mosaic's own argument, so it is passed through untouched."
+  (let* ((attribution (org-rlr-mosaic--attribute element "attribution"))
+         (source (org-rlr-mosaic--attribute element "source"))
+         (value (lambda (name raw)
+                  (org-rlr-mosaic--field-value name raw))))
+    (cond
+     ((and attribution source)
+      ;; Each half is embedded with `#' so that a content block and a
+      ;; bare expression are both spliced rather than printed.
+      (list (format "attribution: [#%s, #%s]"
+                    (funcall value "attribution" attribution)
+                    (funcall value "source" source))))
+     (attribution
+      (list (format "attribution: %s" (funcall value "attribution" attribution))))
+     (source
+      (list (format "source: %s" (funcall value "source" source)))))))
+
 (defun org-rlr-mosaic-quote-block (quote-block contents info)
   "Transcode a QUOTE-BLOCK element into a Mosaic quote, or a native one.
 
@@ -680,7 +717,9 @@ quotation styling applies.
 
 CONTENTS is the transcoded contents string.  INFO is a plist used as a
 communication channel."
-  (let ((attrs (org-rlr-mosaic--attribute-args quote-block)))
+  (let ((attrs (append (org-rlr-mosaic--quote-credit quote-block)
+                       (org-rlr-mosaic--attribute-args
+                        quote-block '("attribution" "source")))))
     (if (or attrs
             (org-rlr-mosaic--option-flag (plist-get info :mosaic-quote-component)))
         ;; The body is the component's first positional parameter, which
