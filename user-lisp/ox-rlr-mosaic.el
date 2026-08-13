@@ -54,6 +54,13 @@
 ;; small amount of coercion (see `org-rlr-mosaic--field-value') lets the
 ;; common cases be written as plain words rather than Typst literals.
 ;;
+;; Tables come from `rlr-typst' unchanged: no cell borders at all, and a
+;; horizontal rule exactly where the Org source draws one with `|---|'.
+;; What this back-end adds is the color of those rules -- Typst paints a
+;; bare `table.hline()' black, which vanishes on a dark deck -- so they
+;; are restated in `org-rlr-mosaic-table-rule-stroke', which follows the
+;; deck's text color by default (see `org-rlr-mosaic--table-rules').
+;;
 ;; Usage: `M-x org-rlr-mosaic-export-to-typst' writes a sibling ".typ"
 ;; file; `M-x org-rlr-mosaic-export-to-pdf' writes it and compiles the
 ;; deck with the `typst' binary.
@@ -144,6 +151,30 @@ replace those dimensions and break the deck."
   :type '(choice (const :tag "Leave Mosaic's default (A4)" nil)
                  (const :tag "US Letter" "us-letter")
                  (string :tag "Typst paper name")))
+
+(defcustom org-rlr-mosaic-table-rule-stroke "0.8pt + text.fill"
+  "Stroke drawn for an Org table's horizontal rules (`|---|').
+
+Tables are inherited from `rlr-typst', which suppresses Typst's cell
+grid and emits one `table.hline()' per Org rule row, so a deck's tables
+carry only the lines its Org source draws.  Typst paints a bare
+`table.hline()' black, which is invisible on a dark deck, so this stroke
+is applied to those rules through a `show table.hline' rule after
+`m.setup'.
+
+The default follows the deck's text color, so the same rule reads
+correctly in either polarity and under any theme.  Any Typst stroke
+expression works; the value is emitted verbatim, and one naming
+`text.fill' or another contextual value is resolved where the rule is
+drawn.
+
+An `hline' given a stroke of its own is left alone, so
+`#+ATTR_TYPST: :stroke ...' on a table and hand-written Typst both keep
+their own lines.  Set this to nil to leave Typst's default stroke
+alone."
+  :group 'org-export-rlr-mosaic
+  :type '(choice (const :tag "Leave Typst's default (1pt black)" nil)
+                 (string :tag "Typst stroke expression")))
 
 (defcustom org-rlr-mosaic-quote-component nil
   "Whether `#+begin_quote' becomes Mosaic's quote component.
@@ -259,6 +290,8 @@ after the slide rather than inside it.")
     (:mosaic-output "MOSAIC_OUTPUT" nil nil t)
     (:mosaic-notes "MOSAIC_NOTES" nil nil t)
     (:mosaic-notes-paper "MOSAIC_NOTES_PAPER" nil org-rlr-mosaic-notes-paper t)
+    (:mosaic-table-rule-stroke "MOSAIC_TABLE_RULE_STROKE" nil
+                               org-rlr-mosaic-table-rule-stroke t)
     (:mosaic-handout "MOSAIC_HANDOUT" nil nil t)
     (:mosaic-overflow "MOSAIC_OVERFLOW" nil nil t)
     (:mosaic-frozen-counters "MOSAIC_FROZEN_COUNTERS" nil nil t)
@@ -886,6 +919,29 @@ that geometry.  INFO is a plist used as a communication channel."
          (member output '("speaker" "notes"))
          (format "\n#set page(paper: %S)\n" (org-trim paper)))))
 
+(defun org-rlr-mosaic--table-rules (info)
+  "Return the deck's `show table.hline' rule, or nil.
+
+Org table rules arrive as bare `table.hline()' calls from `rlr-typst',
+which Typst paints 1pt black -- a line that disappears on a dark deck.
+The rule restates them in `org-rlr-mosaic-table-rule-stroke', whose
+default follows the deck's own text color.
+
+An `hline' carrying a stroke of its own is passed through untouched, so
+a table styled by hand keeps its lines.  The rule is emitted only for a
+deck whose tables actually draw one, since it is dead weight in one that
+does not.  INFO is a plist used as a communication channel."
+  (let ((stroke (org-string-nw-p
+                 (or (plist-get info :mosaic-table-rule-stroke) ""))))
+    (and stroke
+         (org-element-map (plist-get info :parse-tree) 'table-row
+           (lambda (row) (eq (org-element-property :type row) 'rule))
+           info t)
+         (format (concat "\n#show table.hline: it => if it.stroke == auto {"
+                         "\n  context table.hline(..it.fields(), stroke: %s)"
+                         "\n} else { it }\n")
+                 (org-trim stroke)))))
+
 (defun org-rlr-mosaic--preamble (info)
   "Return the deck's `#+MOSAIC_PREAMBLE:' rules, or nil.
 
@@ -943,6 +999,7 @@ communication channel."
             ;; Before the document's own rules, so that a deck wanting
             ;; something else can simply state it.
             (org-rlr-mosaic--notes-paper info)
+            (org-rlr-mosaic--table-rules info)
             (org-rlr-mosaic--preamble info)
             "\n"
             (org-rlr-mosaic--title-slide info)
