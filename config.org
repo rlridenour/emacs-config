@@ -687,9 +687,9 @@ This ensures that the Vim navigation keys navigate by visual lines.
       (global-evil-leader-mode t)
       (evil-leader/set-leader "<SPC>")
       (evil-leader/set-key
-        "s l" 'avy-goto-line
-        "d x w" 'delete-trailing-whitespace
-        )
+	"s l" 'avy-goto-line
+	"d x w" 'delete-trailing-whitespace
+	)
       )
 #+end_src
 
@@ -1830,7 +1830,7 @@ Version: 2021-09-30"
     :commands (speedbar)
     :config
     (setq speedbar-prefer-window t
-          speedbar-use-images nil)
+	  speedbar-use-images nil)
     :bind
     ("H-s" . 'speedbar))
 #+end_src
@@ -2439,6 +2439,8 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
     (vundo-glyph-alist vundo-unicode-symbols)
     :bind
     ("C-x u" . vundo))
+
+  (bind-key* "s-Z" 'undo-redo)
 #+end_src
 
 Raise the undo limits.

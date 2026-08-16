@@ -273,9 +273,9 @@
     (global-evil-leader-mode t)
     (evil-leader/set-leader "<SPC>")
     (evil-leader/set-key
-      "s l" 'avy-goto-line
-      "d x w" 'delete-trailing-whitespace
-      )
+	"s l" 'avy-goto-line
+	"d x w" 'delete-trailing-whitespace
+	)
     )
 
 (set-language-environment "UTF-8")
@@ -928,7 +928,7 @@ Version: 2021-09-30"
   :commands (speedbar)
   :config
   (setq speedbar-prefer-window t
-        speedbar-use-images nil)
+	  speedbar-use-images nil)
   :bind
   ("H-s" . 'speedbar))
 
@@ -1250,6 +1250,8 @@ Version: 2021-09-30"
   (vundo-glyph-alist vundo-unicode-symbols)
   :bind
   ("C-x u" . vundo))
+
+(bind-key* "s-Z" 'undo-redo)
 
 (setq undo-limit 67108864) ; 64mb.
 (setq undo-strong-limit 100663296) ; 96mb.
