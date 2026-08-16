@@ -646,7 +646,7 @@ https://github.com/joaotavora/yasnippet
 
 * Evil Mode
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package evil
     :init
     (defvar evil-mode-buffers nil)
@@ -670,7 +670,7 @@ This ensures that the Vim navigation keys navigate by visual lines.
   (define-key evil-motion-state-map "0" #'evil-beginning-of-visual-line)
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package evil-leader
     :config
     (global-evil-leader-mode)

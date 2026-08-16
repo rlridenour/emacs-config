@@ -267,23 +267,6 @@
   :hook
   (after-init . yas-global-mode))
 
-(use-package evil
-  :init
-  (defvar evil-mode-buffers nil)
-  (setq evil-default-state 'emacs)
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil) ;; Required by evil-collection
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump t)
-  (setq evil-respect-visual-line-mode t)
-  :config
-  (evil-mode 1))
-
-(use-package evil-leader
-  :config
-  (global-evil-leader-mode)
-  (evil-leader/set-leader "SPC"))
-
 (use-package evil-leader
     :ensure t
     :config
