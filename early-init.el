@@ -78,6 +78,8 @@
 
 (setq-default line-spacing 0.25)
 
+(require 'transient)
+
 ;; Local Variables:
 ;; no-byte-compile: t
 ;; no-native-compile: t

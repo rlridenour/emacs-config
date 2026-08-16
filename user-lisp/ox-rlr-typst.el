@@ -48,6 +48,11 @@
 ;;     `#figure(table(...), caption: [...]) <name>', so it is numbered
 ;;     and `[[name]]' cross-references resolve to `@name'.  Captioned
 ;;     or named images are wrapped the same way.
+;;   - A `#+ATTR_TYPST' line above a plain list runs the attributes it
+;;     names through `org-rlr-typst-list-attributes'.  Out of the box
+;;     that provides `:wrap NAME', which encloses the whole list in a
+;;     call to a Typst function -- `:wrap standard-form' gives
+;;     `#standard-form[...]' around the rendered items.
 ;;   - Footnotes are inlined at their first reference as
 ;;     `#footnote[...] <fn-LABEL>'; later references to the same
 ;;     labelled footnote become `#footnote(<fn-LABEL>)'. Anonymous
@@ -98,6 +103,23 @@ Only used when a `latex-fragment' or `latex-environment' is present
 and `:with-latex' is non-nil."
   :group 'org-export-rlr-typst
   :type 'string)
+
+(defcustom org-rlr-typst-list-attributes
+  '(("wrap" . org-rlr-typst--list-attr-wrap))
+  "Handlers for `#+ATTR_TYPST' attributes written above a plain list.
+
+Each entry maps a key -- the attribute name without its leading colon,
+so `:wrap' is matched by \"wrap\" -- to a function of two arguments:
+the list's transcoded Typst body and the attribute's value, both
+strings.  The function returns the body to use in its place.
+
+Handlers are applied in the order the attributes appear on the
+`#+ATTR_TYPST' line, each one seeing the previous one's result, so
+several can be composed on a single list.  Keys with no handler here
+are ignored."
+  :group 'org-export-rlr-typst
+  :type '(alist :key-type (string :tag "Attribute")
+                :value-type (function :tag "Handler")))
 
 
 ;;; Define Backend
@@ -448,9 +470,36 @@ user explicitly opted in with `#+OPTIONS: prop:t' or similar."
 
 ;;;; Plain List, Item
 
-(defun org-rlr-typst-plain-list (_plain-list contents _info)
-  "Transcode a PLAIN-LIST element, passing its items through."
-  (concat contents "\n"))
+(defun org-rlr-typst--list-attr-wrap (body value)
+  "Wrap BODY in a call to the Typst function named VALUE.
+
+Handles the `:wrap' attribute of `org-rlr-typst-list-attributes', so
+
+    #+ATTR_TYPST: :wrap standard-form
+    1. First premise
+    2. Conclusion
+
+exports as `#standard-form[...]' around the list."
+  (format "#%s[\n%s\n]" value (org-trim body)))
+
+(defun org-rlr-typst--apply-list-attributes (plain-list body)
+  "Return BODY after running PLAIN-LIST's `#+ATTR_TYPST' attributes over it.
+Each attribute is looked up in `org-rlr-typst-list-attributes' and its
+handler applied in turn; unknown keys are left alone."
+  (dolist (attr (org-rlr-typst--attrs plain-list) body)
+    (let ((handler (cdr (assoc (car attr) org-rlr-typst-list-attributes)))
+          ;; `org-export-read-attribute' `read's its values, so an unquoted
+          ;; `standard-form' arrives as a symbol; handlers all want text.
+          (value (and (not (memq (cdr attr) '(nil t)))
+                      (format "%s" (cdr attr)))))
+      (when (and handler (org-string-nw-p value))
+        (setq body (funcall handler body value))))))
+
+(defun org-rlr-typst-plain-list (plain-list contents _info)
+  "Transcode a PLAIN-LIST element, passing its items through.
+A `#+ATTR_TYPST' line above the list can transform the result; see
+`org-rlr-typst-list-attributes'."
+  (concat (org-rlr-typst--apply-list-attributes plain-list contents) "\n"))
 
 (defun org-rlr-typst-item (item contents info)
   "Transcode an ITEM element into a Typst list item.
@@ -653,13 +702,13 @@ identical lines at the same position."
           (cons (mapcar render (seq-take rows split))
                 (mapcar render (seq-drop rows split))))))))
 
-(defun org-rlr-typst--table-attrs (table)
-  "Return TABLE's `#+ATTR_TYPST' attributes as an alist of (KEY . VALUE) strings.
-KEY has its leading colon stripped (e.g. \"column-gutter\"); VALUE is
-emitted verbatim (unquoted) into the `#table(...)' call, so bare Typst
-literals like `none', `red', or `1em' work directly -- write
-`:fill \"red\"' in the ATTR line if you actually want a Typst string."
-  (let ((plist (org-export-read-attribute :attr_typst table))
+(defun org-rlr-typst--attrs (element)
+  "Return ELEMENT's `#+ATTR_TYPST' attributes as an alist of (KEY . VALUE) strings.
+KEY has its leading colon stripped (e.g. \"column-gutter\"), and pairs
+keep the order they were written in.  VALUE is the raw text that
+followed the key, so what it means is up to whoever consumes it -- for
+tables it is emitted verbatim into the `#table(...)' call."
+  (let ((plist (org-export-read-attribute :attr_typst element))
         pairs)
     (while plist
       (push (cons (substring (symbol-name (car plist)) 1) (cadr plist)) pairs)
@@ -672,7 +721,7 @@ literals like `none', `red', or `1em' work directly -- write
       ;; table.el tables aren't supported; fall back to a raw block.
       (format "```\n%s```\n\n"
               (org-trim (org-export-format-code-default table info)))
-    (let* ((attrs (org-rlr-typst--table-attrs table))
+    (let* ((attrs (org-rlr-typst--attrs table))
            (cols (cdr (org-export-table-dimensions table info)))
            ;; The first *cell* row: a table opening with `|---|' has a rule
            ;; row first, and rule rows carry no cells to take alignment from.

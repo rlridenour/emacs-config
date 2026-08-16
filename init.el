@@ -1,7 +1,5 @@
 ;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 
-(require 'transient)
-
 (use-package package
   :ensure nil
   :custom
@@ -285,6 +283,17 @@
   :config
   (global-evil-leader-mode)
   (evil-leader/set-leader "SPC"))
+
+(use-package evil-leader
+    :ensure t
+    :config
+    (global-evil-leader-mode t)
+    (evil-leader/set-leader "<SPC>")
+    (evil-leader/set-key
+      "s l" 'avy-goto-line
+      "d x w" 'delete-trailing-whitespace
+      )
+    )
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -930,6 +939,15 @@ Version: 2021-09-30"
        (progn
 	 (message "File path copied: %s" xfpath)
 	 xfpath )))))
+
+(use-package speedbar
+  :ensure nil
+  :commands (speedbar)
+  :config
+  (setq speedbar-prefer-window t
+        speedbar-use-images nil)
+  :bind
+  ("H-s" . 'speedbar))
 
 (use-package reveal-in-osx-finder
   :bind
@@ -2091,7 +2109,7 @@ and convert it to Org using the pandoc utility."
   (org-html-export-to-html)
   (shell-command "canvas-handout"))
 
-(defun make-syllabus ()
+(defun make-tex-syllabus ()
   "publish org data file as LaTeX syllabus and Canvas HTML"
   (interactive)
   (save-buffer)
@@ -2314,30 +2332,26 @@ and convert it to Org using the pandoc utility."
     ("va" org-appear-mode :toggle t)
     ("vl" org-toggle-link-display :toggle t)
     ("vv" visible-mode :toggle t)
-    ("1" denote-link "link to note"))
+    ("d1" denote-link "link to note"))
    "Typst"
-   (("m" rlr/org-mktypst "Make PDF")
-    ("s" rlr/org-mkmosaic "Mosaic")
+   (("p" rlr/org-mktypst "Article")
+    ("h" make-typst-handout "Handout")
+    ("wt" rlr/org-rlr-typst-export-and-watch "Start Typst Watch")
+    ("st" rlr/org-rlr-typst-stop-watch "Stop Typst Watch")
+    ("lt" rlr/org-rlr-typst-list-watches "List Typst Watches")
+    ("h" make-typst-syllabus "Syllabus")
+    ("x" org-exam-export-to-pdf "Exam")
+    ("X" org-exam-export-versions-to-pdf "Exam Versions")
     ("o" rlr/org-goto-pdf "View PDF")
-    ("tt" rlr/org-mktouying "Touying")
-    ("th" make-typst-handout "Make handout")
-    ("tw" rlr/org-rlr-typst-export-and-watch "Watch")
-    ("tl" rlr/org-rlr-typst-list-watches "List Watches")
-    ("ts" rlr/org-rlr-typst-stop-watch "Stop Watch")
-    ("eb" rlr-create-typst-bib "Create bib file"))
-   "Slipshow"
-   (("Sh" org-rlr-slipshow-export-to-html "Compile HTML")
-    ("Sm" org-rlr-slipshow-export-to-slipshow "Make slp")
-    ("Sw" org-rlr-slipshow-watch "Start watch")
-    ("Sk" org-rlr-slipshow-unwatch "Kill watch")
-    ("So" org-rlr-slipshow-export-to-html-and-open "Compile and open"))
+    ("b" rlr-create-typst-bib "Create bib file"))
    "Other"
-   (("l" orglatex/body "LaTeX")
-    ("H" make-html "HTML")
-    ("ec" canvas-copy "Copy HTML for Canvas")
-    ("es" canvas-notes "HTML Canvas notes")
-    ("eS" make-syllabus "Syllabus")
-    ("eh" make-handout "Handout"))))
+   (("m" rlr/org-mkmosaic "Mosaic")
+    ("wm" rlr/org-rlr-mosaic-export-and-watch "Start Mosaic Watch")
+    ("sm" rlr/org-rlr-mosaic-stop-watch "Stop Mosaic Watch")
+    ("lm" rlr/org-rlr-mosaic-list-watches "List Mosaic Watches")
+    ("L" orglatex/body "LaTeX")
+    ("S" slipshow/body "Slipshow")
+    ("H" make-html "HTML"))))
 
 (use-package tex
   :ensure auctex
@@ -2586,18 +2600,123 @@ and convert it to Org using the pandoc utility."
   (rlr/org-export-to-touying-content)
   (compile-typst-lecture))
 
+(defun make-typst-syllabus ()
+  "publish org file as Typst PDF and Canvas HTML"
+  (interactive)
+  (save-buffer)
+  (rlr/org-mktypst)
+  (org-html-export-to-html)
+  (shell-command "canvas"))
+
 (require 'ox-rlr-mosaic)
+(require 'rlr-mosaic-scaffold)
 
 (defun rlr/org-mkmosaic ()
   (interactive)
   (org-rlr-mosaic-export-to-pdf)
   (rlr/org-open-pdf))
 
+(defvar rlr/org-rlr-mosaic-watch-processes (make-hash-table :test 'equal)
+  "Hash table mapping org file paths to their Mosaic typst watch processes.")
+
+(defun rlr/org-rlr-mosaic-export-and-watch ()
+  "Export current org buffer to Mosaic Typst, start `typst watch', and re-export on save.
+Subsequent saves of the org file will trigger a fresh Mosaic export.
+Calling this again on an already-watched buffer stops the old watcher first."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "Not in an org-mode buffer"))
+  (unless (require 'ox-rlr-mosaic nil t)
+    (user-error "ox-rlr-mosaic is not available; please install it"))
+
+  (let* ((org-file (buffer-file-name))
+	 (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+	 (pdf-file (concat (file-name-sans-extension org-file) ".pdf"))
+	 (buf-name (format "*mosaic-watch: %s*"
+			   (file-name-nondirectory typst-file))))
+
+    ;; Kill any existing watcher for this file
+    (rlr/org-rlr-mosaic-stop-watch org-file)
+
+    ;; Initial export
+    (message "Exporting %s → %s..." (file-name-nondirectory org-file)
+	     (file-name-nondirectory typst-file))
+    (org-rlr-mosaic-export-to-typst)
+
+    ;; Start typst watch in a dedicated buffer, from the deck's own directory
+    ;; so that `--root .' resolves relative image paths the same way
+    ;; `org-rlr-mosaic-compile' does.
+    (let* ((default-directory (file-name-directory typst-file))
+	   (proc (apply #'start-process "mosaic-watch" buf-name
+			org-rlr-mosaic-typst-command
+			(append (list "watch")
+				org-rlr-mosaic-typst-compile-options
+				(list (file-relative-name typst-file)
+				      (file-relative-name pdf-file))))))
+      (puthash org-file proc rlr/org-rlr-mosaic-watch-processes)
+      (set-process-sentinel proc
+			    (lambda (p _event)
+			      (when (memq (process-status p) '(exit signal))
+				(remhash org-file rlr/org-rlr-mosaic-watch-processes)
+				(message "typst watch ended for %s" typst-file))))
+      (message "typst watch started → %s" typst-file))
+
+    ;; Give typst a moment to complete the first compile, then open the PDF
+    (sleep-for 1)
+    (rlr/org-open-pdf)
+
+    ;; Add a buffer-local after-save hook
+    (add-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save nil t)
+    (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
+
+(defun rlr/org-rlr-mosaic--on-save ()
+  "Re-export the current org buffer to Mosaic Typst on save."
+  (when (and (derived-mode-p 'org-mode)
+	     (buffer-file-name)
+	     (gethash (buffer-file-name) rlr/org-rlr-mosaic-watch-processes))
+    (org-rlr-mosaic-export-to-typst)
+    (message "Re-exported %s to Mosaic Typst" (file-name-nondirectory (buffer-file-name)))))
+
+(defun rlr/org-rlr-mosaic-stop-watch (&optional org-file)
+  "Stop the Mosaic typst watch process for ORG-FILE (default: current buffer)."
+  (interactive)
+  (let* ((file (or org-file (buffer-file-name)))
+	 (proc (gethash file rlr/org-rlr-mosaic-watch-processes)))
+    (when (process-live-p proc)
+      (delete-process proc)
+      (message "Stopped typst watch for %s" (file-name-nondirectory file)))
+    (remhash file rlr/org-rlr-mosaic-watch-processes)
+    (remove-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save t)))
+
+(defun rlr/org-rlr-mosaic-list-watches ()
+  "Show all active Mosaic typst watch processes."
+  (interactive)
+  (if (hash-table-empty-p rlr/org-rlr-mosaic-watch-processes)
+      (message "No active Mosaic typst watch processes.")
+    (with-current-buffer (get-buffer-create "*mosaic-watches*")
+      (erase-buffer)
+      (insert "Active Mosaic typst watch processes:\n\n")
+      (maphash (lambda (file proc)
+		 (insert (format "  %-50s [%s]\n"
+				 (file-name-nondirectory file)
+				 (process-status proc))))
+	       rlr/org-rlr-mosaic-watch-processes)
+      (display-buffer (current-buffer)))))
+
 (use-package markdown-ts-mode
   :defer t
   :commands (markdown-ts-mode))
 
 (require 'ox-rlr-slipshow)
+
+(pretty-hydra-define slipshow
+  (:color teal :quit-key "q" :title "Org Slipshow")
+  (" "
+   (("Sh" org-rlr-slipshow-export-to-html "Compile HTML")
+    ("Sm" org-rlr-slipshow-export-to-slipshow "Make slp")
+    ("Sw" org-rlr-slipshow-watch "Start watch")
+    ("Sk" org-rlr-slipshow-unwatch "Kill watch")
+    ("So" org-rlr-slipshow-export-to-html-and-open "Compile and open"))))
 
 (use-package citar
   :bind
@@ -2724,7 +2843,7 @@ and convert it to Org using the pandoc utility."
 	  ("C-," . mu4e-sexp-at-point))
   :after org
   :init
-  (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.1/share/emacs/site-lisp/mu/mu4e/")
+  (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.3/share/emacs/site-lisp/mu/mu4e/")
   :config
   (setq mail-user-agent 'mu4e-user-agent)
   (setq mu4e-maildir "~/.maildir/")
@@ -3489,13 +3608,14 @@ and convert it to Org using the pandoc utility."
     (:color teal :quit-key "q" :title "Org LaTeX")
     (" "
      (("l" rlr/org-mklua "Make PDF with LuaLaTeX")
-      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-      ("c" tex-clean "clean aux")
-      ("C" tex-clean-all "clean all")
-      ("o" rlr/org-open-pdf "View PDF")
-      ("s" lecture-slides "Lecture slides")
-      ("n" lecture-notes "Lecture notes"))
-     ))
+	("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+	("c" tex-clean "clean aux")
+	("C" tex-clean-all "clean all")
+	("o" rlr/org-open-pdf "View PDF")
+	("s" lecture-slides "Lecture slides")
+	("n" lecture-notes "Lecture notes")
+	("h" make-handout "Handout")
+	("S" make-tex-syllabus "Syllabus"))))
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
@@ -3599,10 +3719,9 @@ and convert it to Org using the pandoc utility."
     ("p" rlrt-new-post "blog post")
     ("ta" rlrt-new-article "latex article"))
    "Teaching"
-   (("tb" rlrt-new-lecture "beamer lecture")
-    ("l" rlr/new-touying-presentation "lecture")
+   (("l" rlr/new-mosaic-presentation "lecture")
     ("h" rlr/teaching-new-handout "handout")
-    ("ts" rlrt-new-syllabus "syllabus"))
+    ("ts" rlr/teaching-new-syllabus "syllabus"))
    ))
 
 (pretty-hydra-define hydra-logic
