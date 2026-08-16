@@ -942,7 +942,7 @@ Version: 2021-09-30"
 (defun rlr/ghostel-buffer ()
   "Return the active ghostel buffer, or nil if none exists."
   (seq-find (lambda (buf)
-		(string-match-p "\\*ghostel:" (buffer-name buf)))
+		(with-current-buffer buf (derived-mode-p 'ghostel-mode)))
 	      (buffer-list)))
 
 (defun rlr/ghostel-toggle ()
