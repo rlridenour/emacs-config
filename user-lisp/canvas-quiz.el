@@ -44,53 +44,24 @@
 
 (require 'org)
 (require 'org-element)
-(require 'auth-source)
-(require 'url)
-(require 'json)
 (require 'cl-lib)
 (require 'seq)
+(require 'canvas-api)
 
 (defgroup canvas-quiz nil
   "Upload Org-authored quizzes to Canvas."
-  :group 'org)
+  :group 'canvas)
 
-(defcustom canvas-quiz-domain nil
-  "Canvas domain to upload quizzes to, e.g. \"myschool.instructure.com\".
-
-The API access token is looked up via `auth-source' using this domain
-as the host, so `~/.authinfo.gpg' should have a line such as:
-
-  machine myschool.instructure.com login canvas password TOKEN"
-  :type '(choice (const :tag "Unset" nil) string)
-  :group 'canvas-quiz)
-
-(defcustom canvas-quiz-default-course-id nil
-  "Default Canvas course ID offered when uploading a quiz.
-Still prompts every time; this just pre-fills the prompt."
-  :type '(choice (const :tag "None" nil) integer)
-  :group 'canvas-quiz)
+;; The domain and default course ID moved to canvas-api.el when canvas-page.el
+;; started needing them too; the old names still work.
+(define-obsolete-variable-alias 'canvas-quiz-domain 'canvas-domain "canvas-quiz 1.1")
+(define-obsolete-variable-alias 'canvas-quiz-default-course-id 'canvas-default-course-id "canvas-quiz 1.1")
 
 (defcustom canvas-quiz-default-type "assignment"
   "Default Canvas quiz_type for uploaded quizzes.
 One of \"practice_quiz\", \"assignment\", \"graded_survey\", \"survey\"."
   :type 'string
   :group 'canvas-quiz)
-
-;;; Credentials
-
-(defun canvas-quiz--domain ()
-  "Return `canvas-quiz-domain', erroring with guidance if unset."
-  (or canvas-quiz-domain
-      (user-error "Set `canvas-quiz-domain' first, e.g. (setq canvas-quiz-domain \"myschool.instructure.com\")")))
-
-(defun canvas-quiz--token ()
-  "Look up the Canvas API token for `canvas-quiz-domain' via `auth-source'."
-  (let* ((domain (canvas-quiz--domain))
-         (found (car (auth-source-search :host domain :max 1)))
-         (secret (plist-get found :secret)))
-    (unless found
-      (user-error "No auth-source entry for host %S; add a line like `machine %s login canvas password TOKEN' to ~/.authinfo.gpg" domain domain))
-    (if (functionp secret) (funcall secret) secret)))
 
 ;;; Inline markup: Org objects -> HTML
 
@@ -279,70 +250,11 @@ Return a plist (:title STR :description STR-OR-NIL)."
         (user-error "Missing required #+QUIZ_NAME: (or #+EXAM_NAME:) keyword"))
       (list :title title :description description))))
 
-;;; Canvas HTTP
-
-(defun canvas-quiz--flatten-params (params &optional prefix)
-  "Flatten PARAMS (an alist, possibly nested) into Rails-bracket key/value
-conses suitable for an application/x-www-form-urlencoded body.
-
-A value that is itself an alist (its first element's car is a string, e.g.
-\\=(\"title\" . \"Foo\")\\=) recurses with a \"PREFIX[KEY]\" prefix; a value
-that is a list of alists (its first element's car is itself a cons)
-recurses with a \"PREFIX[]\" prefix for each element -- used for
-question[answers][]."
-  (cl-loop for (key . value) in params
-           append
-           (let ((full-key (if prefix (format "%s[%s]" prefix key) (format "%s" key))))
-             (cond
-              ((and (consp value) (consp (car value)) (stringp (caar value)))
-               ;; value is itself an alist -> nested object
-               (canvas-quiz--flatten-params value full-key))
-              ((and (consp value) (consp (car value)))
-               ;; value is a list of alists -> array of objects
-               (cl-loop for element in value
-                        append (canvas-quiz--flatten-params element (concat full-key "[]"))))
-              (t (list (cons full-key value)))))))
-
-(defun canvas-quiz--encode-body (params)
-  "Encode PARAMS (an alist, possibly nested) as an urlencoded request body."
-  (mapconcat
-   (lambda (pair)
-     (concat (url-hexify-string (car pair)) "=" (url-hexify-string (format "%s" (cdr pair)))))
-   (canvas-quiz--flatten-params params)
-   "&"))
-
-(defun canvas-quiz--request (method path params)
-  "Make a synchronous METHOD request to Canvas at PATH with PARAMS.
-PATH is relative to /api/v1/. Returns the parsed JSON response as an alist."
-  (let* ((url-request-method method)
-         (url-request-extra-headers
-          `(("Authorization" . ,(concat "Bearer " (canvas-quiz--token)))
-            ("Content-Type" . "application/x-www-form-urlencoded")))
-         (url-request-data (canvas-quiz--encode-body params))
-         (url (format "https://%s/api/v1/%s" (canvas-quiz--domain) path))
-         (buffer (url-retrieve-synchronously url t t 30)))
-    (unless buffer
-      (user-error "Canvas request to %s timed out or failed" url))
-    (unwind-protect
-        (with-current-buffer buffer
-          (goto-char (point-min))
-          (unless (looking-at "HTTP/[0-9.]+ \\([0-9]+\\)")
-            (user-error "Unexpected response from Canvas: %s" (buffer-string)))
-          (let ((status (string-to-number (match-string 1))))
-            (goto-char (point-min))
-            (search-forward "\n\n" nil t)
-            (let* ((body (buffer-substring-no-properties (point) (point-max)))
-                   (parsed (condition-case nil
-                               (json-parse-string body :object-type 'alist :null-object nil)
-                             (error nil))))
-              (if (and (>= status 200) (< status 300))
-                  parsed
-                (user-error "Canvas request to %s failed (%d): %s" url status body)))))
-      (kill-buffer buffer))))
+;;; Canvas
 
 (defun canvas-quiz--create-quiz (course-id title description type published)
   "Create a quiz named TITLE in COURSE-ID. Return the parsed quiz alist."
-  (canvas-quiz--request
+  (canvas-api-request
    "POST"
    (format "courses/%s/quizzes" course-id)
    `(("quiz" . (("title" . ,title)
@@ -369,7 +281,7 @@ PATH is relative to /api/v1/. Returns the parsed JSON response as an alist."
 
 (defun canvas-quiz--create-question (course-id quiz-id question)
   "Create QUESTION (a plist from `canvas-quiz--parse-item') on QUIZ-ID."
-  (canvas-quiz--request
+  (canvas-api-request
    "POST"
    (format "courses/%s/quizzes/%s/questions" course-id quiz-id)
    `(("question" . ,(canvas-quiz--question-params question)))))
@@ -424,7 +336,7 @@ With a prefix argument PUBLISH, publish the quiz immediately; otherwise
 it is created unpublished for review."
   (interactive "P")
   (let* ((quiz (canvas-quiz--parse-buffer))
-         (course-id (read-number "Canvas course ID: " canvas-quiz-default-course-id))
+         (course-id (canvas-api-read-course-id))
          (questions (plist-get quiz :questions))
          (n (length questions)))
     (message "Creating quiz %S..." (plist-get quiz :title))

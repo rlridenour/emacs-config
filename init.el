@@ -2302,6 +2302,82 @@ and convert it to Org using the pandoc utility."
 
 ;; (global-set-key (kbd "H-w") 'formatted-copy)
 
+(defvar rlr/org-preview-css "
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    max-width: 40rem;
+    margin: 3rem auto;
+    padding: 0 1.25rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Iowan Old Style',
+                 'Palatino Linotype', Georgia, serif;
+    font-size: 1.125rem;
+    line-height: 1.65;
+    color: #24292f;
+    background: #fdfdfc;
+    text-rendering: optimizeLegibility;
+    hyphens: auto;
+  }
+  h1, h2, h3, h4 {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    line-height: 1.25;
+    margin-top: 2.25em;
+    color: #14181c;
+  }
+  h1 { font-size: 1.9rem; margin-bottom: 0.2em; }
+  h2 { font-size: 1.45rem; }
+  h3 { font-size: 1.2rem; }
+  .title { text-align: left; margin-bottom: 2rem; }
+  #table-of-contents { font-size: 0.95rem; }
+  a { color: #0b5cad; text-underline-offset: 2px; }
+  blockquote {
+    margin: 1.5em 0; padding: 0.25em 0 0.25em 1.25em;
+    border-left: 3px solid #d0d7de; color: #4a5058; font-style: italic;
+  }
+  pre, code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.9rem; }
+  pre {
+    background: #f4f4f2; padding: 0.9em 1.1em;
+    border-radius: 6px; overflow-x: auto; line-height: 1.45;
+  }
+  code { background: #f0f0ee; padding: 0.1em 0.3em; border-radius: 3px; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 1.5em 0; font-size: 0.95rem; }
+  th, td { border: 1px solid #d0d7de; padding: 0.4em 0.7em; text-align: left; }
+  th { background: #f4f4f2; }
+  hr { border: none; border-top: 1px solid #d8d8d4; margin: 2.5em 0; }
+  .footpara { display: inline; }
+  #postamble { margin-top: 3rem; font-size: 0.85rem; color: #6a707a; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #d6d3cd; background: #16181a; }
+    h1, h2, h3, h4 { color: #f0ede8; }
+    a { color: #6cb3f5; }
+    blockquote { border-left-color: #3a3f45; color: #a8a49d; }
+    pre { background: #1e2124; }
+    code { background: #24282c; }
+    th, td { border-color: #3a3f45; }
+    th { background: #1e2124; }
+    hr { border-top-color: #2e3236; }
+  }
+</style>"
+  "Stylesheet injected into throwaway HTML previews of Org buffers.")
+
+(defun rlr/org-export-html-to-browser ()
+  "Export the current Org buffer to a temporary HTML file and open it.
+The file lives in the system temp directory and is deleted when Emacs exits."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "Not in an Org buffer"))
+  (let* ((tmp (make-temp-file "org-preview-" nil ".html"))
+         (org-export-in-background nil)
+         (org-html-head-include-default-style nil)
+         (org-html-head-include-scripts nil)
+         (org-html-head rlr/org-preview-css)
+         (org-html-validation-link nil))
+    (org-export-to-file 'html tmp)
+    (add-hook 'kill-emacs-hook
+              (lambda () (ignore-errors (delete-file tmp))))
+    (browse-url-of-file tmp)))
+
 (major-mode-hydra-define org-mode
   (:quit-key "q")
   ("Edit"
@@ -2316,7 +2392,8 @@ and convert it to Org using the pandoc utility."
     ("vc" csm/org-word-count "word count")
     ("va" org-appear-mode :toggle t)
     ("vl" org-toggle-link-display :toggle t)
-    ("vv" visible-mode :toggle t)
+    ("vm" visible-mode :toggle t)
+    ("vv" rlr/org-export-html-to-browser "view in browser") 
     ("d1" denote-link "link to note"))
    "Typst"
    (("p" rlr/org-mktypst "Article")
@@ -2533,9 +2610,11 @@ and convert it to Org using the pandoc utility."
 	(kill-region start end)))
   (org-list-repair))
 
+(require 'canvas-api)
+(require 'canvas-page)
 (require 'canvas-quiz)
-(setq canvas-quiz-domain "okbu.instructure.com")
-(setq canvas-quiz-default-course-id 22154) ; optional, pre-fills the prompt
+(setq canvas-domain "okbu.instructure.com")
+(setq canvas-default-course-id 21895) ; optional, pre-fills the prompt
 
 (use-package reformatter
   :defer t)
