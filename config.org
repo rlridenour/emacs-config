@@ -644,7 +644,7 @@ https://github.com/joaotavora/yasnippet
 
 * Settings
 
-* Evil Mode
+** Evil Mode
 
 #+begin_src emacs-lisp :tangle no
   (use-package evil
@@ -678,7 +678,7 @@ This ensures that the Vim navigation keys navigate by visual lines.
 #+end_src
 
 
-** Evil Leader
+*** Evil Leader
 
 #+begin_src emacs-lisp
   (use-package evil-leader
@@ -1773,16 +1773,16 @@ Replace spaces in file names with hyphens using "%s" in dired.
     :ensure nil
     :bind
     (:map dired-mode-map
-	  ("M-<RET>" . crux-open-with)
-	  ("j" . rlr/dired-search-and-enter)
-	  ("J" . dired-goto-file)
-	  ("%s" . my-dired-substspaces))
+  	  ("M-<RET>" . crux-open-with)
+  	  ("j" . rlr/dired-search-and-enter)
+  	  ("J" . dired-goto-file)
+  	  ("%s" . my-dired-substspaces))
     :config
     (setq dired-clean-confirm-killing-deleted-buffers nil)
     (setq dired-dwim-target t) ;; Make copying and moving files easier.
     (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
     :hook ((dired-mode . dired-hide-details-mode)
-	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+  	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 Copy path of current buffer or dired entry.From [[http://xahlee.info/emacs/emacs/emacs_copy_file_path.html][Emacs: Copy File Path of Current Buffer]]
@@ -5670,7 +5670,7 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (bind-key "s-d" 'randy-dashboard-open)
 
   (setq randy-dashboard-recent-files-exclude
-	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)

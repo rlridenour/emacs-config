@@ -3646,7 +3646,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (bind-key "s-d" 'randy-dashboard-open)
 
 (setq randy-dashboard-recent-files-exclude
-	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld"))
 
 (defun dashboard-startup ()
   (randy-dashboard-open)
