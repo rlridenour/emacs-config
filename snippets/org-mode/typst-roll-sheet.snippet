@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: typst-roll-sheet
+# key: trollsheet
+# --
+:drawer:
+#+TYPST: #set page(paper: "us-letter", margin: (x: 1in, y: 1in))
+#+TYPST: #set text(font: "Libertinus Serif", size: 11pt)
+#+OPTIONS: toc:nil
+:end:
+
+
+*PHIL 1043$1*\\\\
+#+BEGIN_EXPORT typst
+*#datetime.today().display("[month repr:long] [day], [year]")*
+#+END_EXPORT
+

@@ -85,7 +85,7 @@
   (:map transient-map
 	 ("<escape>" . transient-quit-one)))
 
-(use-package casual-suite
+(use-package casual-suite 
    :bind
    ("H-." . casual-editkit-main-tmenu)
    ("M-g a" . casual-avy-tmenu))
@@ -124,6 +124,8 @@
 
  (with-eval-after-load 'org
    (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
+
+(bind-key "H-r" 'casual-editkit-rectangle-tmenu)
 
 (use-package major-mode-hydra
   :custom
@@ -882,7 +884,8 @@
 	  ("M-<RET>" . crux-open-with)
 	  ("j" . rlr/dired-search-and-enter)
 	  ("J" . dired-goto-file)
-	  ("%s" . my-dired-substspaces))
+	  ("%s" . my-dired-substspaces)
+	  ("b" . rlr/dired-preview-in-browser))
   :config
   (setq dired-clean-confirm-killing-deleted-buffers nil)
   (setq dired-dwim-target t) ;; Make copying and moving files easier.
@@ -922,6 +925,28 @@ Version: 2021-09-30"
        (progn
 	 (message "File path copied: %s" xfpath)
 	 xfpath )))))
+
+(defun rlr/dired-preview-in-browser ()
+  "Export the Org or Markdown file at point in Dired to HTML and open it.
+The file is opened in a temporary buffer that is killed after export."
+  (interactive)
+  (let ((file (dired-get-file-for-visit)))
+    (unless file
+      (user-error "No file on this line"))
+    (let ((ext (file-name-extension file)))
+      (cond
+       ((string= ext "org")
+        (let ((buf (find-file-noselect file)))
+          (with-current-buffer buf
+            (rlr/org-export-html-to-browser))
+          (kill-buffer buf)))
+       ((member ext '("md" "markdown" "mkd"))
+        (let ((buf (find-file-noselect file)))
+          (with-current-buffer buf
+            (rlr/markdown-export-html-to-browser))
+          (kill-buffer buf)))
+       (t
+        (user-error "Not a Markdown or Org file: %s" file))))))
 
 (use-package speedbar
   :ensure nil
@@ -2283,7 +2308,39 @@ and convert it to Org using the pandoc utility."
   (org-ctrl-c-ctrl-c)
   ;; Insert LaTeX header.
   (goto-char (point-min))
-  (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
+  (yas-expand-snippet (yas-lookup-snippet "latex-roll-sheet")))
+
+(defun create-typst-roll-sheet ()
+  (interactive)
+  ;; Append signature cells to each line.
+  (goto-char (point-min))
+  (replace-regexp "$" " |  | ")
+  ;; kill bottom half of buffer and move to top
+  (setq lines (count-lines (point-min) (point-max)))
+  (setq lines (+ lines (% lines 2) ))
+  (setq midpoint (+ (/ lines 2) 1))
+  (goto-line midpoint)
+  (kill-region (point) (point-max))
+  (beginning-of-buffer)
+  ;; Append each line from kill-ring to remaining lines.
+  (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
+    (if (eobp)
+	  (newline)
+	(move-end-of-line nil))
+    (insert cur-line-to-insert)
+    (forward-line))
+  ;; Prepend pipe character to each line and kill last line.
+  (goto-char (point-min))
+  (replace-regexp "^" "| ")
+  (kill-whole-line)
+  ;; insert Typst table format and header lines
+  (goto-char (point-min))
+  (insert "#+ATTR_TYPST: :stroke (x, y) => (top: if y == 0 { none } else { 0.5pt }, bottom: 0.5pt) :columns (auto, 1fr, auto, 1fr) :align (bottom)  :rows 1fr\n| *Name*              | *Signature* | *Name*              | *Signature* | \n")
+  ;; Clean up table.
+  (org-ctrl-c-ctrl-c)
+  ;; Insert LaTeX header.
+  (goto-char (point-min))
+  (yas-expand-snippet (yas-lookup-snippet "typst-roll-sheet")))
 
 (require 'org-mcq-to-lisp)
 
@@ -2401,7 +2458,7 @@ The file lives in the system temp directory and is deleted when Emacs exits."
     ("wt" rlr/org-rlr-typst-export-and-watch "Start Typst Watch")
     ("st" rlr/org-rlr-typst-stop-watch "Stop Typst Watch")
     ("lt" rlr/org-rlr-typst-list-watches "List Typst Watches")
-    ("h" make-typst-syllabus "Syllabus")
+    ("y" make-typst-syllabus "Syllabus")
     ("x" org-exam-export-to-pdf "Exam")
     ("X" org-exam-export-versions-to-pdf "Exam Versions")
     ("o" rlr/org-goto-pdf "View PDF")
@@ -2769,7 +2826,27 @@ Calling this again on an already-watched buffer stops the old watcher first."
 
 (use-package markdown-ts-mode
   :defer t
+  :mode ("\\.md\\'" . markdown-ts-mode)
   :commands (markdown-ts-mode))
+
+(defun rlr/markdown-export-html-to-browser ()
+  "Export the current Markdown buffer to a temporary HTML file and open it."
+  (interactive)
+  (unless (derived-mode-p 'markdown-mode 'gfm-mode)
+    (user-error "Not in a Markdown buffer"))
+  (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
+         (html (shell-command-to-string
+                (format "pandoc --from=gfm --to=html5 %s"
+                        (shell-quote-argument (buffer-file-name))))))
+    (with-temp-file tmp
+      (insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+              rlr/org-preview-css
+              "</head><body>\n"
+              html
+              "\n</body></html>"))
+    (add-hook 'kill-emacs-hook
+              (lambda () (ignore-errors (delete-file tmp))))
+    (browse-url-of-file tmp)))
 
 (require 'ox-rlr-slipshow)
 

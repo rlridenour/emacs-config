@@ -355,46 +355,61 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 *** Casual Suite
 
+
+#+begin_src emacs-lisp :tangle no
+  (use-package casual
+    :vc (:url https://github.com/kickingvegas/casual)
+    :init
+    (setq casual-keybinding-primary "s-.")
+    (setq casual-keybinding-secondary "M-m")
+    :config
+    (casual init))
+#+end_src
+
+
+
 #+begin_src emacs-lisp
-  (use-package casual-suite
-    :bind
-    ("H-." . casual-editkit-main-tmenu)
-    ("M-g a" . casual-avy-tmenu))
+   (use-package casual-suite 
+     :bind
+     ("H-." . casual-editkit-main-tmenu)
+     ("M-g a" . casual-avy-tmenu))
 
-  (with-eval-after-load 'dired
-    (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
+   (with-eval-after-load 'dired
+     (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
 
-  (with-eval-after-load 'calc
-    (define-key calc-mode-map (kbd "s-.") #'casual-calc-tmenu))
+   (with-eval-after-load 'calc
+     (define-key calc-mode-map (kbd "s-.") #'casual-calc-tmenu))
 
-  (with-eval-after-load 'isearch
-    (define-key isearch-mode-map (kbd "s-.") #'casual-isearch-tmenu))
+   (with-eval-after-load 'isearch
+     (define-key isearch-mode-map (kbd "s-.") #'casual-isearch-tmenu))
 
-  (with-eval-after-load 'reb
-    (define-key casual-re-builder-map (kbd "s-.") #'casual-re-builder-menu))
+   (with-eval-after-load 'reb
+     (define-key casual-re-builder-map (kbd "s-.") #'casual-re-builder-menu))
 
-  (with-eval-after-load 'ibuffer
-    (define-key ibuffer-mode-map (kbd "s-.")  #'casual-ibuffer-tmenu)
-    (define-key ibuffer-mode-map (kbd "F")  #'casual-ibuffer-filter-tmenu)
-    (define-key ibuffer-mode-map (kbd "s")  #'casual-ibuffer-sortby-tmenu))
+   (with-eval-after-load 'ibuffer
+     (define-key ibuffer-mode-map (kbd "s-.")  #'casual-ibuffer-tmenu)
+     (define-key ibuffer-mode-map (kbd "F")  #'casual-ibuffer-filter-tmenu)
+     (define-key ibuffer-mode-map (kbd "s")  #'casual-ibuffer-sortby-tmenu))
 
-  (with-eval-after-load 'bookmark
-    (define-key bookmark-bmenu-mode-map (kbd "s-.") #'casual-bookmarks-tmenu))
+   (with-eval-after-load 'bookmark
+     (define-key bookmark-bmenu-mode-map (kbd "s-.") #'casual-bookmarks-tmenu))
 
- (with-eval-after-load 'org-agenda
-    (define-key org-agenda-mode-map (kbd "s-.") #'casual-agenda-tmenu))
+  (with-eval-after-load 'org-agenda
+     (define-key org-agenda-mode-map (kbd "s-.") #'casual-agenda-tmenu))
 
-  (with-eval-after-load 'Info
-    (define-key Info-mode-map (kbd "s-.") #'casual-info-tmenu))
+   (with-eval-after-load 'Info
+     (define-key Info-mode-map (kbd "s-.") #'casual-info-tmenu))
 
-  (with-eval-after-load 'calendar
-    (define-key calendar-mode-map (kbd "s-.") #'casual-calendar-tmenu))
+   (with-eval-after-load 'calendar
+     (define-key calendar-mode-map (kbd "s-.") #'casual-calendar-tmenu))
 
-  (with-eval-after-load 'eww
-    (define-key eww-mode-map (kbd "s-.") #'casual-eww-tmenu))
+   (with-eval-after-load 'eww
+     (define-key eww-mode-map (kbd "s-.") #'casual-eww-tmenu))
 
-  (with-eval-after-load 'org
-    (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
+   (with-eval-after-load 'org
+     (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
+
+  (bind-key "H-r" 'casual-editkit-rectangle-tmenu)
 #+end_src
 
 *** Hydra
@@ -1776,7 +1791,8 @@ Replace spaces in file names with hyphens using "%s" in dired.
   	  ("M-<RET>" . crux-open-with)
   	  ("j" . rlr/dired-search-and-enter)
   	  ("J" . dired-goto-file)
-  	  ("%s" . my-dired-substspaces))
+  	  ("%s" . my-dired-substspaces)
+  	  ("b" . rlr/dired-preview-in-browser))
     :config
     (setq dired-clean-confirm-killing-deleted-buffers nil)
     (setq dired-dwim-target t) ;; Make copying and moving files easier.
@@ -1821,6 +1837,34 @@ Version: 2021-09-30"
 	 (message "File path copied: %s" xfpath)
 	 xfpath )))))
 #+end_src
+
+Open Org and Markdown files in the default browser.
+
+#+begin_src emacs-lisp
+(defun rlr/dired-preview-in-browser ()
+  "Export the Org or Markdown file at point in Dired to HTML and open it.
+The file is opened in a temporary buffer that is killed after export."
+  (interactive)
+  (let ((file (dired-get-file-for-visit)))
+    (unless file
+      (user-error "No file on this line"))
+    (let ((ext (file-name-extension file)))
+      (cond
+       ((string= ext "org")
+        (let ((buf (find-file-noselect file)))
+          (with-current-buffer buf
+            (rlr/org-export-html-to-browser))
+          (kill-buffer buf)))
+       ((member ext '("md" "markdown" "mkd"))
+        (let ((buf (find-file-noselect file)))
+          (with-current-buffer buf
+            (rlr/markdown-export-html-to-browser))
+          (kill-buffer buf)))
+       (t
+        (user-error "Not a Markdown or Org file: %s" file))))))
+#+end_src
+
+
 
 *** Speedbar
 
@@ -3763,7 +3807,7 @@ Function for converting Org mode files to QTI file for importing into Canvas usi
     )
 #+end_src
 
-Create attendance sheet.
+Create LaTeX attendance sheet.
 
 #+begin_src emacs-lisp
   (defun create-roll-sheet ()
@@ -3796,7 +3840,43 @@ Create attendance sheet.
     (org-ctrl-c-ctrl-c)
     ;; Insert LaTeX header.
     (goto-char (point-min))
-    (yas-expand-snippet (yas-lookup-snippet "roll-sheet")))
+    (yas-expand-snippet (yas-lookup-snippet "latex-roll-sheet")))
+#+end_src
+
+Create Typst attendance sheet.
+
+#+begin_src emacs-lisp
+  (defun create-typst-roll-sheet ()
+    (interactive)
+    ;; Append signature cells to each line.
+    (goto-char (point-min))
+    (replace-regexp "$" " |  | ")
+    ;; kill bottom half of buffer and move to top
+    (setq lines (count-lines (point-min) (point-max)))
+    (setq lines (+ lines (% lines 2) ))
+    (setq midpoint (+ (/ lines 2) 1))
+    (goto-line midpoint)
+    (kill-region (point) (point-max))
+    (beginning-of-buffer)
+    ;; Append each line from kill-ring to remaining lines.
+    (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
+      (if (eobp)
+	  (newline)
+	(move-end-of-line nil))
+      (insert cur-line-to-insert)
+      (forward-line))
+    ;; Prepend pipe character to each line and kill last line.
+    (goto-char (point-min))
+    (replace-regexp "^" "| ")
+    (kill-whole-line)
+    ;; insert Typst table format and header lines
+    (goto-char (point-min))
+    (insert "#+ATTR_TYPST: :stroke (x, y) => (top: if y == 0 { none } else { 0.5pt }, bottom: 0.5pt) :columns (auto, 1fr, auto, 1fr) :align (bottom)  :rows 1fr\n| *Name*              | *Signature* | *Name*              | *Signature* | \n")
+    ;; Clean up table.
+    (org-ctrl-c-ctrl-c)
+    ;; Insert LaTeX header.
+    (goto-char (point-min))
+    (yas-expand-snippet (yas-lookup-snippet "typst-roll-sheet")))
 #+end_src
 
 For converting simple org mode list quiz questions to the lisp format.
@@ -3828,6 +3908,8 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 
 
 ** Org Preview
+
+View Org file in the default browser.
 
 #+begin_src emacs-lisp
 (defvar rlr/org-preview-css "
@@ -3935,7 +4017,7 @@ The file lives in the system temp directory and is deleted when Emacs exits."
       ("wt" rlr/org-rlr-typst-export-and-watch "Start Typst Watch")
       ("st" rlr/org-rlr-typst-stop-watch "Stop Typst Watch")
       ("lt" rlr/org-rlr-typst-list-watches "List Typst Watches")
-      ("h" make-typst-syllabus "Syllabus")
+      ("y" make-typst-syllabus "Syllabus")
       ("x" org-exam-export-to-pdf "Exam")
       ("X" org-exam-export-versions-to-pdf "Exam Versions")
       ("o" rlr/org-goto-pdf "View PDF")
@@ -4403,8 +4485,36 @@ Calling this again on an already-watched buffer stops the old watcher first."
 #+begin_src emacs-lisp
   (use-package markdown-ts-mode
     :defer t
+    :mode ("\\.md\\'" . markdown-ts-mode)
     :commands (markdown-ts-mode))
 #+end_src
+
+** Markdown Preview
+
+View Markdown file in the default browser.
+
+#+begin_src emacs-lisp
+(defun rlr/markdown-export-html-to-browser ()
+  "Export the current Markdown buffer to a temporary HTML file and open it."
+  (interactive)
+  (unless (derived-mode-p 'markdown-mode 'gfm-mode)
+    (user-error "Not in a Markdown buffer"))
+  (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
+         (html (shell-command-to-string
+                (format "pandoc --from=gfm --to=html5 %s"
+                        (shell-quote-argument (buffer-file-name))))))
+    (with-temp-file tmp
+      (insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+              rlr/org-preview-css
+              "</head><body>\n"
+              html
+              "\n</body></html>"))
+    (add-hook 'kill-emacs-hook
+              (lambda () (ignore-errors (delete-file tmp))))
+    (browse-url-of-file tmp)))
+#+end_src
+
+
 
 * Slipshow
 
