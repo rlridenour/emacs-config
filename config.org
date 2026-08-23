@@ -3843,6 +3843,23 @@ Create LaTeX attendance sheet.
     (yas-expand-snippet (yas-lookup-snippet "latex-roll-sheet")))
 #+end_src
 
+Convert region from "LastName, FirstName" to "FirstName LastName".
+
+#+begin_src emacs-lisp
+(defun rlr/swap-lastname-firstname-in-region (start end)
+  "Swap \"LastName, FirstName\" to \"FirstName LastName\" for each line in region."
+  (interactive "r")
+  (save-excursion
+    (save-match-data
+      (goto-char start)
+      (let ((end-marker (copy-marker end)))
+        (while (< (point) end-marker)
+          (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
+            (replace-match "\\2 \\1" nil nil))
+          (forward-line 1))
+        (set-marker end-marker nil)))))
+#+end_src
+
 Create Typst attendance sheet.
 
 #+begin_src emacs-lisp

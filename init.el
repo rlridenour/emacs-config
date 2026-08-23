@@ -2310,6 +2310,19 @@ and convert it to Org using the pandoc utility."
   (goto-char (point-min))
   (yas-expand-snippet (yas-lookup-snippet "latex-roll-sheet")))
 
+(defun rlr/swap-lastname-firstname-in-region (start end)
+  "Swap \"LastName, FirstName\" to \"FirstName LastName\" for each line in region."
+  (interactive "r")
+  (save-excursion
+    (save-match-data
+      (goto-char start)
+      (let ((end-marker (copy-marker end)))
+        (while (< (point) end-marker)
+          (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
+            (replace-match "\\2 \\1" nil nil))
+          (forward-line 1))
+        (set-marker end-marker nil)))))
+
 (defun create-typst-roll-sheet ()
   (interactive)
   ;; Append signature cells to each line.
