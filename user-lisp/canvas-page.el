@@ -30,36 +30,20 @@
 ;;; Code:
 
 (require 'org)
-(require 'ox-html)
 (require 'cl-lib)
 (require 'canvas-api)
+(require 'canvas-org)
 
 (defgroup canvas-page nil
   "Upload Org-authored pages to Canvas."
   :group 'canvas)
 
-(defcustom canvas-page-export-options
-  '(:with-toc nil
-    :section-numbers nil
-    :html-toplevel-hlevel 2
-    :html-self-link-headlines nil
-    :html-container "div")
-  "Extra export options passed to the HTML exporter for page bodies.
-A plist in the form `org-export-as' accepts as its EXT-PLIST argument.
-The defaults suit Canvas: no table of contents, no section numbers, and
-headlines starting at <h2> because Canvas renders the page title as the
-page's <h1>."
-  :type '(plist)
-  :group 'canvas-page)
-
-(defcustom canvas-page-strip-generated-ids t
-  "When non-nil, drop Org's auto-generated `id=\"orgXXXXXXX\"' anchors.
-Org mints those anchors afresh on every export, so leaving them in makes
-each upload differ from the last even when the Org source has not changed,
-cluttering the page's revision history in Canvas.  Explicit `#+NAME:' and
-`CUSTOM_ID' anchors are untouched, so internal links still work."
-  :type 'boolean
-  :group 'canvas-page)
+;; The Org-to-HTML layer moved to canvas-org.el when canvas-assignment.el
+;; started needing it too; the old names still work.
+(define-obsolete-variable-alias 'canvas-page-export-options
+  'canvas-org-export-options "canvas-page 1.1")
+(define-obsolete-variable-alias 'canvas-page-strip-generated-ids
+  'canvas-org-strip-generated-ids "canvas-page 1.1")
 
 (defcustom canvas-page-default-editing-roles nil
   "Default Canvas `editing_roles' for uploaded pages, or nil to let Canvas decide.
@@ -70,33 +54,22 @@ A comma-separated string; Canvas accepts \"teachers\", \"students\",
 
 ;;; Metadata
 
-(defun canvas-page--keyword (key)
-  "Return the value of buffer keyword #+KEY:, or nil if absent or empty."
-  (let ((val (cdr (assoc key (org-collect-keywords (list key))))))
-    (when val
-      (let ((s (string-trim (mapconcat #'identity val " "))))
-        (unless (string-empty-p s) s)))))
-
-(defun canvas-page--truthy (str)
-  "Return non-nil if STR is an Org-ish spelling of true."
-  (and str (member (downcase (string-trim str)) '("t" "true" "yes" "y" "1"))))
-
 (defun canvas-page--buffer-metadata ()
   "Collect page metadata from the current buffer's #+KEYWORD: lines.
 Return a plist (:title :url :published :front-page :editing-roles :notify
 :course-id)."
-  (let ((title (or (canvas-page--keyword "PAGE_TITLE")
-                   (canvas-page--keyword "TITLE"))))
+  (let ((title (or (canvas-org-keyword "PAGE_TITLE")
+                   (canvas-org-keyword "TITLE"))))
     (unless title
       (user-error "Missing required #+PAGE_TITLE: (or #+TITLE:) keyword"))
     (list :title title
-          :url (canvas-page--keyword "PAGE_URL")
-          :published (canvas-page--truthy (canvas-page--keyword "PAGE_PUBLISHED"))
-          :front-page (canvas-page--truthy (canvas-page--keyword "PAGE_FRONT_PAGE"))
-          :editing-roles (or (canvas-page--keyword "PAGE_EDITING_ROLES")
+          :url (canvas-org-keyword "PAGE_URL")
+          :published (canvas-org-truthy (canvas-org-keyword "PAGE_PUBLISHED"))
+          :front-page (canvas-org-truthy (canvas-org-keyword "PAGE_FRONT_PAGE"))
+          :editing-roles (or (canvas-org-keyword "PAGE_EDITING_ROLES")
                              canvas-page-default-editing-roles)
-          :notify (canvas-page--truthy (canvas-page--keyword "PAGE_NOTIFY"))
-          :course-id (let ((id (canvas-page--keyword "PAGE_COURSE_ID")))
+          :notify (canvas-org-truthy (canvas-org-keyword "PAGE_NOTIFY"))
+          :course-id (let ((id (canvas-org-keyword "PAGE_COURSE_ID")))
                        (and id (string-to-number id))))))
 
 (defun canvas-page--subtree-metadata ()
@@ -116,34 +89,18 @@ back to buffer keywords for anything unset."
           ;; A url is per-page, so unlike the rest it is never inherited from
           ;; a parent headline or from the buffer.
           :url (org-entry-get nil "PAGE_URL")
-          :published (canvas-page--truthy (funcall get "PAGE_PUBLISHED"))
-          :front-page (canvas-page--truthy (funcall get "PAGE_FRONT_PAGE"))
+          :published (canvas-org-truthy (funcall get "PAGE_PUBLISHED"))
+          :front-page (canvas-org-truthy (funcall get "PAGE_FRONT_PAGE"))
           :editing-roles (or (funcall get "PAGE_EDITING_ROLES")
                              (plist-get buffer-meta :editing-roles)
                              canvas-page-default-editing-roles)
-          :notify (canvas-page--truthy (funcall get "PAGE_NOTIFY"))
+          :notify (canvas-org-truthy (funcall get "PAGE_NOTIFY"))
           :course-id (let ((id (funcall get "PAGE_COURSE_ID")))
                        (if id
                            (string-to-number id)
                          (plist-get buffer-meta :course-id))))))
 
-;;; Org -> HTML
-
-(defun canvas-page--clean-html (html)
-  "Post-process exported HTML for Canvas.
-Currently just honours `canvas-page-strip-generated-ids'."
-  (if canvas-page-strip-generated-ids
-      (replace-regexp-in-string
-       " id=\"\\(?:outline-container-\\|text-\\)?org[0-9a-f]+\"" "" html t t)
-    html))
-
-(defun canvas-page--export-body (subtreep)
-  "Export the current buffer (or, with SUBTREEP, the subtree at point) to HTML.
-Returns the body HTML only -- no <html>, <head>, title, or postamble."
-  (let ((org-export-with-broken-links t))
-    (canvas-page--clean-html
-     (string-trim
-      (org-export-as 'html subtreep nil t canvas-page-export-options)))))
+;;; Page URLs
 
 (defun canvas-page--slug (title)
   "Derive a Canvas page URL slug from TITLE.
@@ -171,9 +128,9 @@ Returns the metadata plist with :body (the exported HTML) added."
         (unless (or (org-at-heading-p) (ignore-errors (org-back-to-heading t)))
           (user-error "Point is not inside a subtree"))
         (let ((meta (canvas-page--subtree-metadata)))
-          (plist-put meta :body (canvas-page--export-body t))))
+          (plist-put meta :body (canvas-org-export-body t))))
     (let ((meta (canvas-page--buffer-metadata)))
-      (plist-put meta :body (canvas-page--export-body nil)))))
+      (plist-put meta :body (canvas-org-export-body nil)))))
 
 ;;; Canvas
 
@@ -184,7 +141,7 @@ a locally derived slug keeps re-uploads landing on the same page even when
 Canvas slugified the title differently than `canvas-page--slug' would."
   (let ((results (canvas-api-request
                   "GET" (format "courses/%s/pages" course-id)
-                  `(("search_term" . ,title) ("per_page" . 100))
+                  (canvas-api-search-params title)
                   t)))
     (cl-loop with wanted = (downcase title)
              for page across (or results [])

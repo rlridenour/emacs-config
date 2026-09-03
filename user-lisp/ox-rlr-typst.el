@@ -523,9 +523,19 @@ type alone isn't reliable for mixed runs."
 ;;;; Plain Text
 
 (defun org-rlr-typst-plain-text (text info)
-  "Transcode a TEXT string into Typst format."
-  (when (plist-get info :with-smart-quotes)
-    (setq text (org-export-activate-smart-quotes text :utf-8 info)))
+  "Transcode a TEXT string into Typst format.
+Quote characters are passed through untouched, so that Typst's own
+`smartquote' resolves them.  That is deliberate: it is language-aware
+and better at the job than `org-export-activate-smart-quotes', which
+only treats a single quote as a quotation mark when it sits inside a
+double-quoted run and so renders a standalone \='quoted\=' word as two
+closing apostrophes.  Typst also sees the whole document rather than
+one plain-text fragment at a time, so a quotation spanning emphasis or
+a link still pairs up.
+
+For literal straight quotes instead, turn Typst's handling off with a
+\=`#+TYPST: #set smartquote(enabled: false)\=' line; the Org \=`\='\=' export
+option has no effect on this back-end."
   ;; Protect \, #, `, *, _, @, and $ -- always-reserved Typst markup characters.
   (setq text (replace-regexp-in-string "[\\#`*_@$]" "\\\\\\&" text))
   (when (plist-get info :with-special-strings)

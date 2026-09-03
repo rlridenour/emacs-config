@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: canvas-assignment
+# key: assign
+# group: canvas
+# --
+#+ASSIGNMENT_NAME: $1
+#+ASSIGNMENT_POINTS: ${2:100}               
+#+ASSIGNMENT_DUE: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+ASSIGNMENT_UNLOCK: 
+#+ASSIGNMENT_LOCK: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+ASSIGNMENT_SUBMISSION_TYPES: online_text_entry,online_upload
+#+ASSIGNMENT_ALLOWED_EXTENSIONS: pdf, docx
+#+ASSIGNMENT_GRADING_TYPE: points
+#+ASSIGNMENT_GROUP: ${3:Assignments}
+#+ASSIGNMENT_PUBLISHED: ${4:t}
+#+ASSIGNMENT_ATTEMPTS: ${5:-1}
+#+ASSIGNMENT_COURSE_ID:
+
+$0

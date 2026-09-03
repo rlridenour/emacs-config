@@ -1,0 +1,18 @@
+# -*- mode: snippet -*-
+# name: canvas-quiz
+# key: quiz
+# group: canvas
+# --
+#+QUIZ_NAME: $1
+#+QUIZ_DESCRIPTION: $2
+#+QUIZ_TYPE: 
+#+QUIZ_DUE: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+QUIZ_UNLOCK:
+#+QUIZ_LOCK: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+QUIZ_GROUP: ${3:Quizzes}
+#+QUIZ_PUBLISHED: ${5:t}
+#+QUIZ_ATTEMPTS: ${6:1}
+#+QUIZ_ID:
+#+QUIZ_COURSE_ID:
+
+$0

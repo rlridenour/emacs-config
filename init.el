@@ -1294,6 +1294,9 @@ The file is opened in a temporary buffer that is killed after export."
 (use-package wc-mode
   :commands (wc-mode))
 
+(use-package hyperbole
+  )
+
 (bind-keys
  ("<s-up>" . beginning-of-buffer)
  ("<s-down>" .  end-of-buffer)
@@ -2357,6 +2360,72 @@ and convert it to Org using the pandoc utility."
 
 (require 'org-mcq-to-lisp)
 
+(defun rlr/org-beamer-notes-to-block ()
+  "Convert all Beamer note subtrees into #+begin_note/#+end_note blocks.
+Any heading with :BEAMER_ENV: note in its property drawer, at any
+level, has its heading line and property drawer removed, and its
+body content wrapped in a #+begin_note ... #+end_note block."
+  (interactive)
+  (org-with-wide-buffer
+   (let ((markers (org-map-entries (lambda () (point-marker))
+                                    "BEAMER_ENV=\"note\"")))
+     (dolist (m markers)
+       (goto-char m)
+       (org-back-to-heading t)
+       (let ((heading-start (point-marker))
+             (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
+         (goto-char heading-start)
+         (forward-line 1)
+         (when (looking-at-p "^[ \t]*:PROPERTIES:")
+           (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
+         ;; skip any blank lines before the content
+         (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
+           (forward-line 1))
+         (delete-region heading-start (point))
+         (goto-char heading-start)
+         (insert "#+begin_note\n")
+         ;; find the real end of content, trimming trailing blank lines
+         (goto-char subtree-end)
+         (skip-chars-backward " \t\n")
+         (forward-line 1)
+         (delete-region (point) subtree-end)
+         (insert "#+end_note\n")
+         (set-marker heading-start nil)
+         (set-marker subtree-end nil))
+       (set-marker m nil)))))
+
+(defun rlr/org-delete-notes-headings ()
+  "Delete any heading titled \"Notes\" (any level, any tags) and
+all its content, up to but not including the next heading at any
+level."
+  (interactive)
+  (org-with-wide-buffer
+   (let (markers)
+     (org-map-entries
+      (lambda () (push (point-marker) markers)))
+     (setq markers (nreverse markers))
+     ;; Filter down to headings whose title (ignoring tags/whitespace) is "Notes"
+     (setq markers
+           (seq-filter
+            (lambda (m)
+              (save-excursion
+                (goto-char m)
+                (beginning-of-line)
+                (looking-at
+                 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
+            markers))
+     (dolist (m markers)
+       (goto-char m)
+       (org-back-to-heading t)
+       (let ((start (point))
+             (end (save-excursion
+                    (forward-line 1)
+                    (if (re-search-forward org-heading-regexp nil t)
+                        (match-beginning 0)
+                      (point-max)))))
+         (delete-region start end))
+       (set-marker m nil)))))
+
 (defun formatted-copy ()
   "Export region to HTML, and copy it to the clipboard."
   (interactive)
@@ -2681,8 +2750,10 @@ The file lives in the system temp directory and is deleted when Emacs exits."
   (org-list-repair))
 
 (require 'canvas-api)
+(require 'canvas-org)
 (require 'canvas-page)
 (require 'canvas-quiz)
+(require 'canvas-assignment)
 (setq canvas-domain "okbu.instructure.com")
 (setq canvas-default-course-id 21895) ; optional, pre-fills the prompt
 

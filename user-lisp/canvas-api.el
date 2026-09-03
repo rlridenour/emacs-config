@@ -6,8 +6,9 @@
 ;; expects, and how to make a synchronous request with `url.el' -- no external
 ;; dependencies.
 ;;
-;; Nothing here knows about quizzes or pages; see canvas-quiz.el and
-;; canvas-page.el for those.
+;; Nothing here knows about quizzes or pages -- see canvas-quiz.el and
+;; canvas-page.el for those -- beyond the one course-level lookup (assignment
+;; groups) that quizzes and assignments both need.
 
 ;;; Code:
 
@@ -68,11 +69,17 @@ A value that is itself an alist (its first element's car is a string, e.g.
 \\=(\"title\" . \"Foo\")\\=) recurses with a \"PREFIX[KEY]\" prefix; a value
 that is a list of alists (its first element's car is itself a cons)
 recurses with a \"PREFIX[]\" prefix for each element -- used for
-question[answers][]."
+question[answers][].  A vector is an array of scalars, and each element
+is emitted under a \"PREFIX[]\" key -- used for
+assignment[submission_types][]."
   (cl-loop for (key . value) in params
            append
            (let ((full-key (if prefix (format "%s[%s]" prefix key) (format "%s" key))))
              (cond
+              ((vectorp value)
+               ;; value is a vector of scalars -> array of values
+               (cl-loop for element across value
+                        collect (cons (concat full-key "[]") element)))
               ((and (consp value) (consp (car value)) (stringp (caar value)))
                ;; value is itself an alist -> nested object
                (canvas-api--flatten-params value full-key))
@@ -126,14 +133,42 @@ With ALLOW-404 non-nil, a 404 response returns nil instead of signalling."
                    ;; decode so non-ASCII in responses (and error messages)
                    ;; survives.
                    (body (if (multibyte-string-p raw) raw (decode-coding-string raw 'utf-8)))
+                   ;; JSON false would otherwise parse to the keyword `:false',
+                   ;; which is *truthy* in Lisp -- a trap for any caller testing
+                   ;; a boolean field such as a quiz's `unpublishable'.
                    (parsed (condition-case nil
-                               (json-parse-string body :object-type 'alist :null-object nil)
+                               (json-parse-string body :object-type 'alist
+                                                  :null-object nil :false-object nil)
                              (error nil))))
               (cond
                ((and (>= status 200) (< status 300)) parsed)
                ((and allow-404 (= status 404)) nil)
                (t (user-error "Canvas request to %s failed (%d): %s" url status body))))))
       (kill-buffer buffer))))
+
+(defun canvas-api-search-params (term)
+  "Return the listing params for finding a course object named TERM.
+Canvas rejects a `search_term' shorter than three characters, so a name
+that short asks for the first hundred objects instead and is matched by
+the caller, which compares the full name anyway."
+  (if (>= (length term) 3)
+      `(("search_term" . ,term) ("per_page" . 100))
+    '(("per_page" . 100))))
+
+(defun canvas-api-assignment-group-id (course-id group)
+  "Resolve GROUP -- an assignment group name or numeric ID -- in COURSE-ID.
+Quizzes of type \"assignment\" land in an assignment group just as
+assignments do, so both modules look one up the same way."
+  (if (string-match-p "\\`[0-9]+\\'" (string-trim group))
+      (string-to-number group)
+    (let ((groups (canvas-api-request
+                   "GET" (format "courses/%s/assignment_groups" course-id)
+                   '(("per_page" . 100)))))
+      (or (cl-loop with wanted = (downcase (string-trim group))
+                   for g across (or groups [])
+                   when (equal (downcase (or (alist-get 'name g) "")) wanted)
+                   return (alist-get 'id g))
+          (user-error "No assignment group named %S in course %s" group course-id)))))
 
 (defun canvas-api-read-course-id (&optional default)
   "Prompt for a Canvas course ID, defaulting to DEFAULT or
