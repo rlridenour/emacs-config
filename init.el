@@ -85,7 +85,7 @@
   (:map transient-map
 	 ("<escape>" . transient-quit-one)))
 
-(use-package casual-suite 
+(use-package casual-suite
    :bind
    ("H-." . casual-editkit-main-tmenu)
    ("M-g a" . casual-avy-tmenu))
@@ -252,11 +252,11 @@
   )
 
 (use-package corfu
-  :defer 1
-:custom
-(corfu-cycle t)
-:config
-(global-corfu-mode))
+  :hook (after-init . global-corfu-mode)
+  :custom
+  (corfu-cycle t)
+  :config
+  (global-corfu-mode))
 
 (set-default 'abbrev-mode t)
 (setq abbrev-file-name "~/Dropbox/emacs/my-emacs-abbrev.el")
@@ -270,15 +270,15 @@
   (after-init . yas-global-mode))
 
 (use-package evil-leader
-    :ensure t
-    :config
-    (global-evil-leader-mode t)
-    (evil-leader/set-leader "<SPC>")
-    (evil-leader/set-key
-	"s l" 'avy-goto-line
-	"d x w" 'delete-trailing-whitespace
-	)
+  :ensure t
+  :config
+  (global-evil-leader-mode t)
+  (evil-leader/set-leader "<SPC>")
+  (evil-leader/set-key
+    "s l" 'avy-goto-line
+    "d x w" 'delete-trailing-whitespace
     )
+  )
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -357,7 +357,7 @@
   (after-init . savehist-mode))
 
 (setq read-extended-command-predicate
-      #'command-completion-default-include-p)
+	#'command-completion-default-include-p)
 
 (setq redisplay-skip-fontification-on-input t)
 
@@ -366,13 +366,13 @@
 (setq kill-do-not-save-duplicates t)
 
 (setq savehist-additional-variables
-      '(search-ring regexp-search-ring kill-ring))
+	'(search-ring regexp-search-ring kill-ring))
 
 (add-hook 'savehist-save-hook
-	  (lambda ()
-	    (setq kill-ring
-		  (mapcar #'substring-no-properties
-			  (cl-remove-if-not #'stringp kill-ring)))))
+	    (lambda ()
+	      (setq kill-ring
+		    (mapcar #'substring-no-properties
+			    (cl-remove-if-not #'stringp kill-ring)))))
 
 (setq reb-re-syntax 'string)
 
@@ -492,7 +492,7 @@
   (pulsar-global-mode 1))
 
 (use-package olivetti
-  :defer 5)
+  :commands (olivetti-mode))
 
 (bind-keys
  ("C-+" . text-scale-increase)
@@ -847,9 +847,8 @@
 			     'invisible 'dired-hide-details-information)))))
 
 (use-package diredfl
-  :defer 2
-  :config
-  (diredfl-global-mode 1))
+  :hook
+  (after-init . diredfl-global-mode))
 
 (use-package dired-x
   :ensure nil
@@ -936,17 +935,17 @@ The file is opened in a temporary buffer that is killed after export."
     (let ((ext (file-name-extension file)))
       (cond
        ((string= ext "org")
-        (let ((buf (find-file-noselect file)))
-          (with-current-buffer buf
-            (rlr/org-export-html-to-browser))
-          (kill-buffer buf)))
+	(let ((buf (find-file-noselect file)))
+	  (with-current-buffer buf
+	    (rlr/org-export-html-to-browser))
+	  (kill-buffer buf)))
        ((member ext '("md" "markdown" "mkd"))
-        (let ((buf (find-file-noselect file)))
-          (with-current-buffer buf
-            (rlr/markdown-export-html-to-browser))
-          (kill-buffer buf)))
+	(let ((buf (find-file-noselect file)))
+	  (with-current-buffer buf
+	    (rlr/markdown-export-html-to-browser))
+	  (kill-buffer buf)))
        (t
-        (user-error "Not a Markdown or Org file: %s" file))))))
+	(user-error "Not a Markdown or Org file: %s" file))))))
 
 (use-package speedbar
   :ensure nil
@@ -1868,7 +1867,7 @@ and convert it to Org using the pandoc utility."
   :hook (org-mode . org-autolist-mode))
 
 (use-package org-bulletproof
-  :defer 2)
+  :hook (org-mode . org-bulletproof-mode))
 
 (defun my/org-toggle-emphasis (type)
   "Toggle org emphasis TYPE (a character) at point."
@@ -1925,10 +1924,6 @@ and convert it to Org using the pandoc utility."
  ("C-c e =" . (lambda () (interactive) (my/org-toggle-emphasis ?=)))
  ("s-u" . (lambda () (interactive) (my/org-toggle-emphasis ?_)))
  ("C-c e +" . (lambda () (interactive) (my/org-toggle-emphasis ?+))))
-
-(use-package org-people
-  :after org
-  :defer 2)
 
 (use-package org-mac-link
   :commands org-mac-link-safari-insert-frontmost-url)
@@ -2320,11 +2315,11 @@ and convert it to Org using the pandoc utility."
     (save-match-data
       (goto-char start)
       (let ((end-marker (copy-marker end)))
-        (while (< (point) end-marker)
-          (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
-            (replace-match "\\2 \\1" nil nil))
-          (forward-line 1))
-        (set-marker end-marker nil)))))
+	(while (< (point) end-marker)
+	  (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
+	    (replace-match "\\2 \\1" nil nil))
+	  (forward-line 1))
+	(set-marker end-marker nil)))))
 
 (defun create-typst-roll-sheet ()
   (interactive)
@@ -2368,30 +2363,30 @@ body content wrapped in a #+begin_note ... #+end_note block."
   (interactive)
   (org-with-wide-buffer
    (let ((markers (org-map-entries (lambda () (point-marker))
-                                    "BEAMER_ENV=\"note\"")))
+				    "BEAMER_ENV=\"note\"")))
      (dolist (m markers)
        (goto-char m)
        (org-back-to-heading t)
        (let ((heading-start (point-marker))
-             (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
-         (goto-char heading-start)
-         (forward-line 1)
-         (when (looking-at-p "^[ \t]*:PROPERTIES:")
-           (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
-         ;; skip any blank lines before the content
-         (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
-           (forward-line 1))
-         (delete-region heading-start (point))
-         (goto-char heading-start)
-         (insert "#+begin_note\n")
-         ;; find the real end of content, trimming trailing blank lines
-         (goto-char subtree-end)
-         (skip-chars-backward " \t\n")
-         (forward-line 1)
-         (delete-region (point) subtree-end)
-         (insert "#+end_note\n")
-         (set-marker heading-start nil)
-         (set-marker subtree-end nil))
+	     (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
+	 (goto-char heading-start)
+	 (forward-line 1)
+	 (when (looking-at-p "^[ \t]*:PROPERTIES:")
+	   (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
+	 ;; skip any blank lines before the content
+	 (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
+	   (forward-line 1))
+	 (delete-region heading-start (point))
+	 (goto-char heading-start)
+	 (insert "#+begin_note\n")
+	 ;; find the real end of content, trimming trailing blank lines
+	 (goto-char subtree-end)
+	 (skip-chars-backward " \t\n")
+	 (forward-line 1)
+	 (delete-region (point) subtree-end)
+	 (insert "#+end_note\n")
+	 (set-marker heading-start nil)
+	 (set-marker subtree-end nil))
        (set-marker m nil)))))
 
 (defun rlr/org-delete-notes-headings ()
@@ -2406,24 +2401,24 @@ level."
      (setq markers (nreverse markers))
      ;; Filter down to headings whose title (ignoring tags/whitespace) is "Notes"
      (setq markers
-           (seq-filter
-            (lambda (m)
-              (save-excursion
-                (goto-char m)
-                (beginning-of-line)
-                (looking-at
-                 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
-            markers))
+	   (seq-filter
+	    (lambda (m)
+	      (save-excursion
+		(goto-char m)
+		(beginning-of-line)
+		(looking-at
+		 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
+	    markers))
      (dolist (m markers)
        (goto-char m)
        (org-back-to-heading t)
        (let ((start (point))
-             (end (save-excursion
-                    (forward-line 1)
-                    (if (re-search-forward org-heading-regexp nil t)
-                        (match-beginning 0)
-                      (point-max)))))
-         (delete-region start end))
+	     (end (save-excursion
+		    (forward-line 1)
+		    (if (re-search-forward org-heading-regexp nil t)
+			(match-beginning 0)
+		      (point-max)))))
+	 (delete-region start end))
        (set-marker m nil)))))
 
 (defun formatted-copy ()
@@ -2449,7 +2444,7 @@ level."
     margin: 3rem auto;
     padding: 0 1.25rem;
     font-family: -apple-system, BlinkMacSystemFont, 'Iowan Old Style',
-                 'Palatino Linotype', Georgia, serif;
+		 'Palatino Linotype', Georgia, serif;
     font-size: 1.125rem;
     line-height: 1.65;
     color: #24292f;
@@ -2507,14 +2502,14 @@ The file lives in the system temp directory and is deleted when Emacs exits."
   (unless (derived-mode-p 'org-mode)
     (user-error "Not in an Org buffer"))
   (let* ((tmp (make-temp-file "org-preview-" nil ".html"))
-         (org-export-in-background nil)
-         (org-html-head-include-default-style nil)
-         (org-html-head-include-scripts nil)
-         (org-html-head rlr/org-preview-css)
-         (org-html-validation-link nil))
+	 (org-export-in-background nil)
+	 (org-html-head-include-default-style nil)
+	 (org-html-head-include-scripts nil)
+	 (org-html-head rlr/org-preview-css)
+	 (org-html-validation-link nil))
     (org-export-to-file 'html tmp)
     (add-hook 'kill-emacs-hook
-              (lambda () (ignore-errors (delete-file tmp))))
+	      (lambda () (ignore-errors (delete-file tmp))))
     (browse-url-of-file tmp)))
 
 (major-mode-hydra-define org-mode
@@ -2532,7 +2527,7 @@ The file lives in the system temp directory and is deleted when Emacs exits."
     ("va" org-appear-mode :toggle t)
     ("vl" org-toggle-link-display :toggle t)
     ("vm" visible-mode :toggle t)
-    ("vv" rlr/org-export-html-to-browser "view in browser") 
+    ("vv" rlr/org-export-html-to-browser "view in browser")
     ("d1" denote-link "link to note"))
    "Typst"
    (("p" rlr/org-mktypst "Article")
@@ -2909,7 +2904,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
       (display-buffer (current-buffer)))))
 
 (use-package markdown-ts-mode
-  :defer t
   :mode ("\\.md\\'" . markdown-ts-mode)
   :commands (markdown-ts-mode))
 
@@ -2919,17 +2913,17 @@ Calling this again on an already-watched buffer stops the old watcher first."
   (unless (derived-mode-p 'markdown-mode 'gfm-mode)
     (user-error "Not in a Markdown buffer"))
   (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
-         (html (shell-command-to-string
-                (format "pandoc --from=gfm --to=html5 %s"
-                        (shell-quote-argument (buffer-file-name))))))
+	 (html (shell-command-to-string
+		(format "pandoc --from=gfm --to=html5 %s"
+			(shell-quote-argument (buffer-file-name))))))
     (with-temp-file tmp
       (insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
-              rlr/org-preview-css
-              "</head><body>\n"
-              html
-              "\n</body></html>"))
+	      rlr/org-preview-css
+	      "</head><body>\n"
+	      html
+	      "\n</body></html>"))
     (add-hook 'kill-emacs-hook
-              (lambda () (ignore-errors (delete-file tmp))))
+	      (lambda () (ignore-errors (delete-file tmp))))
     (browse-url-of-file tmp)))
 
 (require 'ox-rlr-slipshow)
@@ -3197,7 +3191,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
   (rlr/delete-tab-or-frame))
 
 (use-package mu4e-alert
-  :defer 2
   :after mu4e
   :config
   (mu4e-alert-enable-mode-line-display))
@@ -3424,6 +3417,13 @@ Calling this again on an already-watched buffer stops the old watcher first."
   (bind-keys
    :map elfeed-search-mode-map
    ("e" . rlr/elfeed-open-in-eww)))
+
+(use-package mastodon
+  :config
+  (setq mastodon-instance-url "https://mastodon.social"
+        mastodon-active-user "randyridenour"))
+
+(setq epg-pinentry-mode 'loopback)
 
 (defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
 (defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
@@ -3768,7 +3768,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (use-package language-detection)
 
 (use-package fish-mode
-  :defer t
   :mode "\\.fish\\'")
 
 (use-package json-mode)

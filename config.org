@@ -369,7 +369,7 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 
 #+begin_src emacs-lisp
-   (use-package casual-suite 
+   (use-package casual-suite
      :bind
      ("H-." . casual-editkit-main-tmenu)
      ("M-g a" . casual-avy-tmenu))
@@ -614,11 +614,11 @@ Enrich existing commands with completion annotations
 
 #+begin_src emacs-lisp
   (use-package corfu
-    :defer 1
-  :custom
-  (corfu-cycle t)
-  :config
-  (global-corfu-mode))
+    :hook (after-init . global-corfu-mode)
+    :custom
+    (corfu-cycle t)
+    :config
+    (global-corfu-mode))
 #+end_src
 
 ** Abbrev
@@ -697,15 +697,15 @@ This ensures that the Vim navigation keys navigate by visual lines.
 
 #+begin_src emacs-lisp
   (use-package evil-leader
-      :ensure t
-      :config
-      (global-evil-leader-mode t)
-      (evil-leader/set-leader "<SPC>")
-      (evil-leader/set-key
-	"s l" 'avy-goto-line
-	"d x w" 'delete-trailing-whitespace
-	)
+    :ensure t
+    :config
+    (global-evil-leader-mode t)
+    (evil-leader/set-leader "<SPC>")
+    (evil-leader/set-key
+      "s l" 'avy-goto-line
+      "d x w" 'delete-trailing-whitespace
       )
+    )
 #+end_src
 
 
@@ -775,23 +775,23 @@ World clock settings.
 
 #+begin_src emacs-lisp :tangle no
   (setq world-clock-list
-	    '(
-	      ("America/Chicago" "Oklahoma City")
-	      ("America/Los_Angeles" "Seattle")
-	      ("Pacific/Honolulu" "Honolulu")
-	      ("America/New_York" "New York")
-	      ("Etc/UTC" "UTC")))
+	'(
+	  ("America/Chicago" "Oklahoma City")
+	  ("America/Los_Angeles" "Seattle")
+	  ("Pacific/Honolulu" "Honolulu")
+	  ("America/New_York" "New York")
+	  ("Etc/UTC" "UTC")))
 
   (setq world-clock-time-format "%a, %d %b %R %Z")
 
   (setq calendar-location-name "Norman, OK"
-	    calendar-latitude 35.24371
-	    calendar-longitude -97.416797
-	    calendar-mark-holidays-flag t        ;colorize holidays in the calendar
-	    holiday-bahai-holidays nil           ;these religions have MANY holidays
-	    holiday-islamic-holidays nil         ;... that I don't get off
-	    holiday-hebrew-holidays nil         ;... that I don't get off
-	    )
+	calendar-latitude 35.24371
+	calendar-longitude -97.416797
+	calendar-mark-holidays-flag t        ;colorize holidays in the calendar
+	holiday-bahai-holidays nil           ;these religions have MANY holidays
+	holiday-islamic-holidays nil         ;... that I don't get off
+	holiday-hebrew-holidays nil         ;... that I don't get off
+	)
 
   (add-hook 'calendar-today-visible-hook 'calendar-mark-today)
   (global-set-key (kbd "<f8>") #'calendar)
@@ -818,16 +818,16 @@ World clock settings.
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package time
-  :ensure nil
-  :custom
-  (world-clock-list
-   '(("America/Chicago"    "Oklahoma City")
-     ("America/Los_Angeles" "Seattle")
-     ("Pacific/Honolulu"   "Honolulu")
-     ("America/New_York"   "New York")
-     ("Etc/UTC"            "UTC")))
-  (world-clock-time-format "%a, %d %b %R %Z"))
+  (use-package time
+    :ensure nil
+    :custom
+    (world-clock-list
+     '(("America/Chicago"    "Oklahoma City")
+       ("America/Los_Angeles" "Seattle")
+       ("Pacific/Honolulu"   "Honolulu")
+       ("America/New_York"   "New York")
+       ("Etc/UTC"            "UTC")))
+    (world-clock-time-format "%a, %d %b %R %Z"))
 #+end_src
 
 Display line and column numbers in the modeline.
@@ -898,8 +898,8 @@ Save minibuffer history.
 Make M-x not offer options that don't apply to the current buffer.
 
 #+begin_src emacs-lisp
-(setq read-extended-command-predicate
-      #'command-completion-default-include-p)
+  (setq read-extended-command-predicate
+	#'command-completion-default-include-p)
 #+end_src
 
 These are from [[https://emacsredux.com/blog/2026/04/07/stealing-from-the-best-emacs-configs/][Stealing from the Best Emacs Configs | Emacs Redux]]
@@ -907,27 +907,27 @@ These are from [[https://emacsredux.com/blog/2026/04/07/stealing-from-the-best-e
 Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4e to crash Emacs on certain messages.)
 
 #+begin_src emacs-lisp :tangle no
-(setq-default bidi-display-reordering 'left-to-right
-	      bidi-paragraph-direction 'left-to-right)
-(setq bidi-inhibit-bpa t)
+  (setq-default bidi-display-reordering 'left-to-right
+		bidi-paragraph-direction 'left-to-right)
+  (setq bidi-inhibit-bpa t)
 #+end_src
 
 Skip Fontification During Input
 
 #+begin_src emacs-lisp
-(setq redisplay-skip-fontification-on-input t)
+  (setq redisplay-skip-fontification-on-input t)
 #+end_src
 
 Increase Process Output Buffer for LSP
 
 #+begin_src emacs-lisp
-(setq read-process-output-max (* 4 1024 1024)) ; 4MB
+  (setq read-process-output-max (* 4 1024 1024)) ; 4MB
 #+end_src
 
 No Duplicates in the Kill Ring
 
 #+begin_src emacs-lisp
-(setq kill-do-not-save-duplicates t)
+  (setq kill-do-not-save-duplicates t)
 #+end_src
 
 Persist the Kill Ring Across Sessions (Doom, Prot)
@@ -935,48 +935,48 @@ Persist the Kill Ring Across Sessions (Doom, Prot)
 Most configs that use savehist-mode only persist search rings. But savehist can save any variable – including the kill ring. Add it and you get clipboard history that survives restarts:
 
 #+begin_src emacs-lisp
-(setq savehist-additional-variables
-      '(search-ring regexp-search-ring kill-ring))
+  (setq savehist-additional-variables
+	'(search-ring regexp-search-ring kill-ring))
 #+end_src
 
 One thing to watch out for: the kill ring can accumulate text properties (fonts, overlays, etc.) that bloat the savehist file. Doom strips them before saving:
 
 #+begin_src emacs-lisp
-(add-hook 'savehist-save-hook
-	  (lambda ()
-	    (setq kill-ring
-		  (mapcar #'substring-no-properties
-			  (cl-remove-if-not #'stringp kill-ring)))))
+  (add-hook 'savehist-save-hook
+	    (lambda ()
+	      (setq kill-ring
+		    (mapcar #'substring-no-properties
+			    (cl-remove-if-not #'stringp kill-ring)))))
 #+end_src
 
 Sane Syntax in re-builder
 
 #+begin_src emacs-lisp
-(setq reb-re-syntax 'string)
+  (setq reb-re-syntax 'string)
 #+end_src
 
 Prevent ffap from Pinging Hostnames (Centaur Emacs)
 
 #+begin_src emacs-elisp
-(setq ffap-machine-p-known 'reject)
+  (setq ffap-machine-p-known 'reject)
 #+end_src
 
 Proportional Window Resizing
 
 #+begin_src emacs-lisp
-(setq window-combination-resize t)
+  (setq window-combination-resize t)
 #+end_src
 
 Faster Mark Popping
 
 #+begin_src emacs-lisp
-(setq set-mark-command-repeat-pop t)
+  (setq set-mark-command-repeat-pop t)
 #+end_src
 
 Smoother scrolling.
 
 #+begin_src emacs-lisp
-(pixel-scroll-precision-mode 1)
+  (pixel-scroll-precision-mode 1)
 #+end_src
 
 Hide warnings.
@@ -1146,7 +1146,7 @@ I can't imagine wanting the same buffer in two tabs, so this calls consult-buffe
 
 #+begin_src emacs-lisp
   (use-package olivetti
-    :defer 5)
+    :commands (olivetti-mode))
 #+end_src
 
 *** Text Scaling
@@ -1738,9 +1738,8 @@ Add some color with diredfl.
 
 #+begin_src emacs-lisp
   (use-package diredfl
-    :defer 2
-    :config
-    (diredfl-global-mode 1))
+    :hook
+    (after-init . diredfl-global-mode))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -1788,17 +1787,17 @@ Replace spaces in file names with hyphens using "%s" in dired.
     :ensure nil
     :bind
     (:map dired-mode-map
-  	  ("M-<RET>" . crux-open-with)
-  	  ("j" . rlr/dired-search-and-enter)
-  	  ("J" . dired-goto-file)
-  	  ("%s" . my-dired-substspaces)
-  	  ("b" . rlr/dired-preview-in-browser))
+	  ("M-<RET>" . crux-open-with)
+	  ("j" . rlr/dired-search-and-enter)
+	  ("J" . dired-goto-file)
+	  ("%s" . my-dired-substspaces)
+	  ("b" . rlr/dired-preview-in-browser))
     :config
     (setq dired-clean-confirm-killing-deleted-buffers nil)
     (setq dired-dwim-target t) ;; Make copying and moving files easier.
     (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
     :hook ((dired-mode . dired-hide-details-mode)
-  	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 Copy path of current buffer or dired entry.From [[http://xahlee.info/emacs/emacs/emacs_copy_file_path.html][Emacs: Copy File Path of Current Buffer]]
@@ -1851,17 +1850,17 @@ The file is opened in a temporary buffer that is killed after export."
     (let ((ext (file-name-extension file)))
       (cond
        ((string= ext "org")
-        (let ((buf (find-file-noselect file)))
-          (with-current-buffer buf
-            (rlr/org-export-html-to-browser))
-          (kill-buffer buf)))
+	(let ((buf (find-file-noselect file)))
+	  (with-current-buffer buf
+	    (rlr/org-export-html-to-browser))
+	  (kill-buffer buf)))
        ((member ext '("md" "markdown" "mkd"))
-        (let ((buf (find-file-noselect file)))
-          (with-current-buffer buf
-            (rlr/markdown-export-html-to-browser))
-          (kill-buffer buf)))
+	(let ((buf (find-file-noselect file)))
+	  (with-current-buffer buf
+	    (rlr/markdown-export-html-to-browser))
+	  (kill-buffer buf)))
        (t
-        (user-error "Not a Markdown or Org file: %s" file))))))
+	(user-error "Not a Markdown or Org file: %s" file))))))
 #+end_src
 
 
@@ -3275,7 +3274,7 @@ Use Emacs appointment system for notifications.
 
 #+begin_src emacs-lisp
   (use-package org-bulletproof
-    :defer 2)
+    :hook (org-mode . org-bulletproof-mode))
 #+end_src
 
 ** Org Toggle Emphasis
@@ -3355,7 +3354,7 @@ Use Emacs appointment system for notifications.
 
 ** Org People
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package org-people
     :after org
     :defer 2)
@@ -3862,11 +3861,11 @@ Convert region from "LastName, FirstName" to "FirstName LastName".
     (save-match-data
       (goto-char start)
       (let ((end-marker (copy-marker end)))
-        (while (< (point) end-marker)
-          (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
-            (replace-match "\\2 \\1" nil nil))
-          (forward-line 1))
-        (set-marker end-marker nil)))))
+	(while (< (point) end-marker)
+	  (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
+	    (replace-match "\\2 \\1" nil nil))
+	  (forward-line 1))
+	(set-marker end-marker nil)))))
 #+end_src
 
 Create Typst attendance sheet.
@@ -3923,30 +3922,30 @@ body content wrapped in a #+begin_note ... #+end_note block."
   (interactive)
   (org-with-wide-buffer
    (let ((markers (org-map-entries (lambda () (point-marker))
-                                    "BEAMER_ENV=\"note\"")))
+				    "BEAMER_ENV=\"note\"")))
      (dolist (m markers)
        (goto-char m)
        (org-back-to-heading t)
        (let ((heading-start (point-marker))
-             (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
-         (goto-char heading-start)
-         (forward-line 1)
-         (when (looking-at-p "^[ \t]*:PROPERTIES:")
-           (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
-         ;; skip any blank lines before the content
-         (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
-           (forward-line 1))
-         (delete-region heading-start (point))
-         (goto-char heading-start)
-         (insert "#+begin_note\n")
-         ;; find the real end of content, trimming trailing blank lines
-         (goto-char subtree-end)
-         (skip-chars-backward " \t\n")
-         (forward-line 1)
-         (delete-region (point) subtree-end)
-         (insert "#+end_note\n")
-         (set-marker heading-start nil)
-         (set-marker subtree-end nil))
+	     (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
+	 (goto-char heading-start)
+	 (forward-line 1)
+	 (when (looking-at-p "^[ \t]*:PROPERTIES:")
+	   (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
+	 ;; skip any blank lines before the content
+	 (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
+	   (forward-line 1))
+	 (delete-region heading-start (point))
+	 (goto-char heading-start)
+	 (insert "#+begin_note\n")
+	 ;; find the real end of content, trimming trailing blank lines
+	 (goto-char subtree-end)
+	 (skip-chars-backward " \t\n")
+	 (forward-line 1)
+	 (delete-region (point) subtree-end)
+	 (insert "#+end_note\n")
+	 (set-marker heading-start nil)
+	 (set-marker subtree-end nil))
        (set-marker m nil)))))
 #+end_src
 
@@ -3963,24 +3962,24 @@ level."
      (setq markers (nreverse markers))
      ;; Filter down to headings whose title (ignoring tags/whitespace) is "Notes"
      (setq markers
-           (seq-filter
-            (lambda (m)
-              (save-excursion
-                (goto-char m)
-                (beginning-of-line)
-                (looking-at
-                 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
-            markers))
+	   (seq-filter
+	    (lambda (m)
+	      (save-excursion
+		(goto-char m)
+		(beginning-of-line)
+		(looking-at
+		 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
+	    markers))
      (dolist (m markers)
        (goto-char m)
        (org-back-to-heading t)
        (let ((start (point))
-             (end (save-excursion
-                    (forward-line 1)
-                    (if (re-search-forward org-heading-regexp nil t)
-                        (match-beginning 0)
-                      (point-max)))))
-         (delete-region start end))
+	     (end (save-excursion
+		    (forward-line 1)
+		    (if (re-search-forward org-heading-regexp nil t)
+			(match-beginning 0)
+		      (point-max)))))
+	 (delete-region start end))
        (set-marker m nil)))))
 #+end_src
 
@@ -4019,7 +4018,7 @@ View Org file in the default browser.
     margin: 3rem auto;
     padding: 0 1.25rem;
     font-family: -apple-system, BlinkMacSystemFont, 'Iowan Old Style',
-                 'Palatino Linotype', Georgia, serif;
+		 'Palatino Linotype', Georgia, serif;
     font-size: 1.125rem;
     line-height: 1.65;
     color: #24292f;
@@ -4077,14 +4076,14 @@ The file lives in the system temp directory and is deleted when Emacs exits."
   (unless (derived-mode-p 'org-mode)
     (user-error "Not in an Org buffer"))
   (let* ((tmp (make-temp-file "org-preview-" nil ".html"))
-         (org-export-in-background nil)
-         (org-html-head-include-default-style nil)
-         (org-html-head-include-scripts nil)
-         (org-html-head rlr/org-preview-css)
-         (org-html-validation-link nil))
+	 (org-export-in-background nil)
+	 (org-html-head-include-default-style nil)
+	 (org-html-head-include-scripts nil)
+	 (org-html-head rlr/org-preview-css)
+	 (org-html-validation-link nil))
     (org-export-to-file 'html tmp)
     (add-hook 'kill-emacs-hook
-              (lambda () (ignore-errors (delete-file tmp))))
+	      (lambda () (ignore-errors (delete-file tmp))))
     (browse-url-of-file tmp)))
 #+end_src
 
@@ -4108,7 +4107,7 @@ The file lives in the system temp directory and is deleted when Emacs exits."
       ("va" org-appear-mode :toggle t)
       ("vl" org-toggle-link-display :toggle t)
       ("vm" visible-mode :toggle t)
-      ("vv" rlr/org-export-html-to-browser "view in browser") 
+      ("vv" rlr/org-export-html-to-browser "view in browser")
       ("d1" denote-link "link to note"))
      "Typst"
      (("p" rlr/org-mktypst "Article")
@@ -4212,8 +4211,6 @@ The file lives in the system temp directory and is deleted when Emacs exits."
 #+begin_src emacs-lisp :tangle no
   (use-package math-delimiters
     :vc (:url "https://github.com/oantolin/math-delimiters")
-    :defer 3
-    :after (:any org latex)
     :commands (math-delimiters-no-dollars math-delimiters-mode)
     :hook ((LaTeX-mode . math-delimiters-mode)
 	   (org-mode . math-delimiters-mode))
@@ -4585,7 +4582,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
 
 #+begin_src emacs-lisp
   (use-package markdown-ts-mode
-    :defer t
     :mode ("\\.md\\'" . markdown-ts-mode)
     :commands (markdown-ts-mode))
 #+end_src
@@ -4601,17 +4597,17 @@ View Markdown file in the default browser.
   (unless (derived-mode-p 'markdown-mode 'gfm-mode)
     (user-error "Not in a Markdown buffer"))
   (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
-         (html (shell-command-to-string
-                (format "pandoc --from=gfm --to=html5 %s"
-                        (shell-quote-argument (buffer-file-name))))))
+	 (html (shell-command-to-string
+		(format "pandoc --from=gfm --to=html5 %s"
+			(shell-quote-argument (buffer-file-name))))))
     (with-temp-file tmp
       (insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
-              rlr/org-preview-css
-              "</head><body>\n"
-              html
-              "\n</body></html>"))
+	      rlr/org-preview-css
+	      "</head><body>\n"
+	      html
+	      "\n</body></html>"))
     (add-hook 'kill-emacs-hook
-              (lambda () (ignore-errors (delete-file tmp))))
+	      (lambda () (ignore-errors (delete-file tmp))))
     (browse-url-of-file tmp)))
 #+end_src
 
@@ -5022,7 +5018,6 @@ Mu4e-alert
 
 #+begin_src emacs-lisp
   (use-package mu4e-alert
-    :defer 2
     :after mu4e
     :config
     (mu4e-alert-enable-mode-line-display))
@@ -5341,6 +5336,21 @@ Open Elfeed entry in EWW
     (bind-keys
      :map elfeed-search-mode-map
      ("e" . rlr/elfeed-open-in-eww)))
+#+end_src
+
+** Mastodon
+
+#+begin_src emacs-lisp
+(use-package mastodon
+  :config
+  (setq mastodon-instance-url "https://mastodon.social"
+        mastodon-active-user "randyridenour"))
+#+end_src
+
+Force GPG to use the minibuffer to ask for password.
+
+#+begin_src emacs-lisp
+(setq epg-pinentry-mode 'loopback)
 #+end_src
 
 * HTML and Web
@@ -5791,7 +5801,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 
 #+begin_src emacs-lisp
   (use-package fish-mode
-    :defer t
     :mode "\\.fish\\'")
 #+end_src
 
