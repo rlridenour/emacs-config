@@ -4084,6 +4084,53 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("a"  mu4e-compose-wide-reply "Reply All")
     )))
 
+(major-mode-hydra-define mastodon-mode
+    (:quit-key "q")
+    ("Timelines"
+     (("H" mastodon-tl--get-home-timeline)
+    ("L" mastodon-tl--get-local-timeline)
+    ("F" mastodon-tl--get-federated-timeline)
+    ("V" mastodon-profile--view-favourites)
+    ("#" mastodon-tl--get-tag-timeline)
+    ("@" mastodon-notifications--get-mentions)
+    ("K" mastodon-profile--view-bookmarks)
+    ("g" mastodon-search--trending-tags)
+    ("u" mastodon-tl--update :exit nil))
+"Toots"
+    (("n" mastodon-tl--goto-next-toot)
+    ("p" mastodon-tl--goto-prev-toot)
+    ("T" mastodon-tl--thread)
+    ("b" mastodon-toot--toggle-boost :exit nil)
+    ("f" mastodon-toot--toggle-favourite :exit nil)
+    ("i" mastodon-toot--pin-toot-toggle :exit nil)
+    ("k" mastodon-toot--bookmark-toot-toggle :exit nil)
+    ("c" mastodon-tl--toggle-spoiler-text-in-toot)
+    ("v" mastodon-tl--poll-vote))
+"Own Toots"
+    (("A" mastodon-profile--get-toot-author)
+    ("P" mastodon-profile--show-user)
+    ("O" mastodon-profile--my-profile)
+    ("U" mastodon-profile--update-user-profile-note))
+"Profiles"
+    (("W" mastodon-tl--follow-user)
+    ("N" mastodon-notifications-get)
+    ("R" mastodon-profile--view-follow-requests)
+    ("G" mastodon-tl--get-follow-suggestions)
+    ("M" mastodon-tl--mute-user)
+    ("B" mastodon-tl--block-user))
+"Users/Follows"
+    (("r" mastodon-toot--reply)
+    ("t" mastodon-toot)
+    ("e" mastodon-toot--edit-toot-at-point)
+    ("d" mastodon-toot--delete-toot)
+    ("E" mastodon-toot--view-toot-edits))
+"Misc"
+    (("I" mastodon-tl--view-filters)
+    ("X" mastodon-tl--view-lists)
+    ("C" mastodon-toot--copy-toot-url)
+    ("S" mastodon-search--search-query)
+    ("h" describe-mode))))
+
 (defun reload-user-init-file()
   (interactive)
   (load-file user-init-file))
