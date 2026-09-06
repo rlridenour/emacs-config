@@ -1296,6 +1296,11 @@ The file is opened in a temporary buffer that is killed after export."
   :commands (wc-mode))
 
 (use-package hyperbole
+  :commands (hyperbole)
+  :config
+  (setq hyrolo-file-list
+        '("~/icloud/.rolo.org"))
+  
   )
 
 (bind-keys

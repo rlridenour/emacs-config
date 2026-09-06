@@ -15,14 +15,16 @@
 (defun rlr/teaching--slugify (title)
   "Return a hyphen-separated slug for TITLE.
 Words of two letters or fewer, and words in
-`rlr/teaching-stopwords', are dropped."
+`rlr/teaching-stopwords', are dropped, unless the word
+contains a digit."
   (let* ((words (split-string title))
          (cleaned (mapcar (lambda (w)
                              (downcase (replace-regexp-in-string "[^[:alnum:]]" "" w)))
                            words))
          (kept (seq-filter (lambda (w)
-                              (and (> (length w) 2)
-                                   (not (member w rlr/teaching-stopwords))))
+                              (or (string-match-p "[[:digit:]]" w)
+                                  (and (> (length w) 2)
+                                       (not (member w rlr/teaching-stopwords)))))
                             cleaned)))
     (string-join kept "-")))
 

@@ -2532,6 +2532,11 @@ For word counts.
 
 #+begin_src emacs-lisp
   (use-package hyperbole
+    :commands (hyperbole)
+    :config
+    (setq hyrolo-file-list
+          '("~/icloud/.rolo.org"))
+    
     )
 #+end_src
 
