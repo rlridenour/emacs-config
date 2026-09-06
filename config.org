@@ -2010,6 +2010,12 @@ Make help buffers active when created, so pressing "q" will immediately close th
   (setq Man-notify-method 'aggressive)
 #+end_src
 
+This kills the buffers when closing them with "q."
+
+#+begin_src emacs-lisp
+(setq quit-window-kill-buffer t)
+#+end_src
+
 Use which-key-mode for hints.
 
 #+begin_src emacs-lisp

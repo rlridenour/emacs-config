@@ -1010,6 +1010,8 @@ The file is opened in a temporary buffer that is killed after export."
 (setq help-window-select t)
 (setq Man-notify-method 'aggressive)
 
+(setq quit-window-kill-buffer t)
+
 (which-key-mode 1)
 
 (use-package helpful
