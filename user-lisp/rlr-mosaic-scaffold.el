@@ -78,8 +78,8 @@ via ox-mosaic.el (see `rlr/mosaic--generate-content-file'). The slug
 is TITLE lower-cased, hyphenated, with the words \"the\" and \"and\",
 and any two-letter-or-shorter words, removed."
   (interactive
-   (list (read-string "Presentation title: ")
-         (read-directory-name "Create in directory: " default-directory)))
+   (let ((dir (read-directory-name "Create in directory: " default-directory)))
+     (list (read-string "Presentation title: ") dir)))
   (let* ((slug (rlr/mosaic-slugify title)))
     (when (string-empty-p slug)
       (user-error "Title \"%s\" has no usable words for a filename" title))
