@@ -2392,7 +2392,7 @@ body content wrapped in a #+begin_note ... #+end_note block."
   (interactive)
   (org-with-wide-buffer
    (let ((markers (org-map-entries (lambda () (point-marker))
-				    "BEAMER_ENV=\"note\"")))
+				    "BEAMER_ENV=\"note\"|BEAMER_ENV=\"noteNH\"")))
      (dolist (m markers)
        (goto-char m)
        (org-back-to-heading t)
@@ -2420,35 +2420,36 @@ body content wrapped in a #+begin_note ... #+end_note block."
 
 (defun rlr/org-delete-notes-headings ()
   "Delete any heading titled \"Notes\" (any level, any tags) and
-all its content, up to but not including the next heading at any
-level."
+  all its content, up to but not including the next heading at any
+  level."
   (interactive)
   (org-with-wide-buffer
    (let (markers)
      (org-map-entries
-      (lambda () (push (point-marker) markers)))
+	(lambda () (push (point-marker) markers)))
      (setq markers (nreverse markers))
      ;; Filter down to headings whose title (ignoring tags/whitespace) is "Notes"
      (setq markers
-	   (seq-filter
-	    (lambda (m)
-	      (save-excursion
-		(goto-char m)
-		(beginning-of-line)
-		(looking-at
-		 "^\\*+[ \t]+Notes[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$")))
-	    markers))
+	 (seq-filter
+	  (lambda (m)
+		(save-excursion
+		  (goto-char m)
+		  (beginning-of-line)
+		  (looking-at
+		   "^\\*+[ \t]+\\(Notes?\\|Article Notes?\\)[ \t]*\\(:[[:alnum:]_@#%:]+:\\)?[ \t]*$"
+		   )))
+	  markers))
      (dolist (m markers)
-       (goto-char m)
-       (org-back-to-heading t)
-       (let ((start (point))
-	     (end (save-excursion
-		    (forward-line 1)
-		    (if (re-search-forward org-heading-regexp nil t)
-			(match-beginning 0)
-		      (point-max)))))
-	 (delete-region start end))
-       (set-marker m nil)))))
+	 (goto-char m)
+	 (org-back-to-heading t)
+	 (let ((start (point))
+	   (end (save-excursion
+		(forward-line 1)
+		(if (re-search-forward org-heading-regexp nil t)
+			  (match-beginning 0)
+		  (point-max)))))
+	   (delete-region start end))
+	 (set-marker m nil)))))
 
 (defun formatted-copy ()
   "Export region to HTML, and copy it to the clipboard."
