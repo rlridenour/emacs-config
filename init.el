@@ -388,6 +388,8 @@
 
 ;; (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
 
+(setq dictionary-server "dict.org")
+
 (use-package modus-themes
   :demand t
   :bind
@@ -886,8 +888,12 @@
 	  ("%s" . my-dired-substspaces)
 	  ("b" . rlr/dired-preview-in-browser))
   :config
-  (setq dired-clean-confirm-killing-deleted-buffers nil)
+  (setq dired-clean-confirm-killing-deleted-buffers nil) ;; Don't ask when killing the buffers of deleted directories.
+  (setq dired-recursive-deletes 'top) ;; Only ask once when deleting directory with sub-directories.
+  (setq dired-movement-style 'bounded-files) ;; Don't move past first or last entries.
+  (setq dired-recursive-copies 'always) ;; Copy recursively without asking.
   (setq dired-dwim-target t) ;; Make copying and moving files easier.
+  (setq dired-mouse-drag-files t) ;; Use mouse to drag files to external apps.
   (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
   :hook ((dired-mode . dired-hide-details-mode)
 	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
@@ -946,6 +952,20 @@ The file is opened in a temporary buffer that is killed after export."
 	  (kill-buffer buf)))
        (t
 	(user-error "Not a Markdown or Org file: %s" file))))))
+
+(setq ls-lisp-verbosity nil
+      ls-lisp-dirs-first t)
+
+(when (eq system-type 'darwin)
+  (setq dired-use-ls-dired nil)) ; macOS/BSD ls
+
+(let ((args "--group-directories-first -ahlv"))
+  (when (or (eq system-type 'darwin) (eq system-type 'berkeley-unix))
+    (if-let* ((gls (executable-find "gls")))
+        (setq insert-directory-program gls)
+      (setq args nil)))
+  (when args
+    (setq dired-listing-switches args)))
 
 (use-package speedbar
   :ensure nil
