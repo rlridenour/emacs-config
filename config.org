@@ -1796,11 +1796,11 @@ Some of these settings are from [[https://www.jamescherti.com/emacs-dired-config
     :ensure nil
     :bind
     (:map dired-mode-map
-  	  ("M-<RET>" . crux-open-with)
-  	  ("j" . rlr/dired-search-and-enter)
-  	  ("J" . dired-goto-file)
-  	  ("%s" . my-dired-substspaces)
-  	  ("b" . rlr/dired-preview-in-browser))
+	  ("M-<RET>" . crux-open-with)
+	  ("j" . rlr/dired-search-and-enter)
+	  ("J" . dired-goto-file)
+	  ("%s" . my-dired-substspaces)
+	  ("b" . rlr/dired-preview-in-browser))
     :config
     (setq dired-clean-confirm-killing-deleted-buffers nil) ;; Don't ask when killing the buffers of deleted directories.
     (setq dired-recursive-deletes 'top) ;; Only ask once when deleting directory with sub-directories.
@@ -1810,7 +1810,7 @@ Some of these settings are from [[https://www.jamescherti.com/emacs-dired-config
     (setq dired-mouse-drag-files t) ;; Use mouse to drag files to external apps.
     (setopt dired-keep-marker-rename 82) ;; Use "R" to mark renamed files to avoid accidental subsequent moves.
     :hook ((dired-mode . dired-hide-details-mode)
-  	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
+	   (dired-after-readin . hide-dired-details-include-all-subdir-paths)))
 #+end_src
 
 Copy path of current buffer or dired entry.From [[http://xahlee.info/emacs/emacs/emacs_copy_file_path.html][Emacs: Copy File Path of Current Buffer]]
@@ -1888,7 +1888,7 @@ List folders before individual files.
 (let ((args "--group-directories-first -ahlv"))
   (when (or (eq system-type 'darwin) (eq system-type 'berkeley-unix))
     (if-let* ((gls (executable-find "gls")))
-        (setq insert-directory-program gls)
+	(setq insert-directory-program gls)
       (setq args nil)))
   (when args
     (setq dired-listing-switches args)))
@@ -1922,45 +1922,36 @@ List folders before individual files.
 
 ** Shells
 
-*** Eat
-
-#+begin_src emacs-lisp :tangle no
-  (use-package eat
-    :commands (eat)
-    :config
-    (when (eq system-type 'darwin)
-      (define-key eat-semi-char-mode-map (kbd "C-h")  #'eat-self-input)
-      (define-key eat-semi-char-mode-map (kbd "<backspace>") (kbd "C-h"))))
-#+end_src
 
 *** Ghost.el
 
-I use Ghostty on Mac OS. Not sure if I like this better than Eat, though.
 
 #+begin_src emacs-lisp
   (use-package ghostel
-    :commands (ghostel))
+    :commands (ghostel ghostel-project))
 #+end_src
 
 #+begin_src emacs-lisp
   (defun rlr/ghostel-buffer ()
     "Return the active ghostel buffer, or nil if none exists."
     (seq-find (lambda (buf)
-		(with-current-buffer buf (derived-mode-p 'ghostel-mode)))
-	      (buffer-list)))
+  		(with-current-buffer buf (derived-mode-p 'ghostel-mode)))
+  	      (buffer-list)))
 
   (defun rlr/ghostel-toggle ()
     (interactive)
     (let ((buf (rlr/ghostel-buffer)))
       (cond
        ((not buf)
-	(ghostel))
+  	(ghostel))
        ((eq (current-buffer) buf)
-	(bury-buffer))
+  	(bury-buffer))
        (t
-	(switch-to-buffer buf)))))
+  	(switch-to-buffer buf)))))
 
-  (bind-key* "<f2>" 'rlr/ghostel-toggle)
+  (bind-keys*
+   ("<f2>" . rlr/ghostel-toggle)
+   ("S-<f2>" . ghostel-project))
 #+end_src
 
 *** Term Toggle
@@ -2567,8 +2558,8 @@ For word counts.
     :commands (hyperbole)
     :config
     (setq hyrolo-file-list
-          '("~/icloud/.rolo.org"))
-    
+	  '("~/icloud/.rolo.org"))
+
     )
 #+end_src
 
@@ -5387,7 +5378,7 @@ Open Elfeed entry in EWW
 (use-package mastodon
   :config
   (setq mastodon-instance-url "https://mastodon.social"
-        mastodon-active-user "randyridenour"))
+	mastodon-active-user "randyridenour"))
 #+end_src
 
 Force GPG to use the minibuffer to ask for password.

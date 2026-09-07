@@ -962,7 +962,7 @@ The file is opened in a temporary buffer that is killed after export."
 (let ((args "--group-directories-first -ahlv"))
   (when (or (eq system-type 'darwin) (eq system-type 'berkeley-unix))
     (if-let* ((gls (executable-find "gls")))
-        (setq insert-directory-program gls)
+	(setq insert-directory-program gls)
       (setq args nil)))
   (when args
     (setq dired-listing-switches args)))
@@ -981,7 +981,7 @@ The file is opened in a temporary buffer that is killed after export."
   ("C-c z" . 'reveal-in-osx-finder))
 
 (use-package ghostel
-  :commands (ghostel))
+  :commands (ghostel ghostel-project))
 
 (defun rlr/ghostel-buffer ()
   "Return the active ghostel buffer, or nil if none exists."
@@ -1000,7 +1000,9 @@ The file is opened in a temporary buffer that is killed after export."
      (t
 	(switch-to-buffer buf)))))
 
-(bind-key* "<f2>" 'rlr/ghostel-toggle)
+(bind-keys*
+ ("<f2>" . rlr/ghostel-toggle)
+ ("S-<f2>" . ghostel-project))
 
 (setq async-shell-command-buffer "new-buffer")
 
@@ -1319,8 +1321,8 @@ The file is opened in a temporary buffer that is killed after export."
   :commands (hyperbole)
   :config
   (setq hyrolo-file-list
-        '("~/icloud/.rolo.org"))
-  
+	  '("~/icloud/.rolo.org"))
+
   )
 
 (bind-keys
@@ -3448,7 +3450,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (use-package mastodon
   :config
   (setq mastodon-instance-url "https://mastodon.social"
-        mastodon-active-user "randyridenour"))
+	mastodon-active-user "randyridenour"))
 
 (setq epg-pinentry-mode 'loopback)
 
