@@ -5390,6 +5390,25 @@ Force GPG to use the minibuffer to ask for password.
 
 * HTML and Web
 
+** MHTML-TS
+
+#+begin_src emacs-lisp
+  (use-package mhtml-ts-mode
+    :ensure nil
+    :mode ("\\.html?\\'" . mhtml-ts-mode))
+#+end_src
+
+
+** CSS
+
+#+begin_src emacs-lisp
+(use-package css-ts-mode
+  :ensure nil
+  :mode ("\\.css\\'"))
+
+#+end_src
+
+
 ** Blog
 
 Define directory variables.

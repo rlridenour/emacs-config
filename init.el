@@ -3455,6 +3455,14 @@ Calling this again on an already-watched buffer stops the old watcher first."
 
 (setq epg-pinentry-mode 'loopback)
 
+(use-package mhtml-ts-mode
+  :ensure nil
+  :mode ("\\.html?\\'" . mhtml-ts-mode))
+
+(use-package css-ts-mode
+  :ensure nil
+  :mode ("\\.css\\'"))
+
 (defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
 (defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
 (defvar orgblog-posts-directory "~/sites/orgblog/posts/" "Path to the blog public directory.")
