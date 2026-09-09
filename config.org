@@ -355,7 +355,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 *** Casual Suite
 
-
 #+begin_src emacs-lisp :tangle no
   (use-package casual
     :vc (:url https://github.com/kickingvegas/casual)
@@ -365,8 +364,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
     :config
     (casual init))
 #+end_src
-
-
 
 #+begin_src emacs-lisp
    (use-package casual-suite
@@ -512,6 +509,7 @@ Enrich existing commands with completion annotations
 #+begin_src emacs-lisp
   (use-package consult
     :bind
+    :config
     (("C-x b" . consult-buffer)
      ("s-r" . consult-buffer)
      ("M-s-r" . consult-buffer-other-window)
@@ -524,6 +522,13 @@ Enrich existing commands with completion annotations
      ("C-c o" . consult-outline)
      ("C-c p f" . consult-project-buffer)
      ("M-s m" . consult-multi-occur)))
+#+end_src
+
+From [[https://www.jamescherti.com/emacs-consult-speed-async-searche-grep-ripgrep-fd-find/][Why Emacs Consult async searches feel slow and how to speed them up? (consult-fd, consult-find, consult-grep, consult-ripgrep...) | James Cherti]]
+#+begin_src emacs-lisp
+(setq consult-async-input-debounce 0.05
+      consult-async-input-throttle 0.1
+      consult-async-refresh-delay 0.05)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -692,7 +697,6 @@ This ensures that the Vim navigation keys navigate by visual lines.
     (evil-leader/set-leader "SPC"))
 #+end_src
 
-
 *** Evil Leader
 
 #+begin_src emacs-lisp
@@ -707,9 +711,6 @@ This ensures that the Vim navigation keys navigate by visual lines.
       )
     )
 #+end_src
-
-
-
 
 ** Miscellaneous
 
@@ -996,7 +997,6 @@ Use dict.org for dictionary function.
 #+begin_src emacs-lisp
 (setq dictionary-server "dict.org")
 #+end_src
-
 
 ** Appearance
 
@@ -1894,9 +1894,6 @@ List folders before individual files.
     (setq dired-listing-switches args)))
 #+end_src
 
-
-
-
 *** Speedbar
 
 #+begin_src emacs-lisp
@@ -1910,8 +1907,6 @@ List folders before individual files.
     ("H-s" . 'speedbar))
 #+end_src
 
-
-
 *** Reveal in Finder
 
 #+begin_src emacs-lisp
@@ -1922,9 +1917,7 @@ List folders before individual files.
 
 ** Shells
 
-
 *** Ghost.el
-
 
 #+begin_src emacs-lisp
   (use-package ghostel
@@ -2390,7 +2383,6 @@ Display suggestions in grid.
 		 '(text-mode . ("harper-ls" "--stdio"))))
 #+end_src
 
-
 Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Small Jinx Tweak | Irreal]]
 
 #+begin_src emacs-lisp
@@ -2562,8 +2554,6 @@ For word counts.
 
     )
 #+end_src
-
-
 
 ** Editing Keybindings
 
@@ -3025,8 +3015,6 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
     (org-html-export-to-html)
     (shell-command "canvas-handout"))
 #+end_src
-
-
 
 Export exam data files to Typst
 
@@ -3944,7 +3932,6 @@ For converting simple org mode list quiz questions to the lisp format.
 (require 'org-mcq-to-lisp)
 #+end_src
 
-
 Tools for converting Beamer to Mosaic.
 
 #+begin_src emacs-lisp
@@ -4039,7 +4026,6 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
   ;; (global-set-key (kbd "H-w") 'formatted-copy)
 #+end_src
 
-
 ** Org Preview
 
 View Org file in the default browser.
@@ -4121,8 +4107,6 @@ The file lives in the system temp directory and is deleted when Emacs exits."
 	      (lambda () (ignore-errors (delete-file tmp))))
     (browse-url-of-file tmp)))
 #+end_src
-
-
 
 ** Org Mode Hydra
 
@@ -4520,7 +4504,6 @@ Create PDF with Mosaic.
     (rlr/org-open-pdf))
 #+end_src
 
-
 Export Mosaic file and start Typst watch.
 
 #+begin_src emacs-lisp
@@ -4612,7 +4595,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
       (display-buffer (current-buffer)))))
 #+end_src
 
-
 * Markdown
 
 #+begin_src emacs-lisp
@@ -4646,14 +4628,11 @@ View Markdown file in the default browser.
     (browse-url-of-file tmp)))
 #+end_src
 
-
-
 * Slipshow
 
 #+begin_src emacs-lisp
   (require 'ox-rlr-slipshow)
 #+end_src
-
 
 ** Hydra Org-Slipshow
 
@@ -4667,8 +4646,6 @@ View Markdown file in the default browser.
       ("Sk" org-rlr-slipshow-unwatch "Kill watch")
       ("So" org-rlr-slipshow-export-to-html-and-open "Compile and open"))))
 #+end_src
-
-
 
 * Citations
 
@@ -5398,7 +5375,6 @@ Force GPG to use the minibuffer to ask for password.
     :mode ("\\.html?\\'" . mhtml-ts-mode))
 #+end_src
 
-
 ** CSS
 
 #+begin_src emacs-lisp
@@ -5407,7 +5383,6 @@ Force GPG to use the minibuffer to ask for password.
   :mode ("\\.css\\'"))
 
 #+end_src
-
 
 ** Blog
 
@@ -5858,14 +5833,11 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     :mode "\\.fish\\'")
 #+end_src
 
-
 ** JSON
 
 #+begin_src emacs-lisp
   (use-package json-mode)
 #+end_src
-
-
 
 ** Yaml
 
@@ -5995,7 +5967,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
      ))
 #+end_src
 
-
 *** Hydra Org-LaTeX
 
 #+begin_src emacs-lisp
@@ -6012,9 +5983,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
 	("h" make-handout "Handout")
 	("S" make-tex-syllabus "Syllabus"))))
 #+end_src
-
-
-
 
 *** Hydra Toggle
 
@@ -6257,7 +6225,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
       ("t" (find-file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org") "open tasks")
       ("b" (find-file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org") "web bookmarks"))))
 #+end_src
-
 
 *** Org Agenda Mode
 
@@ -6524,8 +6491,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     ("h" describe-mode))))
 
 #+end_src
-
-
 
 * Finish
 

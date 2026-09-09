@@ -176,6 +176,7 @@
 
 (use-package consult
   :bind
+  :config
   (("C-x b" . consult-buffer)
    ("s-r" . consult-buffer)
    ("M-s-r" . consult-buffer-other-window)
@@ -188,6 +189,10 @@
    ("C-c o" . consult-outline)
    ("C-c p f" . consult-project-buffer)
    ("M-s m" . consult-multi-occur)))
+
+(setq consult-async-input-debounce 0.05
+      consult-async-input-throttle 0.1
+      consult-async-refresh-delay 0.05)
 
 (defun rlr/consult-rg ()
   "Function for consult-ripgrep with the universal-argument."
