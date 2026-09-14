@@ -88,7 +88,9 @@
 (use-package casual-suite
    :bind
    ("H-." . casual-editkit-main-tmenu)
-   ("M-g a" . casual-avy-tmenu))
+   ("M-g a" . casual-avy-tmenu)
+   :config
+   (casual-suite-init))
 
  (with-eval-after-load 'dired
    (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
@@ -176,7 +178,6 @@
 
 (use-package consult
   :bind
-  :config
   (("C-x b" . consult-buffer)
    ("s-r" . consult-buffer)
    ("M-s-r" . consult-buffer-other-window)
@@ -2455,6 +2456,20 @@ body content wrapped in a #+begin_note ... #+end_note block."
 		  (point-max)))))
 	   (delete-region start end))
 	 (set-marker m nil)))))
+
+(defun my/convert-huge-to-typst ()
+  "Convert \\Huge{...} inside #+begin_center blocks to Typst export blocks."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward
+            "^[ \t]*\\\\Huge{\\([^}]+\\)}"
+            nil t)
+      (let ((text (match-string 1)))
+        (replace-match
+         (concat "#+BEGIN_EXPORT typst\n"
+                 "#text(size: 36pt)[*" text "*]\n"
+                 "#+END_EXPORT"))))))
 
 (defun formatted-copy ()
   "Export region to HTML, and copy it to the clipboard."

@@ -362,14 +362,16 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
     (setq casual-keybinding-primary "s-.")
     (setq casual-keybinding-secondary "M-m")
     :config
-    (casual init))
+    (casual-suite-init))
 #+end_src
 
 #+begin_src emacs-lisp
    (use-package casual-suite
      :bind
      ("H-." . casual-editkit-main-tmenu)
-     ("M-g a" . casual-avy-tmenu))
+     ("M-g a" . casual-avy-tmenu)
+     :config
+     (casual-suite-init))
 
    (with-eval-after-load 'dired
      (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
@@ -509,7 +511,6 @@ Enrich existing commands with completion annotations
 #+begin_src emacs-lisp
   (use-package consult
     :bind
-    :config
     (("C-x b" . consult-buffer)
      ("s-r" . consult-buffer)
      ("M-s-r" . consult-buffer-other-window)
@@ -525,6 +526,7 @@ Enrich existing commands with completion annotations
 #+end_src
 
 From [[https://www.jamescherti.com/emacs-consult-speed-async-searche-grep-ripgrep-fd-find/][Why Emacs Consult async searches feel slow and how to speed them up? (consult-fd, consult-find, consult-grep, consult-ripgrep...) | James Cherti]]
+
 #+begin_src emacs-lisp
 (setq consult-async-input-debounce 0.05
       consult-async-input-throttle 0.1
@@ -4003,6 +4005,22 @@ body content wrapped in a #+begin_note ... #+end_note block."
 		  (point-max)))))
 	   (delete-region start end))
 	 (set-marker m nil)))))
+#+end_src
+
+#+begin_src emacs-lisp
+(defun my/convert-huge-to-typst ()
+  "Convert \\Huge{...} inside #+begin_center blocks to Typst export blocks."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward
+            "^[ \t]*\\\\Huge{\\([^}]+\\)}"
+            nil t)
+      (let ((text (match-string 1)))
+        (replace-match
+         (concat "#+BEGIN_EXPORT typst\n"
+                 "#text(size: 36pt)[*" text "*]\n"
+                 "#+END_EXPORT"))))))	
 #+end_src
 
 ** Copy Org Rich Text
