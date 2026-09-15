@@ -1000,6 +1000,12 @@ Use dict.org for dictionary function.
 (setq dictionary-server "dict.org")
 #+end_src
 
+Open read-only files in view mode. This allows scrolling with the space bar.
+
+#+begin_src emacs-lisp
+(setq view-read-only t)
+#+end_src
+
 ** Appearance
 
 *** Themes

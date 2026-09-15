@@ -396,6 +396,8 @@
 
 (setq dictionary-server "dict.org")
 
+(setq view-read-only t)
+
 (use-package modus-themes
   :demand t
   :bind
