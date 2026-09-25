@@ -975,6 +975,8 @@ The file is opened in a temporary buffer that is killed after export."
   (when args
     (setq dired-listing-switches args)))
 
+(keymap-set dired-mode-map "SPC" #'dired-display-file)
+
 (use-package speedbar
   :ensure nil
   :commands (speedbar)
@@ -2582,21 +2584,21 @@ The file lives in the system temp directory and is deleted when Emacs exits."
     ("vv" rlr/org-export-html-to-browser "view in browser")
     ("d1" denote-link "link to note"))
    "Typst"
-   (("p" rlr/org-mktypst "Article")
+   (("m" rlr/org-mktypst "Article")
     ("h" make-typst-handout "Handout")
     ("wt" rlr/org-rlr-typst-export-and-watch "Start Typst Watch")
-    ("st" rlr/org-rlr-typst-stop-watch "Stop Typst Watch")
-    ("lt" rlr/org-rlr-typst-list-watches "List Typst Watches")
+    ("wT" rlr/org-rlr-typst-stop-watch "Stop Typst Watch")
+    ("wl" rlr/org-rlr-typst-list-watches "List Typst Watches")
     ("y" make-typst-syllabus "Syllabus")
     ("x" org-exam-export-to-pdf "Exam")
     ("X" org-exam-export-versions-to-pdf "Exam Versions")
     ("o" rlr/org-goto-pdf "View PDF")
     ("b" rlr-create-typst-bib "Create bib file"))
    "Other"
-   (("m" rlr/org-mkmosaic "Mosaic")
+   (("l" rlr/org-mkmosaic "Mosaic")
     ("wm" rlr/org-rlr-mosaic-export-and-watch "Start Mosaic Watch")
-    ("sm" rlr/org-rlr-mosaic-stop-watch "Stop Mosaic Watch")
-    ("lm" rlr/org-rlr-mosaic-list-watches "List Mosaic Watches")
+    ("wM" rlr/org-rlr-mosaic-stop-watch "Stop Mosaic Watch")
+    ("wL" rlr/org-rlr-mosaic-list-watches "List Mosaic Watches")
     ("L" orglatex/body "LaTeX")
     ("S" slipshow/body "Slipshow")
     ("H" make-html "HTML"))))
