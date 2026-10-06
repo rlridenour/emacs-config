@@ -118,6 +118,15 @@ would otherwise print the entire tree."
                   ('entity (org-exam--escape-typst (or (org-element-property :utf-8 obj) "")))
                   ('subscript (concat "#sub[" (org-exam--contents-to-typst (org-element-contents obj)) "]"))
                   ('superscript (concat "#super[" (org-exam--contents-to-typst (org-element-contents obj)) "]"))
+                  ;; @@typst:...@@ passes raw Typst through; snippets for
+                  ;; other backends are dropped.
+                  ('export-snippet
+                   (if (equal (org-element-property :back-end obj) "typst")
+                       (org-element-property :value obj)
+                     ""))
+                  ;; Not "\" + space: whitespace collapsing could leave a
+                  ;; bare trailing "\" that escapes the closing "]".
+                  ('line-break "#linebreak() ")
                   (_ (org-exam--contents-to-typst (org-element-contents obj))))))
       (concat body (make-string post-blank ?\s)))))
 

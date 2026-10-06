@@ -2861,50 +2861,67 @@ Convert Org mode to Markdown
 #+end_src
 
 #+begin_src emacs-lisp
-  ;; (setq org-latex-pdf-process '("arara %f"))
-  (setq org-latex-pdf-process '("mkl %f"))
+    ;; (setq org-latex-pdf-process '("arara %f"))
+    (setq org-latex-pdf-process '("mkl %f"))
 
-  (defun rlr/org-mkpdf ()
-    "Make PDF with pdf latexmk."
-    (interactive)
-    (save-buffer)
-    (org-latex-export-to-latex)
-    (async-shell-command-no-window (concat "mkp " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
+    (defun rlr/org-mkpdf ()
+      "Make PDF with pdf latexmk."
+      (interactive)
+      (save-buffer)
+      (org-latex-export-to-latex)
+      (async-shell-command-no-window (concat "mkp " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
 
   (defun rlr/org-open-pdf ()
-    "Open PDF in background with default viewer."
+    "Open the PDF matching the current Org buffer in the background.
+  Tries BASE.pdf first.  If that doesn't exist, looks for PDFs whose names
+  contain the hyphen-separated parts of BASE in order (e.g. 26-midterm.org
+  matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
     (interactive)
-    (async-shell-command-no-window (concat "open -g " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
+    (let* ((dir   (file-name-directory buffer-file-name))
+           (base  (file-name-base buffer-file-name))
+           (exact (concat base ".pdf"))
+           (regex (concat "\\`"
+                          (mapconcat #'regexp-quote (split-string base "-") ".*")
+                          ".*\\.pdf\\'"))
+           (pdf   (if (file-exists-p (expand-file-name exact dir))
+                      exact
+                    (let ((matches (directory-files dir nil regex)))
+                      (cond ((null matches)
+                             (user-error "No PDF found for %s" base))
+                            ((null (cdr matches)) (car matches))
+                            (t (completing-read "Open PDF: " matches nil t)))))))
+      (async-shell-command-no-window
+       (concat "open -g " (shell-quote-argument (expand-file-name pdf dir))))))
+  
+      (defun rlr/org-goto-pdf ()
+      "View PDF with default viewer."
+      (interactive)
+      (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
 
-    (defun rlr/org-goto-pdf ()
-    "View PDF with default viewer."
-    (interactive)
-    (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
+    (defun rlr/org-mklua ()
+      "Make PDF with lua latexmk."
+      (interactive)
+      (save-buffer)
+      (org-latex-export-to-latex)
+      (async-shell-command-no-window (concat "mkl " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
 
-  (defun rlr/org-mklua ()
-    "Make PDF with lua latexmk."
-    (interactive)
-    (save-buffer)
-    (org-latex-export-to-latex)
-    (async-shell-command-no-window (concat "mkl " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
+    (defun rlr/org-arara ()
+      "Make PDF with Arara."
+      (interactive)
+      (save-buffer)
+      (org-arara-export-to-latex)
+      (async-shell-command-no-window (concat "mkarara " (shell-quote-argument(file-name-sans-extension (buffer-file-name)))".tex")))
 
-  (defun rlr/org-arara ()
-    "Make PDF with Arara."
-    (interactive)
-    (save-buffer)
-    (org-arara-export-to-latex)
-    (async-shell-command-no-window (concat "mkarara " (shell-quote-argument(file-name-sans-extension (buffer-file-name)))".tex")))
-
-  (defun rlr/org-date ()
-    "Update existing date: timestamp on a Hugo post."
-    (interactive)
-    (save-excursion (
-		     goto-char 1)
-		    (re-search-forward "^#\\+date:")
-		    (let ((beg (point)))
-		      (end-of-line)
-		      (delete-region beg (point)))
-		    (insert (concat " " (format-time-string "%B %e, %Y")))))
+    (defun rlr/org-date ()
+      "Update existing date: timestamp on a Hugo post."
+      (interactive)
+      (save-excursion (
+  		     goto-char 1)
+  		    (re-search-forward "^#\\+date:")
+  		    (let ((beg (point)))
+  		      (end-of-line)
+  		      (delete-region beg (point)))
+  		    (insert (concat " " (format-time-string "%B %e, %Y")))))
 
 #+end_src
 
@@ -3978,7 +3995,7 @@ body content wrapped in a #+begin_note ... #+end_note block."
 	 (skip-chars-backward " \t\n")
 	 (forward-line 1)
 	 (delete-region (point) subtree-end)
-	 (insert "#+end_note\n")
+	 (insert "#+end_note\n\n")
 	 (set-marker heading-start nil)
 	 (set-marker subtree-end nil))
        (set-marker m nil)))))
@@ -4167,7 +4184,7 @@ The file lives in the system temp directory and is deleted when Emacs exits."
       ("y" make-typst-syllabus "Syllabus")
       ("x" org-exam-export-to-pdf "Exam")
       ("X" org-exam-export-versions-to-pdf "Exam Versions")
-      ("o" rlr/org-goto-pdf "View PDF")
+      ("o" rlr/org-open-pdf "View PDF")
       ("b" rlr-create-typst-bib "Create bib file"))
      "Other"
      (("l" rlr/org-mkmosaic "Mosaic")

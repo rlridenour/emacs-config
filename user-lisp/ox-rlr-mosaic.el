@@ -728,6 +728,45 @@ communication channel."
 
 ;;;; Special Block
 
+(defun org-rlr-mosaic--reveal-items (special-block info)
+  "Return SPECIAL-BLOCK's list items as separate transcoded strings, or nil.
+
+Mosaic reveals a single bulleted list by rebuilding it as a grid whose
+markers are a hard-coded bullet, so the theme's `list.marker' is lost at
+the top level while nested lists keep it.  Handing `m.steps.reveal' one
+body per item instead draws each as a native list.  Each body is its own
+block, because Typst would otherwise join adjacent items into one list
+and a hidden item would still show its marker; the blocks are spaced by
+the list's own item spacing so that the result measures like the native
+list.  This applies only when the block holds nothing but one plain
+bulleted list of at least two items: numbered items would restart their
+count in each body, and a list with its own `#+ATTR_TYPST' line is left
+to that line.  INFO is a plist used as a communication channel."
+  (let ((children (org-element-contents special-block)))
+    (when (and (= (length children) 1)
+               (eq (org-element-type (car children)) 'plain-list))
+      (let* ((plain-list (car children))
+             (items (org-element-contents plain-list))
+             (last (1- (length items)))
+             (gap "if list.spacing == auto { par.leading } else { list.spacing }"))
+        (when (and (> last 0)
+                   (eq (org-element-property :type plain-list) 'unordered)
+                   (not (org-element-property :attr_typst plain-list))
+                   (cl-notany (lambda (item)
+                                (string-match-p
+                                 "\\`[ \t]*[0-9]+[.)]"
+                                 (or (org-element-property :bullet item) "")))
+                              items))
+          (cl-loop
+           for item in items
+           for index from 0
+           collect (format "#context block(%s)[\n%s\n]"
+                           (org-rlr-mosaic--join-args
+                            (append
+                             (and (> index 0) (list (concat "above: " gap)))
+                             (and (< index last) (list (concat "below: " gap)))))
+                           (org-trim (org-export-data item info)))))))))
+
 (defun org-rlr-mosaic-special-block (special-block contents info)
   "Transcode a SPECIAL-BLOCK element into a Mosaic construct.
 
@@ -757,9 +796,13 @@ communication channel."
       ("note"
        (format "#m.note[\n%s\n]\n\n" (org-rlr-mosaic--strip-markers body)))
       ((or "reveal" "steps")
-       (format "%s[\n%s\n]\n\n"
+       (format "%s%s\n\n"
                (org-rlr-mosaic--call "#m.steps.reveal" (org-rlr-mosaic--join-args attrs))
-               (org-rlr-mosaic--strip-markers body)))
+               (mapconcat (lambda (part)
+                            (format "[\n%s\n]" (org-rlr-mosaic--strip-markers part)))
+                          (or (org-rlr-mosaic--reveal-items special-block info)
+                              (list body))
+                          "")))
       ((or "step" "only" "on")
        (format "#m.steps.on(%s)[\n%s\n]\n\n"
                (org-rlr-mosaic--join-args

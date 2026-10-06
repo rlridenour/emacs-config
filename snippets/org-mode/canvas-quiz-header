@@ -6,9 +6,9 @@
 #+QUIZ_NAME: $1
 #+QUIZ_DESCRIPTION: ${2:The following questions are from the scheduled reading assignment and from the previous lecture.}
 #+QUIZ_TYPE: 
-#+QUIZ_DUE: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+QUIZ_DUE: `(format-time-string "<%Y-%m-%d %a 14:00>")`
 #+QUIZ_UNLOCK:
-#+QUIZ_LOCK: `(format-time-string "<%Y-%m-%d %a 09:30>")`
+#+QUIZ_LOCK: `(format-time-string "<%Y-%m-%d %a 14:00>")`
 #+QUIZ_GROUP: ${3:Quizzes}
 #+QUIZ_PUBLISHED: ${5:t}
 #+QUIZ_ATTEMPTS: ${6:1}
