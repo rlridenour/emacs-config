@@ -1186,7 +1186,7 @@ Disable changing text size with mouse and trackpad
   (use-package ultra-scroll
     :vc (:url "https://github.com/jdtsmith/ultra-scroll")
     :init
-    (setq scroll-conservatively 3 ; or whatever value you prefer, since v0.4
+    (setq scroll-conservatively 101 ; prevents recentering when scrolling off screen
 	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
     :config
     (ultra-scroll-mode 1))
