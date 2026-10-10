@@ -78,6 +78,10 @@
 
 (setq-default line-spacing 0.25)
 
+(setq inhibit-compacting-font-caches t)
+(setq redisplay-skip-fontification-on-input t)
+(setq fast-but-imprecise-scrolling t)
+
 (require 'transient)
 
 ;; Local Variables:

@@ -429,6 +429,8 @@
 
 (add-hook 'modus-themes-after-load-theme-hook #'rlr/customize-org-headings)
 
+(setq font-lock-maximum-decoration '((t . 2)))
+
 (defun rlr/color-scheme:emacs (&optional given-scheme)
   "Function to load named theme."
   (let ((scheme
@@ -1302,6 +1304,7 @@ The file is opened in a temporary buffer that is killed after export."
 ;;  '((yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml")))
 (setq treesit-auto-install-grammar 'always)
 (setq treesit-enabled-modes t)
+(setq treesit-font-lock-level 2)
 
 (use-package vundo
   :custom

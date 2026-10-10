@@ -173,6 +173,14 @@ Add some space between lines.
   (setq-default line-spacing 0.25)
 #+end_src
 
+Prevent font compacting. [[https://www.jamescherti.com/emacs-user-interface-better-responsiveness-and-latency/][How to Make the Emacs UI Feel More Responsive | James Cherti]]
+
+#+begin_src emacs-lisp
+  (setq inhibit-compacting-font-caches t)
+  (setq redisplay-skip-fontification-on-input t)
+  (setq fast-but-imprecise-scrolling t)
+#+end_src
+
 ** Transient
 
 I got tired of seeing this error: =Error loading autoloads: (void-function transient-define-prefix)=. Requiring transient early fixed it.
@@ -671,7 +679,6 @@ https://github.com/joaotavora/yasnippet
 #+begin_src emacs-lisp :tangle no
   (use-package evil
     :init
-    (defvar evil-mode-buffers nil)
     (setq evil-default-state 'emacs)
     (setq evil-want-integration t)
     (setq evil-want-keybinding nil) ;; Required by evil-collection
@@ -679,6 +686,7 @@ https://github.com/joaotavora/yasnippet
     (setq evil-want-C-i-jump t)
     (setq evil-respect-visual-line-mode t)
     :config
+    (defvar evil-mode-buffers nil)
     (evil-mode 1))
 #+end_src
 
@@ -1045,6 +1053,12 @@ Open read-only files in view mode. This allows scrolling with the space bar.
     (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5))
 
   (add-hook 'modus-themes-after-load-theme-hook #'rlr/customize-org-headings)
+#+end_src
+
+Try this for speed. See [[https://www.jamescherti.com/emacs-user-interface-better-responsiveness-and-latency/][How to Make the Emacs UI Feel More Responsive | James Cherti]]
+
+#+begin_src emacs-lisp
+(setq font-lock-maximum-decoration '((t . 2)))
 #+end_src
 
 **** Toggle Dark
@@ -2507,6 +2521,7 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
   ;;  '((yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml")))
   (setq treesit-auto-install-grammar 'always)
   (setq treesit-enabled-modes t)
+  (setq treesit-font-lock-level 2) 
 #+end_src
 
 ** Vundo
