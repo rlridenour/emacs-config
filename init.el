@@ -1246,6 +1246,7 @@ The file is opened in a temporary buffer that is killed after export."
   (magit-auto-revert-mode -1)
   (setq with-editor-emacsclient-executable (executable-find "emacsclient"))
   :custom
+  (magit-git-executable "/opt/homebrew/bin/git")
   (magit-log-section-commit-count 5)
   (magit-process-connection-type nil)
   (magit-refresh-verbose nil)
