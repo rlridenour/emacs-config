@@ -1240,16 +1240,42 @@ The file is opened in a temporary buffer that is killed after export."
   (setq hungry-delete-join-reluctantly t)
   (global-hungry-delete-mode))
 
+;; you can use this magit config
 (use-package magit
-  :after transient
-  :bind ("C-x g" . magit-status)
-  :custom
-  (magit-git-executable "/opt/homebrew/bin/git")
   :init
-  (setq magit-process-connection-type nil)
-  :config
-  (setq magit-refresh-verbose t)
-  )
+  (magit-auto-revert-mode -1)
+  (setq with-editor-emacsclient-executable (executable-find "emacsclient"))
+  :custom
+  (magit-log-section-commit-count 5)
+  (magit-process-connection-type nil)
+  (magit-refresh-verbose nil)
+  (magit-refresh-status-buffer nil)
+  (magit-revision-insert-related-refs nil)
+  (magit-save-repository-buffers nil)
+  (magit-uniquify-buffer-names nil)
+  (magit-status-sections-hook
+   '(magit-insert-error-header
+     magit-insert-untracked-files
+     magit-insert-unstaged-changes
+     magit-insert-staged-changes
+     magit-insert-recent-commits)))
+
+;; use package-vc installion
+(use-package magit-fast
+  :vc (:url "https://github.com/zHaOdANiuu/magit-fast" :rev :newest)
+  :after magit
+  :bind
+  (:map magit-status-mode-map
+   ("<return>" . my-magit-fast-diff))
+  :init
+  (remove-hook 'server-switch-hook 'magit-commit-diff)
+  (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
+  (magit-fast-mode)
+
+  (defun my-magit-fast-diff ()
+    (interactive)
+    (when-let* ((file (magit-file-at-point)))
+      (magit-diff-dwim nil `(,file)))))
 
 (use-package jinx
   :init
@@ -3853,6 +3879,13 @@ Calling this again on an already-watched buffer stops the old watcher first."
   :mode "\\.fish\\'")
 
 (use-package json-mode)
+
+(use-package agent-shell
+    :ensure t
+    :ensure-system-package
+    ;; Add agent installation configs here
+    ((claude . "brew install claude-code")
+     (claude-agent-acp . "npm install -g @agentclientprotocol/claude-agent-acp")))
 
 (use-package pdf-tools
   :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))

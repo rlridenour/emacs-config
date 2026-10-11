@@ -2367,7 +2367,7 @@ Solved Applescript error with these default write settings:
 =defaults write org.gnu.Emacs NSApplicationUpdateCycleEnabled -bool NO=
 =defaults write org.gnu.Emacs NSEventConcurrentProcessingEnabled -bool NO=
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package magit
     :after transient
     :bind ("C-x g" . magit-status)
@@ -2379,6 +2379,48 @@ Solved Applescript error with these default write settings:
     (setq magit-refresh-verbose t)
     )
 #+end_src
+
+#+begin_src emacs-lisp
+;; you can use this magit config
+(use-package magit
+  :init
+  (magit-auto-revert-mode -1)
+  (setq with-editor-emacsclient-executable (executable-find "emacsclient"))
+  :custom
+  (magit-log-section-commit-count 5)
+  (magit-process-connection-type nil)
+  (magit-refresh-verbose nil)
+  (magit-refresh-status-buffer nil)
+  (magit-revision-insert-related-refs nil)
+  (magit-save-repository-buffers nil)
+  (magit-uniquify-buffer-names nil)
+  (magit-status-sections-hook
+   '(magit-insert-error-header
+     magit-insert-untracked-files
+     magit-insert-unstaged-changes
+     magit-insert-staged-changes
+     magit-insert-recent-commits)))
+
+;; use package-vc installion
+(use-package magit-fast
+  :vc (:url "https://github.com/zHaOdANiuu/magit-fast" :rev :newest)
+  :after magit
+  :bind
+  (:map magit-status-mode-map
+   ("<return>" . my-magit-fast-diff))
+  :init
+  (remove-hook 'server-switch-hook 'magit-commit-diff)
+  (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
+  (magit-fast-mode)
+
+  (defun my-magit-fast-diff ()
+    (interactive)
+    (when-let* ((file (magit-file-at-point)))
+      (magit-diff-dwim nil `(,file)))))
+#+end_src
+
+
+
 
 ** Jinx
 
@@ -5912,6 +5954,18 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (use-package yaml-pro
     :hook ((yaml-mode-hook . yaml-pro-mode)
 	   (yaml-ts-mode . yaml-pro-ts-mode)))
+#+end_src
+
+
+** Agent-Shell
+
+#+begin_src emacs-lisp
+(use-package agent-shell
+    :ensure t
+    :ensure-system-package
+    ;; Add agent installation configs here
+    ((claude . "brew install claude-code")
+     (claude-agent-acp . "npm install -g @agentclientprotocol/claude-agent-acp")))
 #+end_src
 
 * PDF Readers
