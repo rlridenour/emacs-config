@@ -2367,7 +2367,7 @@ Solved Applescript error with these default write settings:
 =defaults write org.gnu.Emacs NSApplicationUpdateCycleEnabled -bool NO=
 =defaults write org.gnu.Emacs NSEventConcurrentProcessingEnabled -bool NO=
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package magit
     :after transient
     :bind ("C-x g" . magit-status)
@@ -2380,7 +2380,7 @@ Solved Applescript error with these default write settings:
     )
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   ;; you can use this magit config
   (use-package magit
     :init
