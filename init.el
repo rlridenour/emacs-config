@@ -1503,6 +1503,9 @@ and convert it to Org using the pandoc utility."
 ;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
 ;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
 
+(use-package valign
+  :hook (org-mode . valign-mode))
+
 (use-package org-appear
   :after org
   :commands (org-appear-mode)

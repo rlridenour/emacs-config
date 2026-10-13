@@ -2379,6 +2379,7 @@ Solved Applescript error with these default write settings:
     (setq magit-refresh-verbose t)
     )
 #+end_src
+Tried magit-fast, but not convinced of the benefit.
 
 #+begin_src emacs-lisp :tangle no
   ;; you can use this magit config
@@ -2419,9 +2420,6 @@ Solved Applescript error with these default write settings:
       (when-let* ((file (magit-file-at-point)))
         (magit-diff-dwim nil `(,file)))))
 #+end_src
-
-
-
 
 ** Jinx
 
@@ -2826,6 +2824,15 @@ Convert Org mode to Markdown
 
 ;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
 ;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
+#+end_src
+
+** Valign
+
+This fixes alignment problems in Org tables that have hidden emphasis markers.
+
+#+begin_src emacs-lisp
+(use-package valign
+  :hook (org-mode . valign-mode))
 #+end_src
 
 ** Org Appear
@@ -5956,7 +5963,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     :hook ((yaml-mode-hook . yaml-pro-mode)
 	   (yaml-ts-mode . yaml-pro-ts-mode)))
 #+end_src
-
 
 ** Agent-Shell
 
