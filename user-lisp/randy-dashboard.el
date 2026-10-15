@@ -182,7 +182,12 @@ Optional HINT is displayed in comment face after the label."
           (dolist (line (split-string agenda-text "\n"))
             (unless (or (string-match-p "^Week-agenda" line)
                         (string-match-p "^Press.*for help" line))
-              (insert "  " line "\n")))))
+              ;; Agenda right-aligns tags using the agenda window's width,
+              ;; which overflows here; pull them up next to the title.
+              (insert "  "
+                      (replace-regexp-in-string
+                       "[ \t]\\{2,\\}\\(:[[:alnum:]_@#%:]*:\\)[ \t]*\\'" "  \\1" line)
+                      "\n")))))
     (error
      (insert (propertize (format "    Agenda unavailable: %s\n" (error-message-string err))
                          'face 'randy-dashboard-hint-face))))
