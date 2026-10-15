@@ -36,14 +36,16 @@
 (defconst rr-backup-dir (concat rr-cache-dir "backup/")
   "The directory for Emacs backup files.")
 
-(defconst rr-org-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/"
+(defconst rr-org-dir "~/Library/Mobile Documents/com~apple~CloudDocs/org/"
   "The directory for my org files.")
 
-(defconst rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"
+(defconst rr-agenda-dir "~/Library/Mobile Documents/com~apple~CloudDocs/org/agenda/"
+  "The directory for my org agenda files.")
+
+(defconst rr-notes-dir "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"
   "The directory for RR-Emacs note storage.")
 
-(defconst rr-notes-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"
-  "The directory for RR-Emacs note storage.")
+(defconst rr-journelly-file "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org")
 
 ;;;; Create directories if non-existing
 (dolist (dir (list rr-cache-dir
@@ -1359,7 +1361,7 @@ The file is opened in a temporary buffer that is killed after export."
 (use-package org
     :init
     ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-    (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+    (setq org-directory rr-org-dir)
     :config
     (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
     (setq org-list-allow-alphabetical t)
@@ -1400,7 +1402,8 @@ The file is opened in a temporary buffer that is killed after export."
     (setq org-log-done t)
     (setq org-todo-keyword-faces
 	  '(("DONE" . "green4") ("TODO" . org-warning)))
-    (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+    ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+    (setq org-agenda-files (list rr-agenda-dir))
     (setq org-agenda-start-on-weekday nil)
     (setq org-agenda-window-setup 'current-window)
     (setq org-link-frame-setup
@@ -1769,18 +1772,21 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
 
 ;; Org-capture
 (setq org-capture-templates
-	'(
-	  ("t" "Todo" entry (file+headline "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/tasks.org" "Inbox")
-	   "** TODO %?\n  %i\n  %a")
-	  ("e" "Event" entry (file+headline "/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/events.org" "Future")
-	   "** %? %T")
-	  ("b" "Bookmark" entry (file+headline "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/bookmarks.org" "Inbox")
-	   "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-	  ("c" "Quick note" entry (file "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/quick-notes.org")
-	   "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-	  ("j" "Journelly Entry" entry
-	   (file "/Users/rlridenour/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org")
-	   "* %U @ -\n%?" :prepend t)))
+    `(("t" "Todo" entry
+       (file+headline ,(concat rr-agenda-dir "tasks.org") "Inbox")
+       "** TODO %?\n  %i\n  %a")
+      ("e" "Event" entry
+       (file+headline ,(concat rr-agenda-dir "events.org") "Future")
+       "** %? %T")
+      ("b" "Bookmark" entry
+       (file+headline ,(concat rr-org-dir "bookmarks.org") "Inbox")
+       "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+      ("c" "Quick note" entry
+       (file ,(concat rr-notes-dir "quick-notes.org"))
+       "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+      ("j" "Journelly Entry" entry
+       (file ,rr-journelly-file)
+       "* %U @ -\n%?" :prepend t)))
 
 (with-eval-after-load 'org-capture
   (add-to-list 'org-capture-templates
@@ -1915,6 +1921,8 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
 (org-agenda-to-appt) ;; generate the appt list from org agenda files on emacs launch
 (run-at-time "24:01" 3600 'org-agenda-to-appt) ;; update appt list hourly
 (add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
+
+(run-with-timer 0 900 #'start-process "apple-cal" nil "/usr/bin/perl" (expand-file-name "~/bin/apple-cal-to-org.pl"))
 
 (use-package org-contrib
   :after org
