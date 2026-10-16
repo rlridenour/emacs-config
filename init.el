@@ -30,22 +30,23 @@
   :config
   (exec-path-from-shell-initialize))
 
-(defconst rr-cache-dir "~/.cache/emacs/"
-  "The directory for Emacs activity files.")
+(defconst rr-cache-dir (expand-file-name "~/.cache/emacs/"
+    "The directory for Emacs activity files."))
 
-(defconst rr-backup-dir (concat rr-cache-dir "backup/")
-  "The directory for Emacs backup files.")
+  (defconst rr-backup-dir (concat rr-cache-dir "backup/")
+    "The directory for Emacs backup files.")
 
-(defconst rr-org-dir "~/Library/Mobile Documents/com~apple~CloudDocs/org/"
-  "The directory for my org files.")
+  (defconst rr-org-dir (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/org/")
+    "The directory for my org files.")
 
-(defconst rr-agenda-dir "~/Library/Mobile Documents/com~apple~CloudDocs/org/agenda/"
-  "The directory for my org agenda files.")
+  (defconst rr-agenda-dir (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/org/agenda/")
+    "The directory for my org agenda files.")
 
-(defconst rr-notes-dir "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"
-  "The directory for RR-Emacs note storage.")
+  (defconst rr-notes-dir
+  (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"))
 
-(defconst rr-journelly-file "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org")
+(defconst rr-journelly-file
+  (expand-file-name "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
 
 ;;;; Create directories if non-existing
 (dolist (dir (list rr-cache-dir
@@ -1403,7 +1404,7 @@ The file is opened in a temporary buffer that is killed after export."
     (setq org-todo-keyword-faces
 	  '(("DONE" . "green4") ("TODO" . org-warning)))
     ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-    (setq org-agenda-files (list rr-agenda-dir))
+    (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org"))
     (setq org-agenda-start-on-weekday nil)
     (setq org-agenda-window-setup 'current-window)
     (setq org-link-frame-setup
@@ -3147,7 +3148,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 	  ("C-," . mu4e-sexp-at-point))
   :after org
   :init
-  (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.3/share/emacs/site-lisp/mu/mu4e/")
+  (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
   :config
   (setq mail-user-agent 'mu4e-user-agent)
   (setq mu4e-maildir "~/.maildir/")
