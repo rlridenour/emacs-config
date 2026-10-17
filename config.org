@@ -1925,6 +1925,27 @@ Open file in other window: [[http://yummymelon.com/devnull/binding-the-spc-key-i
 (keymap-set dired-mode-map "SPC" #'dired-display-file) 
 #+end_src
 
+Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/has_anyone_managed_to_launch_the_macos_quick_look/][Has anyone managed to launch the macOS Quick Look from emacs? : r/emacs]]
+
+#+begin_src emacs-lisp
+  (defun +quicklook ()
+    "Preview file at point using QuickLook (qlmanage) on macOS or sushi on Linux."
+    (interactive)
+    (let ((file (dired-get-file-for-visit)))
+      (cond
+       ((eq system-type 'darwin)
+  	(start-process "qlmanage" nil "qlmanage" "-p" file))
+       ((eq system-type 'gnu/linux)
+  	(start-process "sushi" nil "sushi" file)))))
+
+  (define-key dired-mode-map (kbd "SPC")
+  	  (lambda ()
+  	    (interactive)
+  	    (if (dired-get-filename nil t)
+  		(+quicklook)
+  	      (dired-next-line 1))))
+#+end_src
+
 *** Speedbar
 
 #+begin_src emacs-lisp
@@ -2700,7 +2721,7 @@ For word counts.
       (setq org-todo-keyword-faces
   	  '(("DONE" . "green4") ("TODO" . org-warning)))
       ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-      (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org"))
+      (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
       (setq org-agenda-start-on-weekday nil)
       (setq org-agenda-window-setup 'current-window)
       (setq org-link-frame-setup
@@ -4974,134 +4995,155 @@ Copy entire buffer then kill. I use this with temporary scratch buffers to write
 ** Mu4e
 
 #+begin_src emacs-lisp
-  (use-package mu4e
-    :ensure nil
-    :commands (mu4e mu4e-update-mail-and-index)
-    :bind
-    (:map mu4e-headers-mode-map
-	  ("q"  . kill-current-buffer)
-	  ("C-<tab>" . tab-next)
-	  ("g" . my-mu4e-mark-add-tag)
-	  :map mu4e-thread-mode-map
-	  ("C-<tab>" . tab-next)
-	  :map mu4e-main-mode-map
-	  ("q"  . rlr/quit-mu4e)
-	  ("u" . mu4e-update-mail-and-index)
-	  :map mu4e-view-mode-map
-	  ("," . link-hint-open-link)
-	  ("." . rlr/link-hint-open-link-in-secondary-browser)
-	  ("C-," . mu4e-sexp-at-point))
-    :after org
-    :init
-    (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
-    :config
-    (setq mail-user-agent 'mu4e-user-agent)
-    (setq mu4e-maildir "~/.maildir/")
-    (setq mu4e-get-mail-command "mbsync -a")
-    (setq mu4e-update-interval 1800) ;; update every 5 minutes
-    (setq mu4e-read-option-use-builtin nil
-	  mu4e-completing-read-function 'completing-read)
-    (setq mu4e-split-view 'horizontal)
-    (setq mu4e-index-update-error-warning nil)
-    (setq mu4e-headers-skip-duplicates  t)
-    (setq mu4e-view-show-images t)
-    (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
-    (setq mu4e-view-show-addresses t)
-    (setq mu4e-use-fancy-chars t)
-    (setq mu4e-compose-format-flowed t)
-    (setq mu4e-date-format "%y/%m/%d")
-    (setq mu4e-headers-date-format "%Y/%m/%d")
-    (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
-    (setq mu4e-change-filenames-when-moving t)
-    ;; customize the reply-quote-string
-    (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
-    ;; choose to use the formatted string
-    (setq message-citation-line-function 'message-insert-formatted-citation-line)
-    (setq mu4e-attachment-dir "~/Downloads")
-    (setq mu4e-context-policy 'pick-first)
-    (setq  mu4e-contexts (list
-			  (make-mu4e-context
-			   :name "fastmail"
-			   :match-func
-			   (lambda (msg)
-			     (when msg
-			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-			   :vars '((user-mail-address . "rlridenour@fastmail.com")
-				   (user-full-name    . "Randy Ridenour")
-				   (mu4e-drafts-folder  . "/fastmail/Drafts")
-				   (mu4e-sent-folder  . "/fastmail/Sent")
-				   (mu4e-trash-folder  . "/fastmail/Trash")
-				   (mu4e-refile-folder  . "/fastmail/Archive")
-				   (sendmail-program . "msmtp")
-				   (send-mail-function . smtpmail-send-it)
-				   (message-sendmail-f-is-evil . t)
-				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
-				   (message-send-mail-function . message-send-mail-with-sendmail)
-				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
-				   (smtpmail-smtp-server  . "smtp.fastmail.com")
-				   ))
-			  (make-mu4e-context
-			   :name "obu"
-			   :match-func
-			   (lambda (msg)
-			     (when msg
-			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
-			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
-				   (user-full-name    . "Randy Ridenour")
-				   (mu4e-drafts-folder  . "/obu/Drafts")
-				   (mu4e-sent-folder  . "/obu/Sent")
-				   (mu4e-trash-folder . "/obu/Trash")
-				   (mu4e-refile-folder  . "/obu/Archive")
-				   ;; (sendmail-program . "msmtp")
-				   (send-mail-function . smtpmail-send-it)
-				   (message-sendmail-f-is-evil . t)
-				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
-				   (message-send-mail-function . message-send-mail-with-sendmail)
-				   (smtpmail-smtp-server  . "localhost")
-				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
-				   (smtpmail-stream-type . plain)
-				   (smtpmail-smtp-service . 1025)
-				   ))
-			  (make-mu4e-context
-			   :name "gmail"
-			   :name "fastmail"
-			   :match-func
-			   (lambda (msg)
-			     (when msg
-			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-			   :vars '((user-mail-address . "rlridenour@gmail.com")
-				   (user-full-name . "Randy Ridenour")
-				   (mu4e-drafts-folder . "/gmail/Drafts")
-				   (mu4e-refile-folder . "/gmail/Archive")
-				   (mu4e-sent-folder . "/gmail/Sent")
-				   (mu4e-trash-folder . "/gmail/Trash")))
-			  ))
+    (use-package mu4e
+      :ensure nil
+      :commands (mu4e mu4e-update-mail-and-index)
+      :bind
+      (:map mu4e-headers-mode-map
+  	  ("q"  . kill-current-buffer)
+  	  ("C-<tab>" . tab-next)
+  	  ("g" . my-mu4e-mark-add-tag)
+  	  :map mu4e-thread-mode-map
+  	  ("C-<tab>" . tab-next)
+  	  :map mu4e-main-mode-map
+  	  ("q"  . rlr/quit-mu4e)
+  	  ("u" . mu4e-update-mail-and-index)
+  	  :map mu4e-view-mode-map
+  	  ("," . link-hint-open-link)
+  	  ("." . rlr/link-hint-open-link-in-secondary-browser)
+  	  ("C-," . mu4e-sexp-at-point))
+      :after org
+      :init
+      (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
+      (defconst my/mu4e-junk-maildirs
+  '("/obu/Trash" "/obu/Junk" "/obu/Blocked"
+    "/gmail/Trash" "/gmail/[Gmail]/Trash" "/gmail/[Gmail]/Spam"
+    "/fastmail/Trash" "/fastmail/Spam"))
 
-    (setq mu4e-bookmarks
-	  '((:name "Unread messages"
-		   :query "flag:unread AND NOT flag:trashed AND NOT maildir:/gmail/[Gmail]/Trash AND NOT maildir:/gmail/[Gmail]/Spam AND NOT maildir:/obu/Junk AND NOT maildir:/fastmail/Spam"
-		   :key ?b)
-	    (:name "Flagged messages"
-		   :query "flag:flagged"
-		   :key ?f)
-	    ( :name "All inboxes"
-	      :query "maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX AND"
-	      :key ?A)
-	    ( :name "Today's messages"
-	      :query "date:today..now"
-	      :key ?t)
-	    ( :name "Last 7 days"
-	      :query "date:7d..now"
-	      :hide-unread t
-	      :key ?w)
-	    ( :name "Messages with images"
-	      :query "mime:image/*"
-	      :key ?p)))
-    (setq mu4e-maildir-shortcuts
-	  '((:maildir "/obu/INBOX" :key ?u)
-	    (:maildir "/fastmail/INBOX" :key ?f)
-	    (:maildir "/gmail/INBOX" :key ?g)))
-    (require 'mu4e-transient))
+;; Gmail label folders that duplicate mail stored elsewhere
+(defconst my/mu4e-duplicate-maildirs
+  '("/gmail/[Gmail]/All Mail" "/gmail/[Gmail]/Important" "/gmail/[Gmail]/Starred"))
+
+(defconst my/mu4e-clean
+  (concat "NOT flag:trashed AND "
+          (mapconcat (lambda (d) (format "NOT maildir:\"%s\"" d))
+                     (append my/mu4e-junk-maildirs my/mu4e-duplicate-maildirs)
+                     " AND ")))
+
+(defconst my/mu4e-inboxes
+  "(maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX)")
+      :config
+      (setq mail-user-agent 'mu4e-user-agent)
+      (setq mu4e-maildir "~/.maildir/")
+      (setq mu4e-get-mail-command "mbsync -a")
+      (setq mu4e-update-interval 1800) ;; update every 5 minutes
+      (setq mu4e-read-option-use-builtin nil
+  	  mu4e-completing-read-function 'completing-read)
+      (setq mu4e-split-view 'horizontal)
+      (setq mu4e-index-update-error-warning nil)
+      (setq mu4e-headers-skip-duplicates  t)
+      (setq mu4e-view-show-images t)
+      (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
+      (setq mu4e-view-show-addresses t)
+      (setq mu4e-use-fancy-chars t)
+      (setq mu4e-compose-format-flowed t)
+      (setq mu4e-date-format "%y/%m/%d")
+      (setq mu4e-headers-date-format "%Y/%m/%d")
+      (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
+      (setq mu4e-change-filenames-when-moving t)
+      ;; customize the reply-quote-string
+      (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
+      ;; choose to use the formatted string
+      (setq message-citation-line-function 'message-insert-formatted-citation-line)
+      (setq mu4e-attachment-dir "~/Downloads")
+      (setq mu4e-context-policy 'pick-first)
+      (setq  mu4e-contexts (list
+  			  (make-mu4e-context
+  			   :name "fastmail"
+  			   :match-func
+  			   (lambda (msg)
+  			     (when msg
+  			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+  			   :vars '((user-mail-address . "rlridenour@fastmail.com")
+  				   (user-full-name    . "Randy Ridenour")
+  				   (mu4e-drafts-folder  . "/fastmail/Drafts")
+  				   (mu4e-sent-folder  . "/fastmail/Sent")
+  				   (mu4e-trash-folder  . "/fastmail/Trash")
+  				   (mu4e-refile-folder  . "/fastmail/Archive")
+  				   (sendmail-program . "msmtp")
+  				   (send-mail-function . smtpmail-send-it)
+  				   (message-sendmail-f-is-evil . t)
+  				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+  				   (message-send-mail-function . message-send-mail-with-sendmail)
+  				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
+  				   (smtpmail-smtp-server  . "smtp.fastmail.com")
+  				   ))
+  			  (make-mu4e-context
+  			   :name "obu"
+  			   :match-func
+  			   (lambda (msg)
+  			     (when msg
+  			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+  			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+  				   (user-full-name    . "Randy Ridenour")
+  				   (mu4e-drafts-folder  . "/obu/Drafts")
+  				   (mu4e-sent-folder  . "/obu/Sent")
+  				   (mu4e-trash-folder . "/obu/Trash")
+  				   (mu4e-refile-folder  . "/obu/Archive")
+  				   ;; (sendmail-program . "msmtp")
+  				   (send-mail-function . smtpmail-send-it)
+  				   (message-sendmail-f-is-evil . t)
+  				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+  				   (message-send-mail-function . message-send-mail-with-sendmail)
+  				   (smtpmail-smtp-server  . "localhost")
+  				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+  				   (smtpmail-stream-type . plain)
+  				   (smtpmail-smtp-service . 1025)
+  				   ))
+  			  (make-mu4e-context
+  			   :name "gmail"
+  			   :name "fastmail"
+  			   :match-func
+  			   (lambda (msg)
+  			     (when msg
+  			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+  			   :vars '((user-mail-address . "rlridenour@gmail.com")
+  				   (user-full-name . "Randy Ridenour")
+  				   (mu4e-drafts-folder . "/gmail/Drafts")
+  				   (mu4e-refile-folder . "/gmail/Archive")
+  				   (mu4e-sent-folder . "/gmail/Sent")
+  				   (mu4e-trash-folder . "/gmail/Trash")))
+  			  ))
+
+
+  (setq mu4e-bookmarks
+        `((:name "Unread messages"
+           :query ,(concat "flag:unread AND " my/mu4e-clean)
+           :key ?b)
+          (:name "Unread in inboxes"
+           :query ,(concat "flag:unread AND " my/mu4e-inboxes " AND NOT flag:trashed")
+           :key ?i)
+          (:name "Flagged messages"
+           :query ,(concat "flag:flagged AND " my/mu4e-clean)
+           :key ?f)
+          (:name "All inboxes"
+           :query ,(concat my/mu4e-inboxes " AND NOT flag:trashed")
+           :key ?A)
+          (:name "Today's messages"
+           :query ,(concat "date:today..now AND " my/mu4e-clean)
+           :key ?t)
+          (:name "Last 7 days"
+           :query ,(concat "date:7d..now AND " my/mu4e-clean)
+           :hide-unread t
+           :key ?w)
+          (:name "Messages with images"
+           :query ,(concat "flag:attach AND mime:image/* AND " my/mu4e-clean)
+           :key ?p)))
+      (setq mu4e-maildir-shortcuts
+  	  '((:maildir "/obu/INBOX" :key ?u)
+  	    (:maildir "/fastmail/INBOX" :key ?f)
+  	    (:maildir "/gmail/INBOX" :key ?g)))
+      (require 'mu4e-transient))
 #+end_src
 
 Claude suggestions to fix crash. Added June 4, 2026
