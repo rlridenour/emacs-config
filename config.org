@@ -68,11 +68,6 @@ Defer garbage collection during startup and when using the minibuffer. Afterward
 
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 
-#+begin_src emacs-lisp :tangle no
-  (defvar default-file-name-handler-alist file-name-handler-alist)
-  (setq file-name-handler-alist nil)
-#+end_src
-
 #+begin_src emacs-lisp
 (defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
 (setq file-name-handler-alist nil)
@@ -159,12 +154,6 @@ Set font to Apple's San Francisco
   (set-face-attribute 'variable-pitch nil :family "SF Pro Text" :height 1.0 :weight 'medium)
   ;; Monospaced typeface
   (set-face-attribute 'fixed-pitch nil :family "SF Mono" :height 1.0 :weight 'medium)
-#+end_src
-
-Increase font size.
-
-#+begin_src emacs-lisp
-  (set-face-attribute 'default nil :height 160)
 #+end_src
 
 Add some space between lines.
@@ -698,12 +687,6 @@ Set default tab width to 10.
   (setq-default tab-width 10)
 #+end_src
 
-Use GNU =ls= to avoid "Listing directory failed but 'access-file' worked" error.
-
-#+begin_src emacs-lisp
-  (setq insert-directory-program "gls")
-#+end_src
-
 Kill message buffer on exit.
 
 #+begin_src emacs-lisp
@@ -735,33 +718,6 @@ Open links in default Mac browser.
 #+begin_src emacs-lisp
   (setq browse-url-browser-function 'browse-url-default-macosx-browser)
   (setq browse-url-secondary-browser-function 'eww-browse-url)
-#+end_src
-
-World clock settings.
-
-#+begin_src emacs-lisp :tangle no
-  (setq world-clock-list
-	'(
-	  ("America/Chicago" "Oklahoma City")
-	  ("America/Los_Angeles" "Seattle")
-	  ("Pacific/Honolulu" "Honolulu")
-	  ("America/New_York" "New York")
-	  ("Etc/UTC" "UTC")))
-
-  (setq world-clock-time-format "%a, %d %b %R %Z")
-
-  (setq calendar-location-name "Norman, OK"
-	calendar-latitude 35.24371
-	calendar-longitude -97.416797
-	calendar-mark-holidays-flag t        ;colorize holidays in the calendar
-	holiday-bahai-holidays nil           ;these religions have MANY holidays
-	holiday-islamic-holidays nil         ;... that I don't get off
-	holiday-hebrew-holidays nil         ;... that I don't get off
-	)
-
-  (add-hook 'calendar-today-visible-hook 'calendar-mark-today)
-  (global-set-key (kbd "<f8>") #'calendar)
-
 #+end_src
 
 #+begin_src emacs-lisp
@@ -841,7 +797,7 @@ Set server to use tcp for [[http://yummymelon.com/scrim/][Scrim]]
 
 #+begin_src emacs-lisp
   (setq server-use-tcp t)
-  (server-start)
+  (unless (server-running-p) (server-start))
   (require 'org-protocol)
 #+end_src
 
@@ -853,12 +809,19 @@ Auto-insert and immediately highlight matching pairs of parentheses and quotes.
   (setq show-paren-delay 0)
 #+end_src
 
-Save minibuffer history.
+Save minibuffer history in the cache directory. The kill ring is also persisted across sessions (Doom, Prot), with text properties stripped before saving so they don't bloat the savehist file.
 
 #+begin_src emacs-lisp
   (use-package savehist
+    :custom
+    (savehist-file (expand-file-name "savehist" rr-cache-dir))
+    (savehist-additional-variables '(search-ring regexp-search-ring kill-ring))
     :hook
-    (after-init . savehist-mode))
+    (after-init . savehist-mode)
+    (savehist-save . (lambda ()
+		       (setq kill-ring
+			     (mapcar #'substring-no-properties
+				     (cl-remove-if-not #'stringp kill-ring))))))
 #+end_src
 
 Make M-x not offer options that don't apply to the current buffer.
@@ -878,12 +841,6 @@ Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4
   (setq bidi-inhibit-bpa t)
 #+end_src
 
-Skip Fontification During Input
-
-#+begin_src emacs-lisp
-  (setq redisplay-skip-fontification-on-input t)
-#+end_src
-
 Increase Process Output Buffer for LSP
 
 #+begin_src emacs-lisp
@@ -894,25 +851,6 @@ No Duplicates in the Kill Ring
 
 #+begin_src emacs-lisp
   (setq kill-do-not-save-duplicates t)
-#+end_src
-
-Persist the Kill Ring Across Sessions (Doom, Prot)
-
-Most configs that use savehist-mode only persist search rings. But savehist can save any variable – including the kill ring. Add it and you get clipboard history that survives restarts:
-
-#+begin_src emacs-lisp
-  (setq savehist-additional-variables
-	'(search-ring regexp-search-ring kill-ring))
-#+end_src
-
-One thing to watch out for: the kill ring can accumulate text properties (fonts, overlays, etc.) that bloat the savehist file. Doom strips them before saving:
-
-#+begin_src emacs-lisp
-  (add-hook 'savehist-save-hook
-	    (lambda ()
-	      (setq kill-ring
-		    (mapcar #'substring-no-properties
-			    (cl-remove-if-not #'stringp kill-ring)))))
 #+end_src
 
 Sane Syntax in re-builder
@@ -1149,18 +1087,6 @@ Disable changing text size with mouse and trackpad
   (global-set-key (kbd "<C-wheel-down>") 'ignore)
 #+end_src
 
-*** Ultra-Scroll
-
-#+begin_src emacs-lisp :tangle no
-  (use-package ultra-scroll
-    :vc (:url "https://github.com/jdtsmith/ultra-scroll")
-    :init
-    (setq scroll-conservatively 101 ; prevents recentering when scrolling off screen
-	  scroll-margin 0)        ; important: scroll-margin>0 not yet supported
-    :config
-    (ultra-scroll-mode 1))
-#+end_src
-
 Indent wrapped lines in bulleted lists.
 
 #+begin_src emacs-lisp
@@ -1216,13 +1142,6 @@ Auto-update ibuffer list.
 	    #'(lambda ()
 		(ibuffer-auto-mode 1)
 		(ibuffer-switch-to-saved-filter-groups "home")))
-#+end_src
-
-Save minibuffer history in the cache directory.
-
-#+begin_src emacs-lisp
-  (setq savehist-file (expand-file-name "savehist" rr-cache-dir))
-  (savehist-mode)
 #+end_src
 
 Don't ask for confirmation to edit a large file.
@@ -2778,7 +2697,6 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
     :commands (org-appear-mode)
     ;; :hook     (org-mode . org-appear-mode)
     :config
-    (setq org-hide-emphasis-markers t)  ; Must be activated for org-appear to work
     (setq org-appear-autoemphasis   t   ; Show bold, italics, verbatim, etc.
 	  org-appear-autolinks      t   ; Show links
 	  org-appear-autosubmarkers t)) ; Show sub and superscripts

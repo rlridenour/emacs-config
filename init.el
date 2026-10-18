@@ -285,8 +285,6 @@
 
 (setq-default tab-width 10)
 
-(setq insert-directory-program "gls")
-
 (setq message-kill-buffer-on-exit t)
 
 (setf use-short-answers t)
@@ -343,7 +341,7 @@
 (setq ring-bell-function 'ignore)
 
 (setq server-use-tcp t)
-(server-start)
+(unless (server-running-p) (server-start))
 (require 'org-protocol)
 
 (electric-pair-mode 1)
@@ -351,26 +349,22 @@
 (setq show-paren-delay 0)
 
 (use-package savehist
+  :custom
+  (savehist-file (expand-file-name "savehist" rr-cache-dir))
+  (savehist-additional-variables '(search-ring regexp-search-ring kill-ring))
   :hook
-  (after-init . savehist-mode))
+  (after-init . savehist-mode)
+  (savehist-save . (lambda ()
+		       (setq kill-ring
+			     (mapcar #'substring-no-properties
+				     (cl-remove-if-not #'stringp kill-ring))))))
 
 (setq read-extended-command-predicate
 	#'command-completion-default-include-p)
 
-(setq redisplay-skip-fontification-on-input t)
-
 (setq read-process-output-max (* 4 1024 1024)) ; 4MB
 
 (setq kill-do-not-save-duplicates t)
-
-(setq savehist-additional-variables
-	'(search-ring regexp-search-ring kill-ring))
-
-(add-hook 'savehist-save-hook
-	    (lambda ()
-	      (setq kill-ring
-		    (mapcar #'substring-no-properties
-			    (cl-remove-if-not #'stringp kill-ring)))))
 
 (setq reb-re-syntax 'string)
 
@@ -532,9 +526,6 @@
 	    #'(lambda ()
 		(ibuffer-auto-mode 1)
 		(ibuffer-switch-to-saved-filter-groups "home")))
-
-(setq savehist-file (expand-file-name "savehist" rr-cache-dir))
-(savehist-mode)
 
 (setq large-file-warning-threshold nil)
 
@@ -1521,7 +1512,6 @@ and convert it to Org using the pandoc utility."
   :commands (org-appear-mode)
   ;; :hook     (org-mode . org-appear-mode)
   :config
-  (setq org-hide-emphasis-markers t)  ; Must be activated for org-appear to work
   (setq org-appear-autoemphasis   t   ; Show bold, italics, verbatim, etc.
 	  org-appear-autolinks      t   ; Show links
 	  org-appear-autosubmarkers t)) ; Show sub and superscripts

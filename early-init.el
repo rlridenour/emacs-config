@@ -74,8 +74,6 @@
 ;; Monospaced typeface
 (set-face-attribute 'fixed-pitch nil :family "SF Mono" :height 1.0 :weight 'medium)
 
-(set-face-attribute 'default nil :height 160)
-
 (setq-default line-spacing 0.25)
 
 (setq inhibit-compacting-font-caches t)
