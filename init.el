@@ -54,17 +54,19 @@
   (unless (file-directory-p dir)
     (make-directory dir t)))
 
-(setq backup-directory-alist (list (cons "."  rr-backup-dir)))
-
-(setq backup-by-copying t)
-
-(setq delete-old-versions t)
-
-(setq kept-new-versions 5)
-
-(setq version-control t)
-
-(setq create-lockfiles nil)
+(use-package emacs
+  :config
+  (setq backup-directory-alist (list (cons "."  rr-backup-dir)))
+  ;; Always backup by copying
+  (setq backup-by-copying t)
+  ;; Delete old backup files
+  (setq delete-old-versions t)
+  ;; Keep 5 backup files
+  (setq kept-new-versions 5)
+  ;; Make numeric backup versions
+  (setq version-control t)
+  ;; Don't make all those files that look like =#foo.ext=
+  (setq create-lockfiles nil))
 
 (use-package buffer-guardian
   :custom
@@ -287,14 +289,6 @@
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
 
-(setq sentence-end-double-space nil)
-
-(setq-default tab-width 10)
-
-(setq message-kill-buffer-on-exit t)
-
-(setf use-short-answers t)
-
 (setopt ns-right-command-modifier 'hyper)
 (setopt ns-right-alternate-modifier 'none)
 
@@ -344,8 +338,6 @@
 (setq display-time-24hr-format t)
 (display-time-mode)
 
-(setq ring-bell-function 'ignore)
-
 (setq server-use-tcp t)
 (require 'server)
 (unless (server-running-p) (server-start))
@@ -369,27 +361,63 @@
 (setq read-extended-command-predicate
 	#'command-completion-default-include-p)
 
-(setq read-process-output-max (* 4 1024 1024)) ; 4MB
-
-(setq kill-do-not-save-duplicates t)
-
-(setq reb-re-syntax 'string)
-
-(setq ffap-machine-p-known 'reject)
-
-(setq window-combination-resize t)
-
-(setq set-mark-command-repeat-pop t)
-
 (pixel-scroll-precision-mode 1)
-
-(setq warning-minimum-level :emergency)
 
 ;; (bind-key "<escape>" (kbd "C-g") key-translation-map)
 
-(setq dictionary-server "dict.org")
-
-(setq view-read-only t)
+(use-package emacs
+  :config
+  ;; Use single space after sentences
+  (setq sentence-end-double-space nil)
+  ;; Set default tab width to 10
+  (setq-default tab-width 10)
+  ;; Kill message buffer on exit
+  (setq message-kill-buffer-on-exit t)
+  ;; Use "y" and "n" in confirmation dialogues
+  (setf use-short-answers t)
+  ;; Silence warning bells
+  (setq ring-bell-function 'ignore)
+  ;; Increase Process Output Buffer for LSP
+  (setq read-process-output-max (* 4 1024 1024)) ; 4MB
+  ;; No Duplicates in the Kill Ring
+  (setq kill-do-not-save-duplicates t)
+  ;; Sane Syntax in re-builder
+  (setq reb-re-syntax 'string)
+  ;; Prevent ffap from Pinging Hostnames (Centaur Emacs)
+  (setq ffap-machine-p-known 'reject)
+  ;; Proportional Window Resizing
+  (setq window-combination-resize t)
+  ;; Faster Mark Popping
+  (setq set-mark-command-repeat-pop t)
+  ;; Hide warnings
+  (setq warning-minimum-level :emergency)
+  ;; Use dict.org for dictionary function
+  (setq dictionary-server "dict.org")
+  ;; Open read-only files in view mode. This allows scrolling with the space bar
+  (setq view-read-only t)
+  ;; Don't ask for unnecessary confirmations in ibuffer
+  (setq ibuffer-expert t)
+  ;; Don't ask for confirmation to edit a large file
+  (setq large-file-warning-threshold nil)
+  ;; Don't ask for confirmation when killing process buffers
+  (setq kill-buffer-query-functions nil)
+  ;; Save the current (system) clipboard before replacing it with the Emacs’ text. https://github.com/dakrone/eos/blob/master/eos.org
+  (setq save-interprogram-paste-before-kill t)
+  ;; Set default input method to TeX
+  (setq default-input-method 'TeX)
+  ;; Don't preserve case in replacements
+  (setq case-replace nil)
+  ;; Use Spotlight for locate
+  (setq locate-command "mdfind")
+  ;; This kills the buffers when closing them with "q."
+  (setq quit-window-kill-buffer t)
+  ;; Make help buffers active when created, so pressing "q" will immediately close them
+  (setq help-window-select t)
+  (setq Man-notify-method 'aggressive)
+  ;; Show number of matches at the end of search field
+  (setq isearch-lazy-count t)
+  (setq lazy-count-prefix-format nil)
+  (setq lazy-count-suffix-format "   (%s/%s)"))
 
 (use-package modus-themes
   :demand t
@@ -527,21 +555,15 @@
 	dired-auto-revert-buffer t
 	auto-revert-verbose nil)
 
-(setq ibuffer-expert t)
-
 (add-hook 'ibuffer-mode-hook
 	    #'(lambda ()
 		(ibuffer-auto-mode 1)
 		(ibuffer-switch-to-saved-filter-groups "home")))
 
-(setq large-file-warning-threshold nil)
-
 (add-hook 'before-save-hook 'time-stamp)
 
 (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
   (cl-flet ((process-list ())) ad-do-it))
-
-(setq kill-buffer-query-functions nil)
 
 (add-to-list 'display-buffer-alist
 	       (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
@@ -575,10 +597,6 @@
   (interactive)
   (crux-kill-other-buffers)
   (tab-bar-close-other-tabs))
-
-(setq save-interprogram-paste-before-kill t)
-
-(setq default-input-method 'TeX)
 
 (delete-selection-mode 1)
 
@@ -784,14 +802,6 @@
  ("s-t" . rlr/find-file-new-tab)
  ("s-w" . rlr/delete-tab-or-frame)
  ("s-W" . rlr/kill-buffer-delete-tab-or-frame))
-
-(setq case-replace nil)
-
-(setq isearch-lazy-count t)
-(setq lazy-count-prefix-format nil)
-(setq lazy-count-suffix-format "   (%s/%s)")
-
-(setq locate-command "mdfind")
 
 (defun occur-non-ascii ()
   "Find any non-ascii characters in the current buffer."
@@ -1046,11 +1056,6 @@ The file is opened in a temporary buffer that is killed after export."
 
 (use-package tldr
   :commands tldr)
-
-(setq help-window-select t)
-(setq Man-notify-method 'aggressive)
-
-(setq quit-window-kill-buffer t)
 
 (which-key-mode 1)
 

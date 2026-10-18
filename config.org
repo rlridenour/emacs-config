@@ -282,37 +282,19 @@ Use Exec-Path-From-Shell to set path.
 Backup files are in ~/Users/rlridenour/.cache/emacs/backup/~.
 
 #+begin_src emacs-lisp
-  (setq backup-directory-alist (list (cons "."  rr-backup-dir)))
-#+end_src
-
-Always backup by copying.
-
-#+begin_src emacs-lisp
-  (setq backup-by-copying t)
-#+end_src
-
-Delete old backup files
-
-#+begin_src emacs-lisp
-  (setq delete-old-versions t)
-#+end_src
-
-Keep 5 backup files
-
-#+begin_src emacs-lisp
-  (setq kept-new-versions 5)
-#+end_src
-
-Make numeric backup versions
-
-#+begin_src emacs-lisp
-  (setq version-control t)
-#+end_src
-
-Don't make all those files that look like =#foo.ext=.
-
-#+begin_src emacs-lisp
-  (setq create-lockfiles nil)
+  (use-package emacs
+    :config
+    (setq backup-directory-alist (list (cons "."  rr-backup-dir)))
+    ;; Always backup by copying
+    (setq backup-by-copying t)
+    ;; Delete old backup files
+    (setq delete-old-versions t)
+    ;; Keep 5 backup files
+    (setq kept-new-versions 5)
+    ;; Make numeric backup versions
+    (setq version-control t)
+    ;; Don't make all those files that look like =#foo.ext=
+    (setq create-lockfiles nil))
 #+end_src
 
 *** Buffer Guardian
@@ -664,29 +646,6 @@ UTF-8 as default.
   (set-default-coding-systems 'utf-8)
 #+end_src
 
-Use single space after sentences.
-
-#+begin_src emacs-lisp
-  (setq sentence-end-double-space nil)
-#+end_src
-
-Set default tab width to 10.
-
-#+begin_src emacs-lisp
-  (setq-default tab-width 10)
-#+end_src
-
-Kill message buffer on exit.
-
-#+begin_src emacs-lisp
-  (setq message-kill-buffer-on-exit t)
-#+end_src
-
-Use "y" and "n" in confirmation dialogues.
-
-#+begin_src emacs-lisp
-  (setf use-short-answers t)
-#+end_src
 
 Set Mac right command key as Emacs hyper key. I was using the fn key, but there were two problems. First, the fn key with A, F, H, E, C, N, and Q are used by the system. Second, on the new magic keyboard, the left control key is small and right by the fn key which I seem to always be reaching for. So, I remapped the fn key to control on the magic keyboard with Karabiner Elements.
 
@@ -769,11 +728,6 @@ Show 24 hour time in the modeline.
   (display-time-mode)
 #+end_src
 
-Silence warning bells.
-
-#+begin_src emacs-lisp
-  (setq ring-bell-function 'ignore)
-#+end_src
 
 Use MacOS SF Symbols
 
@@ -831,41 +785,6 @@ Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4
   (setq bidi-inhibit-bpa t)
 #+end_src
 
-Increase Process Output Buffer for LSP
-
-#+begin_src emacs-lisp
-  (setq read-process-output-max (* 4 1024 1024)) ; 4MB
-#+end_src
-
-No Duplicates in the Kill Ring
-
-#+begin_src emacs-lisp
-  (setq kill-do-not-save-duplicates t)
-#+end_src
-
-Sane Syntax in re-builder
-
-#+begin_src emacs-lisp
-  (setq reb-re-syntax 'string)
-#+end_src
-
-Prevent ffap from Pinging Hostnames (Centaur Emacs)
-
-#+begin_src emacs-lisp
-  (setq ffap-machine-p-known 'reject)
-#+end_src
-
-Proportional Window Resizing
-
-#+begin_src emacs-lisp
-  (setq window-combination-resize t)
-#+end_src
-
-Faster Mark Popping
-
-#+begin_src emacs-lisp
-  (setq set-mark-command-repeat-pop t)
-#+end_src
 
 Smoother scrolling.
 
@@ -873,11 +792,6 @@ Smoother scrolling.
   (pixel-scroll-precision-mode 1)
 #+end_src
 
-Hide warnings.
-
-#+begin_src emacs-lisp
-  (setq warning-minimum-level :emergency)
-#+end_src
 
 Use escape for keyboard-quit
 
@@ -885,16 +799,62 @@ Use escape for keyboard-quit
   ;; (bind-key "<escape>" (kbd "C-g") key-translation-map)
 #+end_src
 
-Use dict.org for dictionary function.
+General variables (one-liners).
 
 #+begin_src emacs-lisp
-(setq dictionary-server "dict.org")
-#+end_src
-
-Open read-only files in view mode. This allows scrolling with the space bar.
-
-#+begin_src emacs-lisp
-(setq view-read-only t)
+  (use-package emacs
+    :config
+    ;; Use single space after sentences
+    (setq sentence-end-double-space nil)
+    ;; Set default tab width to 10
+    (setq-default tab-width 10)
+    ;; Kill message buffer on exit
+    (setq message-kill-buffer-on-exit t)
+    ;; Use "y" and "n" in confirmation dialogues
+    (setf use-short-answers t)
+    ;; Silence warning bells
+    (setq ring-bell-function 'ignore)
+    ;; Increase Process Output Buffer for LSP
+    (setq read-process-output-max (* 4 1024 1024)) ; 4MB
+    ;; No Duplicates in the Kill Ring
+    (setq kill-do-not-save-duplicates t)
+    ;; Sane Syntax in re-builder
+    (setq reb-re-syntax 'string)
+    ;; Prevent ffap from Pinging Hostnames (Centaur Emacs)
+    (setq ffap-machine-p-known 'reject)
+    ;; Proportional Window Resizing
+    (setq window-combination-resize t)
+    ;; Faster Mark Popping
+    (setq set-mark-command-repeat-pop t)
+    ;; Hide warnings
+    (setq warning-minimum-level :emergency)
+    ;; Use dict.org for dictionary function
+    (setq dictionary-server "dict.org")
+    ;; Open read-only files in view mode. This allows scrolling with the space bar
+    (setq view-read-only t)
+    ;; Don't ask for unnecessary confirmations in ibuffer
+    (setq ibuffer-expert t)
+    ;; Don't ask for confirmation to edit a large file
+    (setq large-file-warning-threshold nil)
+    ;; Don't ask for confirmation when killing process buffers
+    (setq kill-buffer-query-functions nil)
+    ;; Save the current (system) clipboard before replacing it with the Emacs’ text. https://github.com/dakrone/eos/blob/master/eos.org
+    (setq save-interprogram-paste-before-kill t)
+    ;; Set default input method to TeX
+    (setq default-input-method 'TeX)
+    ;; Don't preserve case in replacements
+    (setq case-replace nil)
+    ;; Use Spotlight for locate
+    (setq locate-command "mdfind")
+    ;; This kills the buffers when closing them with "q."
+    (setq quit-window-kill-buffer t)
+    ;; Make help buffers active when created, so pressing "q" will immediately close them
+    (setq help-window-select t)
+    (setq Man-notify-method 'aggressive)
+    ;; Show number of matches at the end of search field
+    (setq isearch-lazy-count t)
+    (setq lazy-count-prefix-format nil)
+    (setq lazy-count-suffix-format "   (%s/%s)"))
 #+end_src
 
 ** Appearance
@@ -1119,11 +1079,6 @@ Update buffers when files are changed outside Emacs, but don't generate any mess
 	auto-revert-verbose nil)
 #+end_src
 
-Don't ask for unnecessary confirmations in ibuffer.
-
-#+begin_src emacs-lisp
-  (setq ibuffer-expert t)
-#+end_src
 
 Auto-update ibuffer list.
 
@@ -1134,11 +1089,6 @@ Auto-update ibuffer list.
 		(ibuffer-switch-to-saved-filter-groups "home")))
 #+end_src
 
-Don't ask for confirmation to edit a large file.
-
-#+begin_src emacs-lisp
-  (setq large-file-warning-threshold nil)
-#+end_src
 
 Mark date and time that files were saved.
 
@@ -1153,11 +1103,6 @@ Don't ask for confirmation to kill processes when exiting Emacs. Credit to [[htt
     (cl-flet ((process-list ())) ad-do-it))
 #+end_src
 
-Don't ask for confirmation when killing process buffers.
-
-#+begin_src emacs-lisp
-  (setq kill-buffer-query-functions nil)
-#+end_src
 
 Don't display async shell command process buffers.
 
@@ -1208,17 +1153,6 @@ Kill other buffers and tabs.
     (tab-bar-close-other-tabs))
 #+end_src
 
-Save the current (system) clipboard before replacing it with the Emacs’ text. https://github.com/dakrone/eos/blob/master/eos.org
-
-#+begin_src emacs-lisp
-  (setq save-interprogram-paste-before-kill t)
-#+end_src
-
-Set default input method to TeX
-
-#+begin_src emacs-lisp
-  (setq default-input-method 'TeX)
-#+end_src
 
 Overwrite selected text.
 
@@ -1511,25 +1445,6 @@ Reversible C-x 1
 
 ** Search
 
-Don't preserve case in replacements.
-
-#+begin_src emacs-lisp
-  (setq case-replace nil)
-#+end_src
-
-Show number of matches at the end of search field.
-
-#+begin_src emacs-lisp
-  (setq isearch-lazy-count t)
-  (setq lazy-count-prefix-format nil)
-  (setq lazy-count-suffix-format "   (%s/%s)")
-#+end_src
-
-Use Spotlight for locate.
-
-#+begin_src emacs-lisp
-  (setq locate-command "mdfind")
-#+end_src
 
 Find non-ascii characters in buffer.
 
@@ -1897,18 +1812,6 @@ Go to current directory in Ghostty.
 
 ** Help
 
-Make help buffers active when created, so pressing "q" will immediately close them.
-
-#+begin_src emacs-lisp
-  (setq help-window-select t)
-  (setq Man-notify-method 'aggressive)
-#+end_src
-
-This kills the buffers when closing them with "q."
-
-#+begin_src emacs-lisp
-(setq quit-window-kill-buffer t)
-#+end_src
 
 Use which-key-mode for hints.
 
@@ -3101,7 +3004,6 @@ Update apple-calendar.org
 #+begin_src emacs-lisp
 (run-with-timer 0 900 #'start-process "apple-cal" nil "/usr/bin/perl" (expand-file-name "~/bin/apple-cal-to-org.pl"))
 #+end_src
-
 
 
 ** Org Contrib
