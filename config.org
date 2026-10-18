@@ -231,7 +231,7 @@ Use =C-x c= to kill Emacs.
 
 #+begin_src emacs-lisp
   (unbind-key "s-q")
-  (global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
+  (bind-key "C-x c" #'save-buffers-kill-emacs)
 #+end_src
 
 * File Locations
@@ -364,39 +364,39 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
      (casual-suite-init))
 
    (with-eval-after-load 'dired
-     (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
+     (bind-key "s-." #'casual-dired-tmenu dired-mode-map))
 
    (with-eval-after-load 'calc
-     (define-key calc-mode-map (kbd "s-.") #'casual-calc-tmenu))
+     (bind-key "s-." #'casual-calc-tmenu calc-mode-map))
 
    (with-eval-after-load 'isearch
-     (define-key isearch-mode-map (kbd "s-.") #'casual-isearch-tmenu))
+     (bind-key "s-." #'casual-isearch-tmenu isearch-mode-map))
 
    (with-eval-after-load 'reb
-     (define-key casual-re-builder-map (kbd "s-.") #'casual-re-builder-menu))
+     (bind-key "s-." #'casual-re-builder-menu casual-re-builder-map))
 
    (with-eval-after-load 'ibuffer
-     (define-key ibuffer-mode-map (kbd "s-.")  #'casual-ibuffer-tmenu)
-     (define-key ibuffer-mode-map (kbd "F")  #'casual-ibuffer-filter-tmenu)
-     (define-key ibuffer-mode-map (kbd "s")  #'casual-ibuffer-sortby-tmenu))
+     (bind-key "s-." #'casual-ibuffer-tmenu ibuffer-mode-map)
+     (bind-key "F" #'casual-ibuffer-filter-tmenu ibuffer-mode-map)
+     (bind-key "s" #'casual-ibuffer-sortby-tmenu ibuffer-mode-map))
 
    (with-eval-after-load 'bookmark
-     (define-key bookmark-bmenu-mode-map (kbd "s-.") #'casual-bookmarks-tmenu))
+     (bind-key "s-." #'casual-bookmarks-tmenu bookmark-bmenu-mode-map))
 
   (with-eval-after-load 'org-agenda
-     (define-key org-agenda-mode-map (kbd "s-.") #'casual-agenda-tmenu))
+     (bind-key "s-." #'casual-agenda-tmenu org-agenda-mode-map))
 
    (with-eval-after-load 'Info
-     (define-key Info-mode-map (kbd "s-.") #'casual-info-tmenu))
+     (bind-key "s-." #'casual-info-tmenu Info-mode-map))
 
    (with-eval-after-load 'calendar
-     (define-key calendar-mode-map (kbd "s-.") #'casual-calendar-tmenu))
+     (bind-key "s-." #'casual-calendar-tmenu calendar-mode-map))
 
    (with-eval-after-load 'eww
-     (define-key eww-mode-map (kbd "s-.") #'casual-eww-tmenu))
+     (bind-key "s-." #'casual-eww-tmenu eww-mode-map))
 
    (with-eval-after-load 'org
-     (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
+     (bind-key "s-." #'casual-org-tmenu org-mode-map))
 
   (bind-key "H-r" 'casual-editkit-rectangle-tmenu)
 #+end_src
@@ -882,7 +882,7 @@ Hide warnings.
 Use escape for keyboard-quit
 
 #+begin_src emacs-lisp
-  ;; (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
+  ;; (bind-key "<escape>" (kbd "C-g") key-translation-map)
 #+end_src
 
 Use dict.org for dictionary function.
@@ -1072,9 +1072,9 @@ I can't imagine wanting the same buffer in two tabs, so this calls consult-buffe
 Disable changing text size with mouse and trackpad
 
 #+begin_src emacs-lisp
-  (global-set-key (kbd "<pinch>") 'ignore)
-  (global-set-key (kbd "<C-wheel-up>") 'ignore)
-  (global-set-key (kbd "<C-wheel-down>") 'ignore)
+  (bind-key "<pinch>" 'ignore)
+  (bind-key "<C-wheel-up>" 'ignore)
+  (bind-key "<C-wheel-down>" 'ignore)
 #+end_src
 
 Indent wrapped lines in bulleted lists.
@@ -1769,12 +1769,6 @@ List folders before individual files.
     (setq dired-listing-switches args)))
 #+end_src
 
-Open file in other window: [[http://yummymelon.com/devnull/binding-the-spc-key-in-dired-and-ibuffer.html][nfdn: Binding the SPC key in Dired and IBuffer]]
-
-#+begin_src emacs-lisp
-(keymap-set dired-mode-map "SPC" #'dired-display-file) 
-#+end_src
-
 Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/has_anyone_managed_to_launch_the_macos_quick_look/][Has anyone managed to launch the macOS Quick Look from emacs? : r/emacs]]
 
 #+begin_src emacs-lisp
@@ -1788,12 +1782,13 @@ Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/h
        ((eq system-type 'gnu/linux)
   	(start-process "sushi" nil "sushi" file)))))
 
-  (define-key dired-mode-map (kbd "SPC")
-  	  (lambda ()
-  	    (interactive)
-  	    (if (dired-get-filename nil t)
-  		(+quicklook)
-  	      (dired-next-line 1))))
+  (bind-key "SPC"
+	    (lambda ()
+	      (interactive)
+	      (if (dired-get-filename nil t)
+		  (+quicklook)
+		(dired-next-line 1)))
+	    dired-mode-map)
 #+end_src
 
 *** Speedbar
@@ -2176,7 +2171,7 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
      ("<escape>" . crux-keyboard-quit-dwim)
      ))
 
-  (define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+  (bind-key [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 #+end_src
 
 ** Expand-region
@@ -2485,7 +2480,7 @@ Use variable pitch mode in Org and Markdown modes. Toggle with ~C-M-S-s-v~, boun
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook #'variable-pitch-mode)
   (add-hook 'markdown-mode-hook #'variable-pitch-mode)
-  (global-set-key (kbd "C-M-S-s-v") #'variable-pitch-mode)
+  (bind-key "C-M-S-s-v" #'variable-pitch-mode)
 #+end_src
 
 Prevent electric-pair from adding ">" when using structure block shortcuts
@@ -2932,7 +2927,7 @@ Use ~org-auto-tangle~ to generate ~early-init.el~ and ~init.el~ whenever ~README
 	'((nil :maxlevel . 1)
 	  (org-agenda-files :maxlevel . 1)))
 
-  (define-key global-map "\C-cc" 'org-capture)
+  (bind-key "C-c c" 'org-capture)
 #+end_src
 
 From [[https://christiantietze.de/posts/2025/04/keep-org-mode-items-sorted-alphabetically/][Keep .org File Outline Items Sorted Alphabetically • Christian Tietze]]
@@ -3876,7 +3871,7 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 	   "textutil -stdin -format html -convert rtf -stdout | pbcopy"))
 	(kill-buffer buf))))
 
-  ;; (global-set-key (kbd "H-w") 'formatted-copy)
+  ;; (bind-key "H-w" 'formatted-copy)
 #+end_src
 
 ** Org Preview
@@ -5437,8 +5432,8 @@ Select tag, add tag to to post, then add post to tag page.
       (eww-reload t)
       (message "Images are now %s"
 	       (if shr-inhibit-images "off" "on")))
-    ;; (define-key eww-mode-map (kbd "I") #'rlr/eww-toggle-images)
-    ;; (define-key eww-link-keymap (kbd "I") #'rlr/eww-toggle-images)
+    ;; (bind-key "I" #'rlr/eww-toggle-images eww-mode-map)
+    ;; (bind-key "I" #'rlr/eww-toggle-images eww-link-keymap)
     ;; minimal rendering by default
     (setq-default shr-inhibit-images t)   ; toggle with `I`
     (setq-default shr-use-fonts t)      ; toggle with `F`

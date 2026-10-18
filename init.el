@@ -24,7 +24,7 @@
 (load custom-file :no-error-if-file-is-missing)
 
 (unbind-key "s-q")
-(global-set-key (kbd "C-x c") #'save-buffers-kill-emacs)
+(bind-key "C-x c" #'save-buffers-kill-emacs)
 
 (use-package exec-path-from-shell
   :config
@@ -96,39 +96,39 @@
    (casual-suite-init))
 
  (with-eval-after-load 'dired
-   (define-key dired-mode-map (kbd "s-.") #'casual-dired-tmenu))
+   (bind-key "s-." #'casual-dired-tmenu dired-mode-map))
 
  (with-eval-after-load 'calc
-   (define-key calc-mode-map (kbd "s-.") #'casual-calc-tmenu))
+   (bind-key "s-." #'casual-calc-tmenu calc-mode-map))
 
  (with-eval-after-load 'isearch
-   (define-key isearch-mode-map (kbd "s-.") #'casual-isearch-tmenu))
+   (bind-key "s-." #'casual-isearch-tmenu isearch-mode-map))
 
  (with-eval-after-load 'reb
-   (define-key casual-re-builder-map (kbd "s-.") #'casual-re-builder-menu))
+   (bind-key "s-." #'casual-re-builder-menu casual-re-builder-map))
 
  (with-eval-after-load 'ibuffer
-   (define-key ibuffer-mode-map (kbd "s-.")  #'casual-ibuffer-tmenu)
-   (define-key ibuffer-mode-map (kbd "F")  #'casual-ibuffer-filter-tmenu)
-   (define-key ibuffer-mode-map (kbd "s")  #'casual-ibuffer-sortby-tmenu))
+   (bind-key "s-." #'casual-ibuffer-tmenu ibuffer-mode-map)
+   (bind-key "F" #'casual-ibuffer-filter-tmenu ibuffer-mode-map)
+   (bind-key "s" #'casual-ibuffer-sortby-tmenu ibuffer-mode-map))
 
  (with-eval-after-load 'bookmark
-   (define-key bookmark-bmenu-mode-map (kbd "s-.") #'casual-bookmarks-tmenu))
+   (bind-key "s-." #'casual-bookmarks-tmenu bookmark-bmenu-mode-map))
 
 (with-eval-after-load 'org-agenda
-   (define-key org-agenda-mode-map (kbd "s-.") #'casual-agenda-tmenu))
+   (bind-key "s-." #'casual-agenda-tmenu org-agenda-mode-map))
 
  (with-eval-after-load 'Info
-   (define-key Info-mode-map (kbd "s-.") #'casual-info-tmenu))
+   (bind-key "s-." #'casual-info-tmenu Info-mode-map))
 
  (with-eval-after-load 'calendar
-   (define-key calendar-mode-map (kbd "s-.") #'casual-calendar-tmenu))
+   (bind-key "s-." #'casual-calendar-tmenu calendar-mode-map))
 
  (with-eval-after-load 'eww
-   (define-key eww-mode-map (kbd "s-.") #'casual-eww-tmenu))
+   (bind-key "s-." #'casual-eww-tmenu eww-mode-map))
 
  (with-eval-after-load 'org
-   (define-key org-mode-map (kbd "s-.") #'casual-org-tmenu))
+   (bind-key "s-." #'casual-org-tmenu org-mode-map))
 
 (bind-key "H-r" 'casual-editkit-rectangle-tmenu)
 
@@ -385,7 +385,7 @@
 
 (setq warning-minimum-level :emergency)
 
-;; (define-key key-translation-map (kbd "<escape>") (kbd "C-g"))
+;; (bind-key "<escape>" (kbd "C-g") key-translation-map)
 
 (setq dictionary-server "dict.org")
 
@@ -503,9 +503,9 @@
  ("C-+" . text-scale-increase)
  ("C--" . text-scale-decrease))
 
-(global-set-key (kbd "<pinch>") 'ignore)
-(global-set-key (kbd "<C-wheel-up>") 'ignore)
-(global-set-key (kbd "<C-wheel-down>") 'ignore)
+(bind-key "<pinch>" 'ignore)
+(bind-key "<C-wheel-up>" 'ignore)
+(bind-key "<C-wheel-down>" 'ignore)
 
 (global-visual-wrap-prefix-mode 1)
 
@@ -967,8 +967,6 @@ The file is opened in a temporary buffer that is killed after export."
   (when args
     (setq dired-listing-switches args)))
 
-(keymap-set dired-mode-map "SPC" #'dired-display-file)
-
 (defun +quicklook ()
   "Preview file at point using QuickLook (qlmanage) on macOS or sushi on Linux."
   (interactive)
@@ -979,12 +977,13 @@ The file is opened in a temporary buffer that is killed after export."
      ((eq system-type 'gnu/linux)
 	(start-process "sushi" nil "sushi" file)))))
 
-(define-key dired-mode-map (kbd "SPC")
-	  (lambda ()
-	    (interactive)
-	    (if (dired-get-filename nil t)
-		(+quicklook)
-	      (dired-next-line 1))))
+(bind-key "SPC"
+	    (lambda ()
+	      (interactive)
+	      (if (dired-get-filename nil t)
+		  (+quicklook)
+		(dired-next-line 1)))
+	    dired-mode-map)
 
 (use-package speedbar
   :ensure nil
@@ -1235,7 +1234,7 @@ The file is opened in a temporary buffer that is killed after export."
    ("<escape>" . crux-keyboard-quit-dwim)
    ))
 
-(define-key (current-global-map) [remap keyboard-quit] #'crux-keyboard-quit-dwim)
+(bind-key [remap keyboard-quit] #'crux-keyboard-quit-dwim)
 
 (use-package expand-region
   :bind
@@ -1430,7 +1429,7 @@ The file is opened in a temporary buffer that is killed after export."
 
 (add-hook 'org-mode-hook #'variable-pitch-mode)
 (add-hook 'markdown-mode-hook #'variable-pitch-mode)
-(global-set-key (kbd "C-M-S-s-v") #'variable-pitch-mode)
+(bind-key "C-M-S-s-v" #'variable-pitch-mode)
 
 (add-hook 'org-mode-hook
   (lambda ()
@@ -1806,7 +1805,7 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
 	'((nil :maxlevel . 1)
 	  (org-agenda-files :maxlevel . 1)))
 
-(define-key global-map "\C-cc" 'org-capture)
+(bind-key "C-c c" 'org-capture)
 
 (defun rlr/org-sort ()
   (mark-whole-buffer)
@@ -2523,7 +2522,7 @@ body content wrapped in a #+begin_note ... #+end_note block."
 	   "textutil -stdin -format html -convert rtf -stdout | pbcopy"))
 	(kill-buffer buf))))
 
-;; (global-set-key (kbd "H-w") 'formatted-copy)
+;; (bind-key "H-w" 'formatted-copy)
 
 (defvar rlr/org-preview-css "
 <style>
@@ -3718,8 +3717,8 @@ Calling this again on an already-watched buffer stops the old watcher first."
     (eww-reload t)
     (message "Images are now %s"
 	       (if shr-inhibit-images "off" "on")))
-  ;; (define-key eww-mode-map (kbd "I") #'rlr/eww-toggle-images)
-  ;; (define-key eww-link-keymap (kbd "I") #'rlr/eww-toggle-images)
+  ;; (bind-key "I" #'rlr/eww-toggle-images eww-mode-map)
+  ;; (bind-key "I" #'rlr/eww-toggle-images eww-link-keymap)
   ;; minimal rendering by default
   (setq-default shr-inhibit-images t)   ; toggle with `I`
   (setq-default shr-use-fonts t)      ; toggle with `F`
