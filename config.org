@@ -355,16 +355,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 *** Casual Suite
 
-#+begin_src emacs-lisp :tangle no
-  (use-package casual
-    :vc (:url https://github.com/kickingvegas/casual)
-    :init
-    (setq casual-keybinding-primary "s-.")
-    (setq casual-keybinding-secondary "M-m")
-    :config
-    (casual-suite-init))
-#+end_src
-
 #+begin_src emacs-lisp
    (use-package casual-suite
      :bind
@@ -651,17 +641,6 @@ https://github.com/joaotavora/yasnippet
     (yas-snippet-dirs '("~/.config/emacs/snippets"))
     :hook
     (after-init . yas-global-mode))
-#+end_src
-
-*** Yankpad
-
-#+begin_src emacs-lisp :tangle no
-  (use-package yankpad
-    :ensure
-    :init
-    (setq yankpad-file "~/Library/Mobile Documents/com~apple~CloudDocs/org/yankpad.org")
-    :bind
-    (("<f6>" . yankpad-insert)))
 #+end_src
 
 * Settings
@@ -1608,20 +1587,9 @@ Find non-ascii characters in buffer.
     ("<f5>" . deadgrep))
 #+end_src
 
-*** Zoxide
-
-#+begin_src emacs-lisp :tangle no
-  (use-package zoxide)
-#+end_src
-
 ** Dired
 
 Hide file details and absolute path by default, from [[https://lmno.lol/alvaro/hide-another-detail][Hide another detail]]. Check back later to see if =dired-hide-details-hide-absolute-location= has been merged into Dired.
-
-#+begin_src emacs-lisp :tangle no
-  (use-package dired+
-    :vc (:url "https://github.com/emacsmirror/dired-plus"))
-#+end_src
 
 #+begin_src emacs-lisp
   (defun hide-dired-details-include-all-subdir-paths ()
@@ -1871,25 +1839,6 @@ Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/h
    ("S-<f2>" . ghostel-project))
 #+end_src
 
-*** Term Toggle
-https://github.com/amno1/emacs-term-toggle
-
-#+begin_src emacs-lisp :tangle no
-  (use-package term-toggle
-    :vc (:url "https://github.com/amno1/emacs-term-toggle")
-    :config
-    (setq term-toggle-no-confirm-exit t)
-    ;; (defun term-toggle-eat ()
-    ;;  "Toggle `term'."
-    ;;  (interactive) (term-toggle 'eat))
-    (defun term-toggle-ghostel ()
-      "Toggle `term'."
-      (interactive) (term-toggle 'ghostel))
-    :bind
-    ("<f2>" . term-toggle-ghostel)
-    ("<S-f2>" . term-toggle-eshell))
-#+end_src
-
 *** Async Shell Command Buffers
 
 Don't ask to create new shell buffers.
@@ -1978,16 +1927,6 @@ Helpful gives better contextual information in help buffers.
     ("C-c H f" . helpful-function)
     ("C-c H v" . helpful-variable)
     ("C-c H k" . helpful-key))
-#+end_src
-
-*** Discover
-
-From [[https://github.com/mickeynp/discover.el][mickeynp/discover.el: Discover more of emacs with context menus!]]
-
-#+begin_src emacs-lisp :tangle no
-  (use-package discover
-    :config
-    (global-discover-mode 1))
 #+end_src
 
 * Editing
@@ -2248,14 +2187,6 @@ Accent allows easy insertion of accented characters. Place the mark on the chara
     (global-hungry-delete-mode))
 #+end_src
 
-** With-Editor
-
-Required by Magit.
-
-#+begin_src emacs-lisp :tangle no
-(use-package with-editor)
-#+end_src
-
 ** Magit
 
 Solved Applescript error with these default write settings:
@@ -2322,33 +2253,6 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
     :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
 #+end_src
 
-** Selected
-
-#+begin_src emacs-lisp :tangle no
-  (use-package selected
-    :ensure
-    :commands (selected-minor-mode)
-    :config
-    (selected-global-mode)
-    :general
-    (:keymaps 'selected-keymap
-	  "j" #'next-line
-	  "k" #'previous-line
-	  "l" #'forward-char
-	  "h" #'backward-char
-	  "d" #'downcase-dwim
-	  "f" #'forward-word
-	  "b" #'backward-word
-	  "e" #'forward-sentence
-	  "a" #'backward-sentence
-	  "}" #'forward-paragraph
-	  "{" #'backward-paragraph
-	  "u" #'upcase-dwim
-	  "c" #'capitalize-dwim
-	  "C" #'count-words-region
-	  "m" #'apply-macro-to-region-lines))
-#+end_src
-
 ** Shrink Whitespace
 
 #+begin_src emacs-lisp
@@ -2364,16 +2268,6 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
     :bind
     ("C-c r" . vr/replace)
     ("C-c q" . vr/query-replace))
-#+end_src
-
-** Smartparens
-
-#+begin_src emacs-lisp :tangle no
-  (use-package smartparens
-    :hook (prog-mode text-mode markdown-mode) ;; add `smartparens-mode` to these hooks
-    :config
-    ;; load default config
-    (require 'smartparens-config))
 #+end_src
 
 ** Paredit
@@ -3145,10 +3039,6 @@ This opens the daily agenda and deletes all other windows.
 
 Set the initial frame. This opens the daily agenda on start-up.
 
-#+begin_src emacs-lisp :tangle no
-  (add-hook 'server-after-make-frame-hook #'agenda-home)
-#+end_src
-
 Refresh the agenda, but suppress the error message when the agenda is not visible.
 
 #+begin_src emacs-lisp
@@ -3177,23 +3067,6 @@ Make the current time more visible.
    '(org-agenda-current-time ((t (:foreground "red3")))))
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
-  (global-set-key (kbd "s-d") #'agenda-home)
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-  (defun rlr/agenda-links ()
-    (end-of-buffer)
-    (insert-file-contents "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/agenda-links.org")
-    (while (org-activate-links (point-max))
-      (goto-char (match-end 0)))
-    ;; (end-of-buffer)
-    ;; (insert (concat "\n\n" (get-votd)))
-    (beginning-of-buffer))
-
-  (add-hook 'org-agenda-finalize-hook #'rlr/agenda-links)
-#+end_src
-
 Open links with the return key.
 
 #+begin_src emacs-lisp
@@ -3201,13 +3074,6 @@ Open links with the return key.
 #+end_src
 
 Use space key to show link hints.
-
-#+begin_src emacs-lisp :tangle no
-  (bind-keys
-   :map org-agenda-mode-map
-   ("<SPC>" . link-hint-open-link)
-   ("," . link-hint-open-link))
-#+end_src
 
 Set agenda links as safe.
 
@@ -4202,25 +4068,6 @@ The file lives in the system temp directory and is deleted when Emacs exits."
       (message (replace-match "" nil nil word-count))))
 #+end_src
 
-** Math Delimiters
-
-#+begin_src emacs-lisp :tangle no
-  (use-package math-delimiters
-    :vc (:url "https://github.com/oantolin/math-delimiters")
-    :commands (math-delimiters-no-dollars math-delimiters-mode)
-    :hook ((LaTeX-mode . math-delimiters-mode)
-	   (org-mode . math-delimiters-mode))
-    :config (progn
-	  (setq math-delimiters-compressed-display-math nil)
-	  (define-minor-mode math-delimiters-mode
-		"Math Delimeters"
-		:init-value nil
-		:lighter " MD"
-		:keymap (let ((map (make-sparse-keymap)))
-		    (define-key map (kbd "$")  #'math-delimiters-insert)
-		    map))))
-#+end_src
-
 ** Exams
 
 Wrap current line in
@@ -4439,11 +4286,6 @@ Close compilation window after successful compile.
 
 #+begin_src emacs-lisp
   (require 'rlr-touying-scaffold)
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-  (use-package ox-typst
-    :after org)
 #+end_src
 
 Export presentation from Org to Typst, compile, and open PDF's.
@@ -4772,51 +4614,6 @@ Typst only uses files in the current directory. This scans the current Org or Ty
     (grove-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/grove/")
     :config
     (global-grove-mode 1))
-#+end_src
-
-** Notepad
-
-I use this to quickly create a disposable Emacs buffer to write some quick text for pasting into another app. I'm using this with a Keyboard Maestro macro.
-
-Define initial mode to use for notepad buffers. This is so I can use "C-c C-c" to copy and kill.
-
-#+begin_src emacs-lisp :tangle no
-  (general-define-key
-   :bind
-   (:map notepad-mode-map
-	 ("C-c C-c" #'copy-kill-buffer)))
-
-  (define-derived-mode notepad-mode
-    org-mode "Notepad"
-    "Major mode for scratch buffers.")
-#+end_src
-
-Create notepad buffer
-
-#+begin_src emacs-lisp :tangle no
-  (defun rlr/create-notepad-buffer ()
-    "Create a new notepad buffer."
-    (interactive)
-    (let ((buf (generate-new-buffer "*notepad*")))
-      (switch-to-buffer buf))
-    (notepad-mode)
-    (insert (shell-command-to-string "pbpaste")))
-#+end_src
-
-Copy entire buffer then kill. I use this with temporary scratch buffers to write text that will be pasted into other apps.
-
-#+begin_src emacs-lisp :tangle no
-  (defun copy-kill-buffer ()
-    (interactive)
-    (goto-char (point-max))
-    (newline)
-    (mark-whole-buffer)
-    (copy-region-as-kill 1 (buffer-size))
-    (kill-buffer)
-    (message "Copied to clipboard!"))
-
-  (general-define-key
-   "C-M-S-s-k" #'copy-kill-buffer)
 #+end_src
 
 * Mail and News
@@ -5837,19 +5634,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (use-package json-mode)
 #+end_src
 
-** Yaml
-
-#+begin_src emacs-lisp :tangle no
-  (use-package yaml
-    :defer t)
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-  (use-package yaml-pro
-    :hook ((yaml-mode-hook . yaml-pro-mode)
-	   (yaml-ts-mode . yaml-pro-ts-mode)))
-#+end_src
-
 ** Agent-Shell
 
 #+begin_src emacs-lisp
@@ -5875,15 +5659,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
     :bind
     (:map pdf-view-mode-map
 	  ("C-s" . isearch-forward)))
-#+end_src
-
-* Emacs-Reader
-
-#+begin_src emacs-lisp :tangle no
-  (use-package reader
-    :ensure (:type git :host codeberg :repo "divyaranjan/emacs-reader"
-		   :files ("*.el" "render-core.dylib")
-		   :pre-build ("make" "all")))
 #+end_src
 
 * Appine
@@ -5938,24 +5713,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
   (add-hook 'server-after-make-frame-hook #'dashboard-startup)
 #+end_src
 
-#+begin_src emacs-lisp :tangle no
-  (bind-keys
-   :map dashboard-mode-map
-   ("g" . randy-dashboard-open)
-   ("q" . quit-window)
-   ("a" . org-agenda-list)
-   ("f" . link-hint-open-link)
-   ("m" . mu4e)
-   ("e" . rlr/open-elfeed-new-tab)
-   ("n" . forward-button)
-   ("p" . backward-button)
-   ("<TAB>" . forward-button)
-   ("[backtab]" . backward-button)
-   ("<SPC>" . scroll-up-command)
-   ("S-<SPC>" . scroll-down-command)
-   )
-#+end_src
-
 * Keybindings
 
 ** Hydras
@@ -6006,7 +5763,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
       ("f" auto-fill-mode "fill" :toggle t)
       ("l" display-line-numbers-mode "linum" :toggle t)
       ("m" variable-pitch-mode "variable-pitch" :toggle t)
-      ("p" smartparens-mode "smartparens" :toggle t)
       ("P" electric-pair-mode "electric-pair" :toggle t))
      " "
      (("t" toggle-truncate-lines "truncate" :toggle t)

@@ -3970,7 +3970,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("f" auto-fill-mode "fill" :toggle t)
     ("l" display-line-numbers-mode "linum" :toggle t)
     ("m" variable-pitch-mode "variable-pitch" :toggle t)
-    ("p" smartparens-mode "smartparens" :toggle t)
     ("P" electric-pair-mode "electric-pair" :toggle t))
    " "
    (("t" toggle-truncate-lines "truncate" :toggle t)
