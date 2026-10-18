@@ -677,54 +677,6 @@ https://github.com/joaotavora/yasnippet
 
 * Settings
 
-** Evil Mode
-
-#+begin_src emacs-lisp :tangle no
-  (use-package evil
-    :init
-    (setq evil-default-state 'emacs)
-    (setq evil-want-integration t)
-    (setq evil-want-keybinding nil) ;; Required by evil-collection
-    (setq evil-want-C-u-scroll t)
-    (setq evil-want-C-i-jump t)
-    (setq evil-respect-visual-line-mode t)
-    :config
-    (defvar evil-mode-buffers nil)
-    (evil-mode 1))
-#+end_src
-
-This ensures that the Vim navigation keys navigate by visual lines.
-
-#+begin_src emacs-lisp :tangle no
-  (define-key evil-motion-state-map "j" #'evil-next-visual-line)
-  (define-key evil-motion-state-map "k" #'evil-previous-visual-line)
-  (define-key evil-motion-state-map "$" #'evil-end-of-visual-line)
-  (define-key evil-motion-state-map "^" #'evil-first-non-blank-of-visual-line)
-  (define-key evil-motion-state-map "0" #'evil-beginning-of-visual-line)
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-  (use-package evil-leader
-    :config
-    (global-evil-leader-mode)
-    (evil-leader/set-leader "SPC"))
-#+end_src
-
-*** Evil Leader
-
-#+begin_src emacs-lisp
-  (use-package evil-leader
-    :ensure t
-    :config
-    (global-evil-leader-mode t)
-    (evil-leader/set-leader "<SPC>")
-    (evil-leader/set-key
-      "s l" 'avy-goto-line
-      "d x w" 'delete-trailing-whitespace
-      )
-    )
-#+end_src
-
 ** Miscellaneous
 
 UTF-8 as default.
@@ -971,7 +923,7 @@ Sane Syntax in re-builder
 
 Prevent ffap from Pinging Hostnames (Centaur Emacs)
 
-#+begin_src emacs-elisp
+#+begin_src emacs-lisp
   (setq ffap-machine-p-known 'reject)
 #+end_src
 
@@ -2403,48 +2355,6 @@ Solved Applescript error with these default write settings:
     (setq magit-refresh-verbose t)
     )
 #+end_src
-Tried magit-fast, but not convinced of the benefit.
-
-#+begin_src emacs-lisp :tangle no
-  ;; you can use this magit config
-  (use-package magit
-    :init
-    (magit-auto-revert-mode -1)
-    (setq with-editor-emacsclient-executable (executable-find "emacsclient"))
-    :custom
-    (magit-git-executable "/opt/homebrew/bin/git")
-    (magit-log-section-commit-count 5)
-    (magit-process-connection-type nil)
-    (magit-refresh-verbose nil)
-    (magit-refresh-status-buffer nil)
-    (magit-revision-insert-related-refs nil)
-    (magit-save-repository-buffers nil)
-    (magit-uniquify-buffer-names nil)
-    (magit-status-sections-hook
-     '(magit-insert-error-header
-       magit-insert-untracked-files
-       magit-insert-unstaged-changes
-       magit-insert-staged-changes
-       magit-insert-recent-commits)))
-
-  ;; use package-vc installion
-  (use-package magit-fast
-    :vc (:url "https://github.com/zHaOdANiuu/magit-fast" :rev :newest)
-    :after magit
-    :bind
-    (:map magit-status-mode-map
-     ("<return>" . my-magit-fast-diff))
-    :init
-    (remove-hook 'server-switch-hook 'magit-commit-diff)
-    (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
-    (magit-fast-mode)
-
-    (defun my-magit-fast-diff ()
-      (interactive)
-      (when-let* ((file (magit-file-at-point)))
-        (magit-diff-dwim nil `(,file)))))
-#+end_src
-
 ** Jinx
 
 For spell-checking
@@ -6173,7 +6083,6 @@ Open NRSV passage using [[https://bible.oremus.org/][oremus Bible Browser]].
      (("a" abbrev-mode "abbrev" :toggle t)
       ("b" toggle-debug-on-error "debug" (default value 'debug-on-error))
       ("d" global-devil-mode "devil" :toggle t)
-      ("e" evil-mode "evil" :toggle t)
       ("i" aggressive-indent-mode "indent" :toggle t)
       ("f" auto-fill-mode "fill" :toggle t)
       ("l" display-line-numbers-mode "linum" :toggle t)

@@ -278,17 +278,6 @@
   :hook
   (after-init . yas-global-mode))
 
-(use-package evil-leader
-  :ensure t
-  :config
-  (global-evil-leader-mode t)
-  (evil-leader/set-leader "<SPC>")
-  (evil-leader/set-key
-    "s l" 'avy-goto-line
-    "d x w" 'delete-trailing-whitespace
-    )
-  )
-
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
 
@@ -3986,7 +3975,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
    (("a" abbrev-mode "abbrev" :toggle t)
     ("b" toggle-debug-on-error "debug" (default value 'debug-on-error))
     ("d" global-devil-mode "devil" :toggle t)
-    ("e" evil-mode "evil" :toggle t)
     ("i" aggressive-indent-mode "indent" :toggle t)
     ("f" auto-fill-mode "fill" :toggle t)
     ("l" display-line-numbers-mode "linum" :toggle t)
