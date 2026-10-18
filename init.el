@@ -1989,366 +1989,6 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
 (require 'rlr-teaching)
 (require 'rlr-org-standard-form)
 
-(defvar rlrt-filename)
-
-(defun rlrt-make-filename (string)
-  (s-downcase  (s-join "-" (s-split " " (replace-regexp-in-string "\\bthe \\b\\|\\band \\b\\|\\b[a-z]\\b \\|\\b[a-z][a-z]\\b \\|[[:punct:]]" "" string)))))
-
-(defun rlrt-new-tex-handout (rlrt-title)
-  (interactive "sTitle: ")
-
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-
-  ;; Create directory
-  (make-directory rlrt-filename)
-
-  ;; Create main org file
-  (find-file (s-concat rlrt-filename "/" rlrt-filename "-handout.org"))
-  (insert (s-concat "#+TITLE: " rlrt-title) ?\n"#+AUTHOR: Dr. Randy Ridenour" ?\n "#+DATE: "(format-time-string "%B %e, %Y") ?\n)
-  (insert-file-contents "~/.config/emacs/teaching-templates/handout/handout.org")
-  (goto-char (point-max))
-  (save-buffer))
-
-(defun rlrt-new-typst-handout (rlrt-title)
-  (interactive "sTitle: ")
-
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-
-  ;; Create directory
-  (make-directory rlrt-filename)
-
-  ;; Create main org file
-  (find-file (s-concat rlrt-filename "/" rlrt-filename "-handout.org"))
-  (insert (s-concat "#+TITLE: " rlrt-title) ?\n"#+AUTHOR: Dr. Randy Ridenour" ?\n "#+DATE: "(format-time-string "%B %e, %Y") ?\n)
-  (insert-file-contents "~/.config/emacs/teaching-templates/handout/handout.org")
-  (goto-char (point-max))
-  (save-buffer))
-
-(defun rlrt-new-syllabus (rlrt-title)
-  (interactive "sTitle: ")
-
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-
-  ;; Create directory
-  (make-directory rlrt-filename)
-
-  ;; Create main org file
-  (find-file (s-concat rlrt-filename "/" rlrt-filename "-syllabus.org"))
-  (insert-file-contents "~/.config/emacs/teaching-templates/syllabus/syllabus.org")
-  (goto-char (point-max))
-  (insert (s-concat "#+include: \"" rlrt-filename "-data.org\" :minlevel 1"))
-  (save-buffer)
-  (kill-buffer)
-
-  ;; Create Canvas file
-  (find-file (s-concat rlrt-filename "/canvas.org"))
-  (insert-file-contents "~/.config/emacs/teaching-templates/syllabus/canvas.org")
-  (save-buffer)
-  (kill-buffer)
-
-  ;; Create data file
-  (find-file (s-concat rlrt-filename "/" rlrt-filename "-data.org")))
-
-(defun rlrt-new-lecture (rlrt-title)
-  (interactive "sTitle: ")
-
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-
-  ;; Create directory
-  (make-directory rlrt-filename)
-
-(find-file (s-concat rlrt-filename "/" rlrt-filename "-slides.org"))
-(insert-file-contents "~/.config/emacs/teaching-templates/lecture/slides.org")
-(goto-char (point-max))
-(insert (s-concat "#+include: \"" rlrt-filename "-data.org\" :minlevel 1"))
-(save-buffer)
-(kill-buffer)
-
-(find-file (s-concat rlrt-filename "/" rlrt-filename "-notes.org"))
-(insert-file-contents "~/.config/emacs/teaching-templates/lecture/notes.org")
-(goto-char (point-max))
-(insert (s-concat "#+include: \"" rlrt-filename "-data.org\" :minlevel 1"))
-(save-buffer)
-(kill-buffer)
-
-(find-file (s-concat rlrt-filename "/canvas.org"))
-(insert-file-contents "~/.config/emacs/teaching-templates/lecture/canvas.org")
-(goto-char (point-max))
-(save-buffer)
-(kill-buffer)
-
-(find-file (s-concat rlrt-filename "/" rlrt-filename "-data.org"))
-(insert (s-concat "#+TITLE: " rlrt-title) ?\n)
-(yas-expand-snippet (yas-lookup-snippet "beamer-data")))
-
-(defun make-slides ()
-  (async-shell-command-no-window "mkslides"))
-
-(defun make-notes ()
-  (async-shell-command-no-window "mknotes"))
-
-(defun lecture-slides ()
-  "publish org data file as beamer slides"
-  (interactive)
-  (save-buffer)
-  (find-file "*-slides.org" t)
-  (org-beamer-export-to-latex)
-  (kill-buffer)
-  (make-slides)
-  (find-file "*-data.org" t))
-
-(defun rlr/create-frametitle ()
-  "Convert title to frametitle."
-  (interactive)
-  (goto-char 1)
-  (while (ignore-errors
-	     (re-search-forward "begin{frame}.*]"))
-    (insert "\n \\frametitle")))
-
-(defun lecture-notes ()
-  "publish org data file as beamer notes"
-  (interactive)
-  (save-buffer)
-  (find-file "*-notes.org" t)
-  (org-beamer-export-to-latex)
-  (kill-buffer)
-  (find-file "*-notes.tex" t)
-  (rlr/create-frametitle)
-  (save-buffer)
-  (kill-buffer)
-  (make-notes)
-  (find-file "*-data.org" t))
-
-(defun canvas-copy ()
-  "Copy html for canvas pages"
-  (interactive)
-  (save-buffer)
-  (org-html-export-to-html)
-  (shell-command "canvas"))
-
-(defun canvas-notes ()
-  "Copy HTML slide notes for Canvas"
-  (interactive)
-  (save-buffer)
-  (shell-command "canvas-notes")
-  (find-file "canvas.org")
-  (canvas-copy)
-  (kill-buffer)
-  (delete-file "canvas-data.org"))
-
-(defun make-handout ()
-  "publish org data file as LaTeX handout and Canvas HTML"
-  (interactive)
-  (save-buffer)
-  ;; (find-file "*-handout.org" t)
-  (rlr/org-mklua)
-  ;; (kill-buffer)
-  ;; (shell-command "canvas-notes")
-  ;; (find-file "canvas.org" t)
-  (org-html-export-to-html)
-  (shell-command "canvas-handout"))
-
-(defun make-html ()
-  (interactive)
-  (save-buffer)
-  (org-html-export-to-html)
-  (shell-command "canvas-handout"))
-
-(defun make-tex-syllabus ()
-  "publish org data file as LaTeX syllabus and Canvas HTML"
-  (interactive)
-  (save-buffer)
-  (find-file "*-syllabus.org" t)
-  (rlr/org-mklua)
-  (kill-buffer)
-  (shell-command "canvas-notes")
-  (find-file "canvas.org" t)
-  (org-html-export-to-html)
-  (shell-command "canvas")
-  (kill-buffer)
-  (delete-file "canvas-data.org")
-  (find-file "*-data.org" t))
-
-(defun  create-args ()
-  (interactive)
-  (kill-ring-save (region-beginning) (region-end))
-  (exchange-point-and-mark)
-  (yas-expand-snippet (yas-lookup-snippet "arg-wrap-tex"))
-  (previous-line)
-  ;; (previous-line)
-  (org-beginning-of-line)
-  (forward-word)
-  (forward-char)
-  (forward-char)
-  (insert "\\underline{")
-  (org-end-of-line)
-  (insert "}")
-  (next-line)
-  (org-beginning-of-line)
-  (forward-word)
-  (insert "[\\phantom{\\(\\therefore\\)}]")
-  (next-line)
-  (next-line)
-  (org-return)
-  (org-return)
-  (org-yank)
-  (exchange-point-and-mark)
-  (yas-expand-snippet (yas-lookup-snippet "arg-wrap-html")))
-
-(defun  create-tex-arg ()
-  (interactive)
-  (yas-expand-snippet (yas-lookup-snippet "arg-wrap-tex"))
-  (previous-line)
-  (previous-line)
-  (forward-word)
-  (forward-char)
-  (forward-char)
-  (insert "\\underline{")
-  (org-end-of-line)
-  (insert "}")
-  (next-line)
-  (org-beginning-of-line)
-  (forward-word)
-  (insert "[\\phantom{\\(\\therefore\\)}]")
-  (next-line)
-  (next-line)
-  (org-return)
-  (org-return))
-
-(defun duplicate-slide-note ()
-  (interactive)
-  (search-backward ":END:")
-  (next-line)
-  (kill-ring-save (point)
-		    (progn
-		      (search-forward "** ")
-		      (beginning-of-line)
-		      (point))
-		    )
-  (yas-expand-snippet (yas-lookup-snippet "beamer article notes"))
-  (yank))
-
-(defun duplicate-all-slide-notes ()
-  (interactive)
-  (save-excursion
-    (end-of-buffer)
-    (newline)
-    (newline)
-    ;; Need a blank slide at the end to convert the last note.
-    (insert "** ")
-    (beginning-of-buffer)
-    (while (ignore-errors
-	       (search-forward ":BEAMER_ENV: note"))
-	(next-line)
-	(next-line)
-	(kill-ring-save (point)
-			(progn
-			  (search-forward "** ")
-			  (beginning-of-line)
-			  (point))
-			)
-	(yas-expand-snippet (yas-lookup-snippet "beamer article notes"))
-	(yank))
-    ;; Delete the blank slide that was added earlier.
-    (end-of-buffer)
-    (search-backward "**")
-    (kill-line)
-    )
-  (save-buffer))
-
-(defun rlrt-new-article (rlrt-title)
-  (interactive "sTitle: ")
-
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-
-  ;; Create directory
-  (make-directory rlrt-filename)
-
-  (find-file (s-concat rlrt-filename "/" rlrt-filename ".org"))
-  (insert (s-concat "#+TITLE: " rlrt-title) ?\n)
-  (yas-expand-snippet (yas-lookup-snippet "rlrt-lua-article")))
-
-(defun convert-qti-nyit ()
-  (interactive)
-  ;; Copy all to a temp buffer and set to text mode.
-  (let ((old-buffer (current-buffer)))
-    (with-temp-buffer
-	(insert-buffer-substring old-buffer)
-	(text-mode)
-	;; convert multiple correct answer and essay questions
-	(beginning-of-buffer)
-	(while (re-search-forward "^[:space:]*-" nil t)
-	  (replace-match ""))
-	;; Change correct multiple answer options to "*"
-	(beginning-of-buffer)
-	(let ((case-fold-search nil))
-	  (while (re-search-forward "\[X\]" nil t)
-	    (replace-match "*")))
-	;; Mark short answer responses with "**"
-	(beginning-of-buffer)
-	(while (re-search-forward "+" nil t)
-	  (replace-match "*"))
-	;; remove whitespace at beginning of lines
-	(beginning-of-buffer)
-	(while (re-search-forward "^\s-*" nil t)
-	  (replace-match ""))
-	(beginning-of-buffer)
-	(while (re-search-forward "\\(^[0-9]\\)" nil t)
-	  (replace-match "\n\\1"))
-	;; move correct answer symbol to beginning of line
-	(beginning-of-buffer)
-	(while (re-search-forward "\\(^.*\\)\\(\*$\\)" nil t)
-	  (replace-match "\*\\1"))
-	(delete-trailing-whitespace)
-	;; delete empty line at end and beginning
-	(end-of-buffer)
-	(delete-char -1)
-	(beginning-of-buffer)
-	(kill-line)
-	;; Copy result to clipboard
-	(clipboard-kill-ring-save (point-min) (point-max))
-	)
-    )
-  (browse-url "https://www.nyit.edu/its/canvas_exam_converter")
-  )
-
-(defun create-roll-sheet ()
-  (interactive)
-  ;; Append signature cells to each line.
-  (goto-char (point-min))
-  (replace-regexp "$" " |  | ")
-  ;; kill bottom half of buffer and move to top
-  (setq lines (count-lines (point-min) (point-max)))
-  (setq lines (+ lines (% lines 2) ))
-  (setq midpoint (+ (/ lines 2) 1))
-  (goto-line midpoint)
-  (kill-region (point) (point-max))
-  (beginning-of-buffer)
-  ;; Append each line from kill-ring to remaining lines.
-  (dolist (cur-line-to-insert (split-string (current-kill 0) "\n"))
-    (if (eobp)
-	  (newline)
-	(move-end-of-line nil))
-    (insert cur-line-to-insert)
-    (forward-line))
-  ;; Prepend pipe character to each line and kill last line.
-  (goto-char (point-min))
-  (replace-regexp "^" "| ")
-  (kill-whole-line)
-  ;; insert LaTeX table format and header lines
-  (goto-char (point-min))
-  (insert "#+ATTR_LATEX: :environment tblr :align hline{3-Z}={solid},row{2-Z}={f,10mm},colspec={XXXX}\n| *Name*              | *Signature* | *Name*              | *Signature* | \n")
-  ;; Clean up table.
-  (org-ctrl-c-ctrl-c)
-  ;; Insert LaTeX header.
-  (goto-char (point-min))
-  (yas-expand-snippet (yas-lookup-snippet "latex-roll-sheet")))
-
 (defun rlr/swap-lastname-firstname-in-region (start end)
   "Swap \"LastName, FirstName\" to \"FirstName LastName\" for each line in region."
   (interactive "r")
@@ -2476,6 +2116,57 @@ body content wrapped in a #+begin_note ... #+end_note block."
          (concat "#+BEGIN_EXPORT typst\n"
                  "#text(size: 36pt)[*" text "*]\n"
                  "#+END_EXPORT"))))))
+
+(defun rlr/copy-mcq ()
+  "Copy the multiple choice question at point to the buffer in the adjacent window."
+  (interactive)
+  (save-excursion
+    (let* ((question-start
+	      (progn
+		(end-of-line)
+		(if (re-search-backward "^[0-9]+\\." nil t)
+		    (point)
+		  (error "No question found at point"))))
+	 (question-end
+	      (progn
+		(goto-char question-start)
+		(forward-line 1)
+		(if (re-search-forward "^[0-9]+\\." nil t)
+		    (match-beginning 0)
+		  (point-max))))
+	 (text (buffer-substring-no-properties question-start question-end))
+	 (target-window (next-window)))
+	(when (eq target-window (selected-window))
+	  (error "No adjacent window found"))
+	(with-selected-window target-window
+	  (goto-char (point-max))
+	  (insert text)))))
+(bind-key "H-q" #'rlr/copy-mcq)
+
+(defun rlr/delete-mcq-at-point ()
+  "Delete the multiple choice question at point, including all its choices."
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    ;; If on a choice line, move up to the question line first
+    (unless (looking-at "[[:space:]]*[0-9]+\\.")
+	(re-search-backward "^[[:space:]]*[0-9]+\\." nil t))
+    (let ((start (line-beginning-position))
+	    (end (progn
+		   (forward-line 1)
+		   (if (re-search-forward "^[[:space:]]*[0-9]+\\." nil t)
+		       (match-beginning 0)
+		     (point-max)))))
+	(kill-region start end)))
+  (org-list-repair))
+
+(require 'canvas-api)
+(require 'canvas-org)
+(require 'canvas-page)
+(require 'canvas-quiz)
+(require 'canvas-assignment)
+(setq canvas-domain "okbu.instructure.com")
+(setq canvas-default-course-id 21895) ; optional, pre-fills the prompt
 
 (defun formatted-copy ()
   "Export region to HTML, and copy it to the clipboard."
@@ -2672,141 +2363,6 @@ The file lives in the system temp directory and is deleted when Emacs exits."
 		(call-process "texcount" nil t nil "-brief" this-file)))))
     (string-match "\n$" word-count)
     (message (replace-match "" nil nil word-count))))
-
-(defalias 'mcq-item
-  (kmacro "C-a C-k \\ c h o i c e SPC { C-y <down>"))
-
-(defun mcq-wrap-line ()
-  "Wrap the current line in \choice{}"
-  (interactive)
-  (beginning-of-line)
-  (skip-chars-forward " \t")
-  (insert "\\choice{")
-  (end-of-line)
-  (insert "}"))
-
-(defun mcq-wrap-selection ()
-  "Wrap the selected text in \choice{}"
-  (interactive)
-  (if (use-region-p)
-	(let ((begin (region-beginning))
-	      (end (region-end)))
-	  (save-excursion
-	    (goto-char end)
-	    (insert "}")
-	    (goto-char begin)
-	    (insert "\\choice{")))
-    (insert "\\choice{}")
-    (backward-char)))
-
-(defun convert-quiz-claude-to-org ()
-  "Convert markdown-style quiz questions from Claude to Org mode format. Operates on the current buffer or active region."
-  (interactive)
-  (let ((start (if (use-region-p) (region-beginning) (point-min)))
-	  (end   (if (use-region-p) (region-end)       (point-max)))
-	  (question-num 0))
-    (save-excursion
-	;; Remove '---' separator lines
-	(goto-char start)
-	(while (re-search-forward "^---\n?" end t)
-	  (replace-match ""))
-
-	;; Convert **Question N:** to "N."
-	(goto-char start)
-	(while (re-search-forward "^\\*\\*Question [0-9]+:\\*\\* " end t)
-	  (setq question-num (1+ question-num))
-	  (replace-match (format "%d. " question-num)))
-
-	;; Convert "- A)" "- B)" etc. to "     a)" "     b)" etc.
-	(goto-char start)
-	(while (re-search-forward "^- \\([A-D]\\))" end t)
-	  (replace-match (format "     %s)" (downcase (match-string 1)))))
-
-	;; Remove blank lines
-	(goto-char start)
-	(while (re-search-forward "^[[:blank:]]*\n" end t)
-	  (replace-match "")))))
-
-(defun rlr/org-mc-to-latex-questions (beg end)
-  "Convert org-mode multiple choice questions in region to LaTeX format. Questions are numbered lines followed by lettered choices (a-z). Correct answers are marked with * after the choice text."
-  (interactive "r")
-  (let* ((text (buffer-substring-no-properties beg end))
-	   (lines (split-string text "\n"))
-	   (result '())
-	   (in-question nil))
-    (dolist (line lines)
-	(cond
-	 ;; Numbered question line: "2. Question text"
-	 ((string-match "^[[:space:]]*[0-9]+\\.[[:space:]]+\\(.+\\)$" line)
-	  (when in-question
-	    (push "  \\end{question}" result)
-	(push "" result))
-	  (push "  \\begin{question}" result)
-	  (push (format "    %s" (match-string 1 line)) result)
-	  (setq in-question t))
-	 ;; Choice line: "  a) Choice text" or "  a) Choice text*"
-	 ((string-match "^[[:space:]]*[a-z])[[:space:]]+\\(.+?\\)\\(*\\)?[[:space:]]*$" line)
-	  (let* ((text (match-string 1 line))
-		 (correct (match-string 2 line))
-		 (tag (if correct "\\choice[!]" "\\choice")))
-	    (push (format "    %s {%s}" tag text) result)))))
-    (when in-question
-	(push "  \\end{question}" result))
-    (let ((output (mapconcat #'identity (nreverse result) "\n")))
-	(goto-char beg)
-	(delete-region beg end)
-	(insert output))))
-
-(defun rlr/copy-mcq ()
-  "Copy the multiple choice question at point to the buffer in the adjacent window."
-  (interactive)
-  (save-excursion
-    (let* ((question-start
-	      (progn
-		(end-of-line)
-		(if (re-search-backward "^[0-9]+\\." nil t)
-		    (point)
-		  (error "No question found at point"))))
-	 (question-end
-	      (progn
-		(goto-char question-start)
-		(forward-line 1)
-		(if (re-search-forward "^[0-9]+\\." nil t)
-		    (match-beginning 0)
-		  (point-max))))
-	 (text (buffer-substring-no-properties question-start question-end))
-	 (target-window (next-window)))
-	(when (eq target-window (selected-window))
-	  (error "No adjacent window found"))
-	(with-selected-window target-window
-	  (goto-char (point-max))
-	  (insert text)))))
-(bind-key "H-q" #'rlr/copy-mcq)
-
-(defun rlr/delete-mcq-at-point ()
-  "Delete the multiple choice question at point, including all its choices."
-  (interactive)
-  (save-excursion
-    (beginning-of-line)
-    ;; If on a choice line, move up to the question line first
-    (unless (looking-at "[[:space:]]*[0-9]+\\.")
-	(re-search-backward "^[[:space:]]*[0-9]+\\." nil t))
-    (let ((start (line-beginning-position))
-	    (end (progn
-		   (forward-line 1)
-		   (if (re-search-forward "^[[:space:]]*[0-9]+\\." nil t)
-		       (match-beginning 0)
-		     (point-max)))))
-	(kill-region start end)))
-  (org-list-repair))
-
-(require 'canvas-api)
-(require 'canvas-org)
-(require 'canvas-page)
-(require 'canvas-quiz)
-(require 'canvas-assignment)
-(setq canvas-domain "okbu.instructure.com")
-(setq canvas-default-course-id 21895) ; optional, pre-fills the prompt
 
 (use-package reformatter
   :defer t)
