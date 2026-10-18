@@ -230,14 +230,6 @@ Compile handout
     (shell-command "canvas-handout"))
 #+end_src
 
-#+begin_src emacs-lisp
-  (defun make-html ()
-    (interactive)
-    (save-buffer)
-    (org-html-export-to-html)
-    (shell-command "canvas-handout"))
-#+end_src
-
 Compile syllabus.
 
 #+begin_src emacs-lisp

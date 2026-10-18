@@ -646,7 +646,6 @@ UTF-8 as default.
   (set-default-coding-systems 'utf-8)
 #+end_src
 
-
 Set Mac right command key as Emacs hyper key. I was using the fn key, but there were two problems. First, the fn key with A, F, H, E, C, N, and Q are used by the system. Second, on the new magic keyboard, the left control key is small and right by the fn key which I seem to always be reaching for. So, I remapped the fn key to control on the magic keyboard with Karabiner Elements.
 
 #+begin_src emacs-lisp
@@ -728,7 +727,6 @@ Show 24 hour time in the modeline.
   (display-time-mode)
 #+end_src
 
-
 Use MacOS SF Symbols
 
 #+begin_src emacs-lisp :tangle no
@@ -785,13 +783,11 @@ Disable Bidirectional Text Scanning (Disabled because it seems to be causing mu4
   (setq bidi-inhibit-bpa t)
 #+end_src
 
-
 Smoother scrolling.
 
 #+begin_src emacs-lisp
   (pixel-scroll-precision-mode 1)
 #+end_src
-
 
 Use escape for keyboard-quit
 
@@ -1079,7 +1075,6 @@ Update buffers when files are changed outside Emacs, but don't generate any mess
 	auto-revert-verbose nil)
 #+end_src
 
-
 Auto-update ibuffer list.
 
 #+begin_src emacs-lisp
@@ -1088,7 +1083,6 @@ Auto-update ibuffer list.
 		(ibuffer-auto-mode 1)
 		(ibuffer-switch-to-saved-filter-groups "home")))
 #+end_src
-
 
 Mark date and time that files were saved.
 
@@ -1102,7 +1096,6 @@ Don't ask for confirmation to kill processes when exiting Emacs. Credit to [[htt
   (defadvice save-buffers-kill-emacs (around no-query-kill-emacs activate)
     (cl-flet ((process-list ())) ad-do-it))
 #+end_src
-
 
 Don't display async shell command process buffers.
 
@@ -1152,7 +1145,6 @@ Kill other buffers and tabs.
     (crux-kill-other-buffers)
     (tab-bar-close-other-tabs))
 #+end_src
-
 
 Overwrite selected text.
 
@@ -1444,7 +1436,6 @@ Reversible C-x 1
 #+end_src
 
 ** Search
-
 
 Find non-ascii characters in buffer.
 
@@ -1783,7 +1774,6 @@ Go to current directory in Ghostty.
 #+end_src
 
 ** Help
-
 
 Use which-key-mode for hints.
 
@@ -2942,7 +2932,6 @@ Update apple-calendar.org
 (run-with-timer 0 900 #'start-process "apple-cal" nil "/usr/bin/perl" (expand-file-name "~/bin/apple-cal-to-org.pl"))
 #+end_src
 
-
 ** Org Contrib
 
 #+begin_src emacs-lisp
@@ -3090,7 +3079,6 @@ Update apple-calendar.org
   (require 'rlr-org-standard-form)
 #+end_src
 
-
 Convert region from "LastName, FirstName" to "FirstName LastName".
 
 #+begin_src emacs-lisp
@@ -3237,6 +3225,14 @@ body content wrapped in a #+begin_note ... #+end_note block."
          (concat "#+BEGIN_EXPORT typst\n"
                  "#text(size: 36pt)[*" text "*]\n"
                  "#+END_EXPORT"))))))	
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun make-html ()
+    (interactive)
+    (save-buffer)
+    (org-html-export-to-html)
+    (shell-command "canvas-handout"))
 #+end_src
 
 *** Exams
@@ -3523,7 +3519,6 @@ The file lives in the system temp directory and is deleted when Emacs exits."
       (string-match "\n$" word-count)
       (message (replace-match "" nil nil word-count))))
 #+end_src
-
 
 * Typst
 
@@ -4032,7 +4027,6 @@ Typst only uses files in the current directory. This scans the current Org or Ty
   				   (mu4e-sent-folder . "/gmail/Sent")
   				   (mu4e-trash-folder . "/gmail/Trash")))
   			  ))
-
 
   (setq mu4e-bookmarks
         `((:name "Unread messages"
@@ -4672,11 +4666,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 	("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
 	("c" tex-clean "clean aux")
 	("C" tex-clean-all "clean all")
-	("o" rlr/org-open-pdf "View PDF")
-	("s" lecture-slides "Lecture slides")
-	("n" lecture-notes "Lecture notes")
-	("h" make-handout "Handout")
-	("S" make-tex-syllabus "Syllabus"))))
+	("o" rlr/org-open-pdf "View PDF"))))
 #+end_src
 
 *** Hydra Toggle
@@ -4795,8 +4785,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
       ("j" denote-journal-extras-new-or-existing-entry "journal"))
      "Writing"
      (("a" rlr/teaching-new-article "typst article")
-      ("p" orgblog-new-post "blog post")
-      ("ta" rlrt-new-article "latex article"))
+      ("p" orgblog-new-post "blog post"))
      "Teaching"
      (("l" rlr/new-mosaic-presentation "lecture")
       ("h" rlr/teaching-new-handout "handout")
@@ -5027,8 +5016,6 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
       ("c" tex-clean "clean aux")
       ("C" tex-clean-all "clean all")
       ("n" latex-word-count "word count"))
-     "Exams"
-     (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
      ))
 #+end_src
 

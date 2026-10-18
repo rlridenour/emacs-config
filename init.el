@@ -2117,6 +2117,12 @@ body content wrapped in a #+begin_note ... #+end_note block."
                  "#text(size: 36pt)[*" text "*]\n"
                  "#+END_EXPORT"))))))
 
+(defun make-html ()
+  (interactive)
+  (save-buffer)
+  (org-html-export-to-html)
+  (shell-command "canvas-handout"))
+
 (defun rlr/copy-mcq ()
   "Copy the multiple choice question at point to the buffer in the adjacent window."
   (interactive)
@@ -2775,7 +2781,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
   				   (mu4e-trash-folder . "/gmail/Trash")))
   			  ))
 
-
   (setq mu4e-bookmarks
         `((:name "Unread messages"
            :query ,(concat "flag:unread AND " my/mu4e-clean)
@@ -3185,11 +3190,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 	("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
 	("c" tex-clean "clean aux")
 	("C" tex-clean-all "clean all")
-	("o" rlr/org-open-pdf "View PDF")
-	("s" lecture-slides "Lecture slides")
-	("n" lecture-notes "Lecture notes")
-	("h" make-handout "Handout")
-	("S" make-tex-syllabus "Syllabus"))))
+	("o" rlr/org-open-pdf "View PDF"))))
 
 (pretty-hydra-define hydra-toggle
   (:color teal :quit-key "q" :title "Toggle")
@@ -3288,8 +3289,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("j" denote-journal-extras-new-or-existing-entry "journal"))
    "Writing"
    (("a" rlr/teaching-new-article "typst article")
-    ("p" orgblog-new-post "blog post")
-    ("ta" rlrt-new-article "latex article"))
+    ("p" orgblog-new-post "blog post"))
    "Teaching"
    (("l" rlr/new-mosaic-presentation "lecture")
     ("h" rlr/teaching-new-handout "handout")
@@ -3401,8 +3401,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("c" tex-clean "clean aux")
     ("C" tex-clean-all "clean all")
     ("n" latex-word-count "word count"))
-   "Exams"
-   (("eo" rlr/org-mc-to-latex-questions "Convert mc question"))
    ))
 
 (major-mode-hydra-define dired-mode
