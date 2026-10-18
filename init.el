@@ -341,6 +341,7 @@
 (setq ring-bell-function 'ignore)
 
 (setq server-use-tcp t)
+(require 'server)
 (unless (server-running-p) (server-start))
 (require 'org-protocol)
 
