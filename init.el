@@ -278,6 +278,12 @@
   :hook
   (after-init . yas-global-mode))
 
+(use-package yankpad
+  :custom
+  (yankpad-file (expand-file-name "yankpad.org" rr-org-dir))
+  :bind
+  ("<f6>" . yankpad-insert))
+
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
 

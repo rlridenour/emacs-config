@@ -643,6 +643,16 @@ https://github.com/joaotavora/yasnippet
     (after-init . yas-global-mode))
 #+end_src
 
+*** Yankpad
+
+#+begin_src emacs-lisp
+  (use-package yankpad
+    :custom
+    (yankpad-file (expand-file-name "yankpad.org" rr-org-dir))
+    :bind
+    ("<f6>" . yankpad-insert))
+#+end_src
+
 * Settings
 
 ** Miscellaneous
