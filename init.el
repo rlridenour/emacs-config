@@ -3510,144 +3510,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
   :ensure nil
   :mode ("\\.css\\'"))
 
-(defvar orgblog-directory "~/sites/orgblog/" "Path to the Org mode blog.")
-(defvar orgblog-public-directory "~/sites/orgblog/docs/" "Path to the blog public directory.")
-(defvar orgblog-posts-directory "~/sites/orgblog/posts/" "Path to the blog public directory.")
-(defvar orgblog-drafts-directory "~/sites/orgblog/drafts/" "Path to the blog public directory.")
-
-(defun rlrt-new-post (rlrt-title)
-  (interactive "sTitle: ")
-  ;; Make filename
-  (setq rlrt-filename (rlrt-make-filename rlrt-title))
-  (find-file (s-concat orgblog-drafts-directory (format-time-string "%Y-%m-%d-") rlrt-filename ".org"))
-  (insert (s-concat "#+TITLE: " rlrt-title) ?\n)
-  (yas-expand-snippet (yas-lookup-snippet "orgblogt")))
-
-(defun orgblog-insert-image ()
-  (interactive)
-  (insert "#+begin_center
-#+ATTR_HTML: :width 100% :height
-")
-  (insert "[[" (file-relative-name (read-file-name "Insert file name: " "~/sites/orgblog/images/posts/")) "]]
-#+end_center
-
-")
-  )
-
-(defun orgblog-publish-draft ()
-  (interactive)
-  (save-buffer)
-  (copy-file (buffer-file-name) "~/sites/orgblog/posts/")
-  (delete-file (buffer-file-name) t)
-  (kill-buffer)
-  (dired "~/sites/orgblog/posts"))
-
-(defun orgblog-build ()
-  (interactive)
-  (progn
-    (find-file "~/sites/orgblog/publish.el")
-    (eval-buffer)
-    (org-publish-all)
-    ;; (webfeeder-build "atom.xml"
-    ;;                       "./docs"
-    ;;                       "https://randyridenour.net/"
-    ;;                       (let ((default-directory (expand-file-name "./docs")))
-    ;;                         (remove "posts/index.html"
-    ;;                                 (directory-files-recursively "posts"
-    ;;                                                              ".*\\.html$")))
-    ;;                       :title "Randy Ridenour"
-    ;;                       :description "Blog posts by Randy Ridenour")
-    (kill-buffer))
-  (message "Build complete!"))
-
-(defun orgblog-serve ()
-  (interactive)
-  (progn
-    (async-shell-command "orgblog-serve")
-    (sleep-for 2)
-    (async-shell-command "open http://localhost:3000")))
-
-(defun orgblog-push ()
-  (interactive)
-  (async-shell-command "orgblog-push"))
-
-(setq org-html-footnotes-section "<div id=\"footnotes\">
-<h2 class=\"footnotes\">%s</h2>
-<div id=\"text-footnotes\">
-%s
-</div>
-</div>")
-
-(defvar yt-iframe-format
-  ;; You may want to change your width and height.
-  (concat "<iframe width=\"440\""
-	    " height=\"335\""
-	    " src=\"https://www.youtube.com/embed/%s\""
-	    " frameborder=\"0\""
-	    " allowfullscreen>%s</iframe>"))
-
-(org-add-link-type
- "yt"
- (lambda (handle)
-   (browse-url
-    (concat "https://www.youtube.com/embed/"
-	      handle)))
- (lambda (path desc backend)
-   (cl-case backend
-     (html (format yt-iframe-format
-		     path (or desc "")))
-     (latex (format "\href{%s}{%s}"
-		      path (or desc "video"))))))
-
-(defun orgblog-all-tag-lines ()
-  "Get filetag lines from all posts."
-  (let ((post-dir orgblog-posts-directory)
-	  (regex "^#\\+filetags:\\s([a-zA-Z]+)"))
-    (shell-command-to-string
-     (concat "rg --context 0 --no-filename --no-heading --replace \"\\$1\" -- " (shell-quote-argument regex) " " post-dir))))
-
-(defun orgblog-all-tags ()
-  "Return a list of unique tags from all posts."
-  (delete-dups
-   (split-string (orgblog-all-tag-lines) nil t)))
-
-(defun orgblog-select-tag ()
-  "Select and insert a tag from tags in the blog."
-  (defvar newtag)
-  (setq newtag (completing-read "Tag: " (orgblog-all-tags))))
-
-(defun insert-post-tag ()
-  (orgblog-select-tag)
-  (beginning-of-buffer)
-  (search-forward "#+filetags" nil 1)
-  (end-of-line)
-  (insert (concat " " newtag))
-  (beginning-of-buffer)
-  (search-forward "Tagged:")
-  (end-of-line)
-  (insert (concat " [[file:../tags/" newtag ".org][" (s-titleized-words newtag) "]]")))
-
-(defun add-post-to-tagfile ()
-  (defvar tagfile)
-  (defvar post-filename)
-  (defvar post-title)
-  (setq tagfile (concat "../tags/" newtag ".org"))
-  (setq post-filename (f-filename (f-this-file)))
-  (progn
-    (beginning-of-buffer)
-    (search-forward "#+title: " nil 1)
-    (setq post-title (buffer-substring (point) (line-end-position))))
-  (when
-	(not (file-exists-p tagfile))
-    (f-append-text (concat "#+title: Tagged: " (s-titleized-words newtag) "\n#+setupfile: ../org-templates/post.org\n") 'utf-8 tagfile))
-  (f-append-text (concat "\n- [[file:../posts/" post-filename "][" post-title "]]") 'utf-8 tagfile))
-
-(defun orgblog-add-tag ()
-  (interactive)
-  (orgblog-select-tag)
-  (insert-post-tag)
-  (add-post-to-tagfile)
-  (save-buffer))
+(require 'rlr-blog)
 
 (use-package org-publish-rss
   :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
@@ -3668,36 +3531,13 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (use-package htmlize
   :commands (htmlize-file))
 
+(require 'rlr-eww)
+
 (use-package eww
   :config
-  (defun rlr/open-eww-link-new-buffer ()
-    (interactive)
-    (link-hint-copy-link)
-    (tab-new)
-    (setq new-buffer-url (current-kill 0 t))
-    (switch-to-buffer (generate-new-buffer "*eww*"))
-    (eww-mode)
-    (eww new-buffer-url))
-  (defun rlr/eww-toggle-images ()
-    "Toggle whether images are loaded and reload the current page from cache."
-    (interactive)
-    (setq-local shr-inhibit-images (not shr-inhibit-images))
-    (eww-reload t)
-    (message "Images are now %s"
-	       (if shr-inhibit-images "off" "on")))
-  ;; (bind-key "I" #'rlr/eww-toggle-images eww-mode-map)
-  ;; (bind-key "I" #'rlr/eww-toggle-images eww-link-keymap)
   ;; minimal rendering by default
   (setq-default shr-inhibit-images t)   ; toggle with `I`
   (setq-default shr-use-fonts t)      ; toggle with `F`
-  (defun rrnet ()
-    (interactive)
-    (eww-browse-url "randyridenour.net")
-    )
-  (defun sep ()
-    (interactive)
-    (eww-browse-url "plato.stanford.edu")
-    )
   :bind
   (nil
    :map eww-mode-map
@@ -3706,149 +3546,11 @@ Calling this again on an already-watched buffer stops the old watcher first."
    ("F" . rlr/open-eww-link-new-buffer)
    ("T" . eww-toggle-fonts)))
 
-(defun jao-eww-to-org (&optional dest)
-  "Render the current eww buffer using org markup.
- If DEST, a buffer, is provided, insert the markup there."
-  (interactive)
-  (unless (org-region-active-p)
-    (let ((shr-width 80)) (eww-readable)))
-  (let* ((start (if (org-region-active-p) (region-beginning) (point-min)))
-	   (end (if (org-region-active-p) (region-end) (point-max)))
-	   (buff (or dest (generate-new-buffer "*eww-to-org*")))
-	   (link (eww-current-url))
-	   (title (or (plist-get eww-data :title) "")))
-    (with-current-buffer buff
-	(insert "#+title: " title "\n#+link: " link "\n\n")
-	(org-mode))
-    (save-excursion
-	(goto-char start)
-	(while (< (point) end)
-	  (let* ((p (point))
-		 (props (text-properties-at p))
-		 (k (seq-find (lambda (x) (plist-get props x))
-			      '(shr-url image-url outline-level face)))
-		 (prop (and k (list k (plist-get props k))))
-		 (next (if prop
-			   (next-single-property-change p (car prop) nil end)
-			 (next-property-change p nil end)))
-		 (txt (buffer-substring (point) next))
-		 (txt (replace-regexp-in-string "\\*" "·" txt)))
-	    (with-current-buffer buff
-	      (insert
-	       (pcase prop
-		 ((and (or `(shr-url ,url) `(image-url ,url))
-		       (guard (string-match-p "^http" url)))
-		  (let ((tt (replace-regexp-in-string "\n\\([^$]\\)" " \\1" txt)))
-		    (org-link-make-string url tt)))
-		 (`(outline-level ,n)
-		  (concat (make-string (- (* 2 n) 1) ?*) " " txt "\n"))
-		 ('(face italic) (format "/%s/ " (string-trim txt)))
-		 ('(face bold) (format "*%s* " (string-trim txt)))
-		 (_ txt))))
-	    (goto-char next))))
-    (pop-to-buffer buff)
-    (goto-char (point-min))))
-
-(defun rlr/open-safari-page-in-eww ()
-  (interactive)
-  (org-mac-link-safari-get-frontmost-url)
-  (setq rlr-org-link (current-kill 0 t))
-  (setq rlr-org-link (s-chop-left 2 rlr-org-link))
-  (setq rlr-org-link (s-chop-right 2 rlr-org-link))
-  (setq rlr-org-link (s-split "\\]\\[" rlr-org-link))
-  (setq rlr-org-url (pop rlr-org-link))
-  (eww rlr-org-url))
-
-(defun nrsv-open-eww ()
-  (interactive)
-  (setq nrsv-passage (read-string "Passage: "))
-  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
-  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
-  (eww-browse-url oremus-link))
-
-(defun nrsv-open-default-browser ()
-  (interactive)
-  (setq nrsv-passage (read-string "Passage: "))
-  (setq nrsv-passage (s-replace " " "%20" oremus-passage))
-  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
-  (browse-url oremus-link))
-
-(defun oremus-eww-cleanup ()
-  (interactive)
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "" nil t)
-    (replace-match "—"))
-  )
-
-(defun nrsv-insert-passage ()
-  (interactive)
-  (setq oremus-passage (read-string "Passage: "))
-  (setq oremus-passage (s-replace " " "%20" oremus-passage))
-  (setq oremus-link (concat "https://bible.oremus.org/?version=NRSV&passage=" oremus-passage "&vnum=NO&fnote=NO&omithidden=YES"))
-  (switch-to-buffer (url-retrieve-synchronously oremus-link))
-  (beginning-of-buffer)
-  (search-forward "passageref\">")
-  (kill-region (point) 1)
-  (search-forward "</div><!-- class=\"bibletext\" -->")
-  (beginning-of-line)
-  (kill-region (point) (point-max))
-  (beginning-of-buffer)
-  (while (re-search-forward "<p>" nil t)
-    (replace-match "\n"))
-  (beginning-of-buffer)
-  (while (re-search-forward "<!.+?->" nil t)
-    (replace-match ""))
-  (beginning-of-buffer)
-  (while (re-search-forward "<.+?>" nil t)
-    (replace-match ""))
-  (beginning-of-buffer)
-  (while (re-search-forward "&nbsp;" nil t)
-    (replace-match " "))
-  (beginning-of-buffer)
-  (while (re-search-forward "&#147;" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "&#148;" nil t)
-    (replace-match "\""))
-  (beginning-of-buffer)
-  (while (re-search-forward "&#145;" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "&#146;" nil t)
-    (replace-match "\'"))
-  (beginning-of-buffer)
-  (while (re-search-forward "&#151;" nil t)
-    (replace-match "---"))
-  (delete-extra-blank-lines)
-  (clipboard-kill-ring-save (point-min) (point-max))
-  (kill-buffer)
-  (yank))
-
 (use-package link-hint
   :bind
   ("s-," . link-hint-open-link)
   ("C-c l o" . link-hint-open-link)
   ("C-c l c" . link-hint-copy-link))
-
-(defun rlr/link-hint-open-link-in-secondary-browser ()
-  (interactive)
-  (let ((browse-url-browser-function  browse-url-secondary-browser-function))
-    (link-hint-open-link)))
 
 (use-package language-detection)
 
@@ -3911,7 +3613,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (pretty-hydra-define hydra-blog
   (:color teal :quit-key "q" :title "Blog")
   (" "
-   (("bn" rlrt-new-post "New draft")
+   (("bn" orgblog-new-post "New draft")
     ("bt" orgblog-add-tag "Add tag")
     ("bi" orgblog-insert-image "Insert image")
     ("bp" orgblog-publish-draft "Publish draft")
@@ -4030,7 +3732,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("j" denote-journal-extras-new-or-existing-entry "journal"))
    "Writing"
    (("a" rlr/teaching-new-article "typst article")
-    ("p" rlrt-new-post "blog post")
+    ("p" orgblog-new-post "blog post")
     ("ta" rlrt-new-article "latex article"))
    "Teaching"
    (("l" rlr/new-mosaic-presentation "lecture")
