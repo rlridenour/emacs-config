@@ -2281,6 +2281,7 @@ For word counts.
   	  '(("DONE" . "green4") ("TODO" . org-warning)))
       ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
       (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
+      (setq org-log-into-drawer t)
       (setq org-agenda-start-on-weekday nil)
       (setq org-agenda-window-setup 'current-window)
       (setq org-link-frame-setup
