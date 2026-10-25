@@ -3079,7 +3079,9 @@ Calling this again on an already-watched buffer stops the old watcher first."
 	      :rev :newest)
   :commands (org-publish-all)
   :config
-  (setq org-publish-rss-publish-immediately t))
+  (setq org-publish-rss-publish-immediately t)
+  (setq org-publish-rss-cache-content t)
+  )
 
 (use-package website2org
   :vc (:url "https://github.com/rtrppl/website2org")
@@ -3151,6 +3153,9 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (use-package calc
   :bind
   ("C-M-S-s-c" . calc))
+
+(use-package literate-calc-mode
+  :commands (literate-calc-insert-results))
 
 (define-derived-mode dashboard-mode
   fundamental-mode "Dashboard"

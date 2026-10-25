@@ -4479,10 +4479,12 @@ Commands for writing and publishing the blog (new draft, insert image, publish d
 #+begin_src emacs-lisp
   (use-package org-publish-rss
     :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
-	      :rev :newest)
+  	      :rev :newest)
     :commands (org-publish-all)
     :config
-    (setq org-publish-rss-publish-immediately t))
+    (setq org-publish-rss-publish-immediately t)
+    (setq org-publish-rss-cache-content t)
+    )
 
 #+end_src
 
@@ -4608,6 +4610,15 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
     :bind
     ("C-M-S-s-c" . calc))
 #+end_src
+
+** Literate Calc
+
+#+begin_src emacs-lisp
+  (use-package literate-calc-mode
+    :commands (literate-calc-insert-results))
+#+end_src
+
+
 
 * Dashboard
 
