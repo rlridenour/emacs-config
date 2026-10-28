@@ -86,7 +86,7 @@ Styling (header, footer, colors, fonts) comes from the
 :drawer:
 #+TYPST: #set document(title: \"%s\")
 #+TYPST: #set document(author: \"Randy Ridenour\")
-#+TYPST: #set page(paper: \"us-letter\", margin: (x: 1.5in, y: 1.5in, , numbering: \"1\"))
+#+TYPST: #set page(paper: \"us-letter\", margin: (x: 1.5in, y: 1.5in),  numbering: \"1\")
 #+TYPST: #set text(font: \"Libertinus Serif\", size: 12pt,)
 #+TYPST: #set heading(numbering: \"1.1\")
 #+TYPST: #show title: set text(font: \"Libertinus Serif\", size: 20pt, weight: \"regular\")
