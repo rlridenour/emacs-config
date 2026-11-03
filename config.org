@@ -2106,6 +2106,24 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
     :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
 #+end_src
 
+** Merriam-Webster Thesaurus
+
+#+begin_src emacs-lisp
+(use-package mw-thesaurus
+  :bind ("C-M-s-t" . mw-thesaurus-lookup-dwim)
+  :hook (mw-thesaurus-mode . variable-pitch-mode)
+  :config
+  ;; window on the right side
+  (add-to-list
+   'display-buffer-alist
+   `(,mw-thesaurus-buffer-name
+     (display-buffer-reuse-window
+      display-buffer-in-direction)
+     (direction . right)
+     (window . root)
+     (window-width . 0.3))))
+#+end_src
+
 ** Shrink Whitespace
 
 #+begin_src emacs-lisp
@@ -2279,8 +2297,8 @@ For word counts.
       (setq org-log-done t)
       (setq org-todo-keyword-faces
   	  '(("DONE" . "green4") ("TODO" . org-warning)))
-      ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-      (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
+      (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+      ;; (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
       (setq org-log-into-drawer t)
       (setq org-agenda-start-on-weekday nil)
       (setq org-agenda-window-setup 'current-window)
@@ -3595,6 +3613,21 @@ Export presentation from Org to Typst, compile, and open PDF's.
     (shell-command "canvas"))
 #+end_src
 
+Delete handout notes from touying files.
+
+#+begin_src emacs-lisp
+(defun delete-handoutnote ()
+  "Delete all text from #+begin_handoutnote up to and including #+end_handoutnote."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^[ \t]*#\\+begin_handoutnote" nil t)
+      (let ((start (match-beginning 0)))
+        (if (re-search-forward "^[ \t]*#\\+end_handoutnote[ \t]*$" nil t)
+            (delete-region start (min (1+ (match-end 0)) (point-max)))
+          (error "No matching #+end_handoutnote found"))))))
+#+end_src
+
 ** Mosaic
 
 #+begin_src emacs-lisp
@@ -4618,8 +4651,6 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
     :commands (literate-calc-insert-results))
 #+end_src
 
-
-
 * Dashboard
 
 #+begin_src emacs-lisp
@@ -4635,7 +4666,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
   (bind-key "s-d" 'randy-dashboard-open)
 
   (setq randy-dashboard-recent-files-exclude
-	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "refile-beorg.org" "beorg-customize-init.org" "apple-calendar.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld" "docx"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)

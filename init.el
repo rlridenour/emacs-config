@@ -1256,6 +1256,20 @@ The file is opened in a temporary buffer that is killed after export."
 (use-package osx-dictionary
   :commands osx-dictionary-search-word-at-point osx-dictionary-search-input)
 
+(use-package mw-thesaurus
+  :bind ("C-M-s-t" . mw-thesaurus-lookup-dwim)
+  :hook (mw-thesaurus-mode . variable-pitch-mode)
+  :config
+  ;; window on the right side
+  (add-to-list
+   'display-buffer-alist
+   `(,mw-thesaurus-buffer-name
+     (display-buffer-reuse-window
+      display-buffer-in-direction)
+     (direction . right)
+     (window . root)
+     (window-width . 0.3))))
+
 (use-package shrink-whitespace
   :bind
   ("M-=" . shrink-whitespace))
@@ -1374,8 +1388,8 @@ The file is opened in a temporary buffer that is killed after export."
     (setq org-log-done t)
     (setq org-todo-keyword-faces
 	  '(("DONE" . "green4") ("TODO" . org-warning)))
-    ;; (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-    (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
+    (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+    ;; (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
     (setq org-log-into-drawer t)
     (setq org-agenda-start-on-weekday nil)
     (setq org-agenda-window-setup 'current-window)
@@ -2427,6 +2441,17 @@ The file lives in the system temp directory and is deleted when Emacs exits."
   (org-html-export-to-html)
   (shell-command "canvas"))
 
+(defun delete-handoutnote ()
+  "Delete all text from #+begin_handoutnote up to and including #+end_handoutnote."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^[ \t]*#\\+begin_handoutnote" nil t)
+      (let ((start (match-beginning 0)))
+        (if (re-search-forward "^[ \t]*#\\+end_handoutnote[ \t]*$" nil t)
+            (delete-region start (min (1+ (match-end 0)) (point-max)))
+          (error "No matching #+end_handoutnote found"))))))
+
 (require 'ox-rlr-mosaic)
 (require 'rlr-mosaic-scaffold)
 
@@ -3167,7 +3192,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
 (bind-key "s-d" 'randy-dashboard-open)
 
 (setq randy-dashboard-recent-files-exclude
-	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld"))
+	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "refile-beorg.org" "beorg-customize-init.org" "apple-calendar.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld" "docx"))
 
 (defun dashboard-startup ()
   (randy-dashboard-open)
