@@ -245,6 +245,7 @@
   :commands (cape-file)
   :bind
   (("M-p p" . completion-at-point) ;; capf
+   ("C-M-S-s-<tab>" . completion-at-point) ;; capf
    ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
    ("M-p a" . cape-abbrev)
    ("M-p w" . cape-dict)
@@ -259,8 +260,7 @@
   (add-hook 'completion-at-point-functions #'cape-dabbrev)
   (add-hook 'completion-at-point-functions #'cape-file)
   (add-hook 'completion-at-point-functions #'cape-elisp-block)
-  (add-hook 'completion-at-point-functions #'cape-history)
-  )
+  (add-hook 'completion-at-point-functions #'cape-history))
 
 (use-package corfu
   :hook (after-init . global-corfu-mode)
@@ -783,7 +783,10 @@
 
 (bind-key "C-x 1" 'toggle-delete-other-windows)
 
+(unbind-key "M-<tab>")
+
 (bind-keys
+ ("M-<tab>". other-window)
  ("s-0" . delete-window)
  ("s-1" . delete-other-windows)
  ("s-2" . rlr/find-file-below)
@@ -1492,6 +1495,39 @@ and convert it to Org using the pandoc utility."
 
 ;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
 ;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
+
+(defun my/org-word-count-in-subtree ()
+  "Count words in subtree at point."
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((start (line-beginning-position 2))
+          (end (save-excursion (org-end-of-subtree t t) (point))))
+      (count-words start end))))
+
+(defun my/org-update-word-count-cookies ()
+  "Search and update the nearest enclosing [Nw] word count cookie.
+Returns the updated word count if cookie found, returns nil otherwise."
+  (interactive)
+  (save-excursion
+    (ignore-errors (org-back-to-heading t))
+    (catch 'done
+      (while (org-at-heading-p)
+        (when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
+          (let* ((cookie-start (match-beginning 0))
+                 (cookie-end   (match-end 0))
+                 (wc           (my/org-word-count-in-subtree)))
+            (goto-char cookie-start)
+            (delete-region cookie-start cookie-end)
+            (insert (format "[%dw]" wc)))
+          (throw 'done t))
+        (unless (org-up-heading-safe)
+          (throw 'done nil))))))
+
+;; (add-hook 'org-mode-hook
+;;           (lambda ()
+;;             (add-hook 'org-ctrl-c-ctrl-c-hook
+;;                       #'my/org-update-word-count-cookies
+;;                       nil t)))
 
 (use-package valign
   :hook (org-mode . valign-mode))
@@ -3174,6 +3210,8 @@ Calling this again on an already-watched buffer stops the old watcher first."
   :bind (("C-x a a" . appine)
 	   ("C-x a u" . appine-open-url)
 	   ("C-x a o" . appine-open-file)))
+
+(use-package emureader)
 
 (use-package calc
   :bind

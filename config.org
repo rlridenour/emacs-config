@@ -571,6 +571,7 @@ From [[https://www.jamescherti.com/emacs-consult-speed-async-searche-grep-ripgre
     :commands (cape-file)
     :bind
     (("M-p p" . completion-at-point) ;; capf
+     ("C-M-S-s-<tab>" . completion-at-point) ;; capf
      ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
      ("M-p a" . cape-abbrev)
      ("M-p w" . cape-dict)
@@ -585,8 +586,7 @@ From [[https://www.jamescherti.com/emacs-consult-speed-async-searche-grep-ripgre
     (add-hook 'completion-at-point-functions #'cape-dabbrev)
     (add-hook 'completion-at-point-functions #'cape-file)
     (add-hook 'completion-at-point-functions #'cape-elisp-block)
-    (add-hook 'completion-at-point-functions #'cape-history)
-    )
+    (add-hook 'completion-at-point-functions #'cape-history))
 #+end_src
 
 ** Corfu
@@ -1414,7 +1414,10 @@ Reversible C-x 1
 *** Window and Tab Keybindings
 
 #+begin_src emacs-lisp
+  (unbind-key "M-<tab>")
+
   (bind-keys
+   ("M-<tab>". other-window)
    ("s-0" . delete-window)
    ("s-1" . delete-other-windows)
    ("s-2" . rlr/find-file-below)
@@ -2428,6 +2431,49 @@ Convert Org mode to Markdown
 ;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
 ;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
 #+end_src
+
+** Org Word Count
+
+Add =[0w]= to a heading, then =M-x my/org-update-word-count-cookies= from anywhere in the subtree updates the word count of the subtree. The count does not include the heading. The function my/org-update-word-count-cookies searches backwards and stops at the first word counting cookie it finds, so when you have nested cookies, it will only update the lowermost cookie above point.
+
+From [[https://www.reddit.com/r/orgmode/comments/1xmnt5c/word_counting_cookies/?%24deep_link=true&correlation_id=ea361d6c-054c-473b-a725-bcb9a14cde72&post_fullname=t3_1xmnt5c&post_index=7&ref=email_digest&ref_campaign=email_digest&ref_source=email&target_user=okphil&%243p=e_as&_branch_match_id=1346396330329104972&_branch_referrer=H4sIAAAAAAAAA22QS27DMAxET8PskjSUP2iBoChg%2BAI9gCBLtCPEEgVKhrPq2Qv1t%2Bp2Hmc4mFspKb%2Bcz0LO%2BXIyKZ1WH%2B9nlV4BG5WupE0%2BADYsfvHRrHqT9XqrLlBvgCPguO%2F76cdvOQCOAjiyLIEdAY6WQ6BYMuB4eYRYWls9LE5b3mLxcdGW%2Be6pXoAaAVtsHFHStQmoochGgJ1lEVpN8Ry1d6AGMqq7uM4en9rGHpteTUfTY3uc7PRsLo111CNglzgXPW%2FrGk2gGqf0X49v6KOjB6ihB%2ByE5hodjF%2B18wvl8i1qa0Iyfon%2F08ybWPplgF0xslDRWyYBNfA93b7krQRtORaKBdRQvx8%2BhGYSqTtMwnsmub6b2Yj%2FBMUWEJecAQAA][Word counting cookies : r/orgmode]]
+
+#+begin_src emacs-lisp
+(defun my/org-word-count-in-subtree ()
+  "Count words in subtree at point."
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((start (line-beginning-position 2))
+          (end (save-excursion (org-end-of-subtree t t) (point))))
+      (count-words start end))))
+
+(defun my/org-update-word-count-cookies ()
+  "Search and update the nearest enclosing [Nw] word count cookie.
+Returns the updated word count if cookie found, returns nil otherwise."
+  (interactive)
+  (save-excursion
+    (ignore-errors (org-back-to-heading t))
+    (catch 'done
+      (while (org-at-heading-p)
+        (when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
+          (let* ((cookie-start (match-beginning 0))
+                 (cookie-end   (match-end 0))
+                 (wc           (my/org-word-count-in-subtree)))
+            (goto-char cookie-start)
+            (delete-region cookie-start cookie-end)
+            (insert (format "[%dw]" wc)))
+          (throw 'done t))
+        (unless (org-up-heading-safe)
+          (throw 'done nil))))))
+
+;; (add-hook 'org-mode-hook
+;;           (lambda ()
+;;             (add-hook 'org-ctrl-c-ctrl-c-hook
+;;                       #'my/org-update-word-count-cookies
+;;                       nil t)))
+#+end_src
+
+
 
 ** Valign
 
@@ -4605,8 +4651,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 #+end_src
 
 * PDF Readers
-
-* PDF-Tools
+** PDF-Tools
 
 #+begin_src emacs-lisp
   (use-package pdf-tools
@@ -4620,7 +4665,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 	  ("C-s" . isearch-forward)))
 #+end_src
 
-* Appine
+** Appine
 
 [[https://github.com/chaoswork/appine][Appine]] for native MacOS webkit, PDFkit, etc.
 
@@ -4635,6 +4680,14 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 	   ("C-x a u" . appine-open-url)
 	   ("C-x a o" . appine-open-file)))
 #+end_src
+
+** Emureader
+
+#+begin_src emacs-lisp
+(use-package emureader)
+#+end_src
+
+
 
 * Calc
 
