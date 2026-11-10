@@ -2174,6 +2174,15 @@ body content wrapped in a #+begin_note ... #+end_note block."
   (org-html-export-to-html)
   (shell-command "canvas-handout"))
 
+(defun kill-handoutnote ()
+    (interactive)
+    (search-forward "#+begin_handoutnote" nil t)
+(beginning-of-line)
+(push-mark (point) nil t)
+(search-forward "#+end_handoutnote" nil t)
+(end-of-line)
+(delete-region (region-beginning) (region-end)))
+
 (defun rlr/copy-mcq ()
   "Copy the multiple choice question at point to the buffer in the adjacent window."
   (interactive)
