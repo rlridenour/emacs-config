@@ -2473,8 +2473,6 @@ Returns the updated word count if cookie found, returns nil otherwise."
 ;;                       nil t)))
 #+end_src
 
-
-
 ** Valign
 
 This fixes alignment problems in Org tables that have hidden emphasis markers.
@@ -3135,6 +3133,16 @@ Update apple-calendar.org
     (setq rlr-org-filename (s-dashed-words rlr-org-title))
     (org-web-tools-read-url-as-org rlr-org-url)
     (write-file (concat "~/icloud/web-saves/" rlr-org-title ".org")))
+#+end_src
+
+** Org Time Grid
+
+#+begin_src emacs-lisp
+  (use-package org-timegrid
+    :ensure t
+    :commands (org-timegrid-week)
+    ;; :bind ("C-c c" . org-timegrid-week)
+    )
 #+end_src
 
 ** Teaching
@@ -4697,8 +4705,6 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 #+begin_src emacs-lisp
 (use-package emureader)
 #+end_src
-
-
 
 * Calc
 

@@ -2037,6 +2037,12 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
   (org-web-tools-read-url-as-org rlr-org-url)
   (write-file (concat "~/icloud/web-saves/" rlr-org-title ".org")))
 
+(use-package org-timegrid
+  :ensure t
+  :commands (org-timegrid-week)
+  ;; :bind ("C-c c" . org-timegrid-week)
+  )
+
 (require 'rlr-teaching)
 (require 'rlr-org-standard-form)
 
