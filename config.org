@@ -1659,9 +1659,9 @@ Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/h
     (let ((file (dired-get-file-for-visit)))
       (cond
        ((eq system-type 'darwin)
-  	(start-process "qlmanage" nil "qlmanage" "-p" file))
+	(start-process "qlmanage" nil "qlmanage" "-p" file))
        ((eq system-type 'gnu/linux)
-  	(start-process "sushi" nil "sushi" file)))))
+	(start-process "sushi" nil "sushi" file)))))
 
   (bind-key "SPC"
 	    (lambda ()
@@ -2175,7 +2175,7 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
   ;;  '((yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml")))
   (setq treesit-auto-install-grammar 'always)
   (setq treesit-enabled-modes t)
-  (setq treesit-font-lock-level 2) 
+  (setq treesit-font-lock-level 2)
 #+end_src
 
 ** Vundo
@@ -2219,7 +2219,7 @@ For word counts.
 
 ** Hyperbole
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package hyperbole
     :commands (hyperbole)
     :config
@@ -2299,18 +2299,18 @@ For word counts.
       (setq org-time-stamp-rounding-minutes '(0 15))
       (setq org-log-done t)
       (setq org-todo-keyword-faces
-  	  '(("DONE" . "green4") ("TODO" . org-warning)))
+	      '(("DONE" . "green4") ("TODO" . org-warning)))
       (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
       ;; (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
       (setq org-log-into-drawer t)
       (setq org-agenda-start-on-weekday nil)
       (setq org-agenda-window-setup 'current-window)
       (setq org-link-frame-setup
-  	  '((vm . vm-visit-folder-other-frame)
-  	(vm-imap . vm-visit-imap-folder-other-frame)
-  	(gnus . org-gnus-no-new-news)
-  	(file . find-file)
-  	(wl . wl-other-frame)))
+	      '((vm . vm-visit-folder-other-frame)
+	    (vm-imap . vm-visit-imap-folder-other-frame)
+	    (gnus . org-gnus-no-new-news)
+	    (file . find-file)
+	    (wl . wl-other-frame)))
       (require 'org-tempo)
       ;; Open directory links in Dired.
       (add-to-list 'org-file-apps '(directory . emacs))
@@ -2444,7 +2444,7 @@ From [[https://www.reddit.com/r/orgmode/comments/1xmnt5c/word_counting_cookies/?
   (save-excursion
     (org-back-to-heading t)
     (let ((start (line-beginning-position 2))
-          (end (save-excursion (org-end-of-subtree t t) (point))))
+	  (end (save-excursion (org-end-of-subtree t t) (point))))
       (count-words start end))))
 
 (defun my/org-update-word-count-cookies ()
@@ -2455,16 +2455,16 @@ Returns the updated word count if cookie found, returns nil otherwise."
     (ignore-errors (org-back-to-heading t))
     (catch 'done
       (while (org-at-heading-p)
-        (when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
-          (let* ((cookie-start (match-beginning 0))
-                 (cookie-end   (match-end 0))
-                 (wc           (my/org-word-count-in-subtree)))
-            (goto-char cookie-start)
-            (delete-region cookie-start cookie-end)
-            (insert (format "[%dw]" wc)))
-          (throw 'done t))
-        (unless (org-up-heading-safe)
-          (throw 'done nil))))))
+	(when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
+	  (let* ((cookie-start (match-beginning 0))
+		 (cookie-end   (match-end 0))
+		 (wc           (my/org-word-count-in-subtree)))
+	    (goto-char cookie-start)
+	    (delete-region cookie-start cookie-end)
+	    (insert (format "[%dw]" wc)))
+	  (throw 'done t))
+	(unless (org-up-heading-safe)
+	  (throw 'done nil))))))
 
 ;; (add-hook 'org-mode-hook
 ;;           (lambda ()
@@ -2589,21 +2589,21 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
   matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
     (interactive)
     (let* ((dir   (file-name-directory buffer-file-name))
-           (base  (file-name-base buffer-file-name))
-           (exact (concat base ".pdf"))
-           (regex (concat "\\`"
-                          (mapconcat #'regexp-quote (split-string base "-") ".*")
-                          ".*\\.pdf\\'"))
-           (pdf   (if (file-exists-p (expand-file-name exact dir))
-                      exact
-                    (let ((matches (directory-files dir nil regex)))
-                      (cond ((null matches)
-                             (user-error "No PDF found for %s" base))
-                            ((null (cdr matches)) (car matches))
-                            (t (completing-read "Open PDF: " matches nil t)))))))
+	   (base  (file-name-base buffer-file-name))
+	   (exact (concat base ".pdf"))
+	   (regex (concat "\\`"
+			  (mapconcat #'regexp-quote (split-string base "-") ".*")
+			  ".*\\.pdf\\'"))
+	   (pdf   (if (file-exists-p (expand-file-name exact dir))
+		      exact
+		    (let ((matches (directory-files dir nil regex)))
+		      (cond ((null matches)
+			     (user-error "No PDF found for %s" base))
+			    ((null (cdr matches)) (car matches))
+			    (t (completing-read "Open PDF: " matches nil t)))))))
       (async-shell-command-no-window
        (concat "open -g " (shell-quote-argument (expand-file-name pdf dir))))))
-  
+
       (defun rlr/org-goto-pdf ()
       "View PDF with default viewer."
       (interactive)
@@ -2627,12 +2627,12 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
       "Update existing date: timestamp on a Hugo post."
       (interactive)
       (save-excursion (
-  		     goto-char 1)
-  		    (re-search-forward "^#\\+date:")
-  		    (let ((beg (point)))
-  		      (end-of-line)
-  		      (delete-region beg (point)))
-  		    (insert (concat " " (format-time-string "%B %e, %Y")))))
+		     goto-char 1)
+		    (re-search-forward "^#\\+date:")
+		    (let ((beg (point)))
+		      (end-of-line)
+		      (delete-region beg (point)))
+		    (insert (concat " " (format-time-string "%B %e, %Y")))))
 
 #+end_src
 
@@ -2791,20 +2791,20 @@ Use ~org-auto-tangle~ to generate ~early-init.el~ and ~init.el~ whenever ~README
   ;; Org-capture
   (setq org-capture-templates
       `(("t" "Todo" entry
-         (file+headline ,(concat rr-agenda-dir "tasks.org") "Inbox")
-         "** TODO %?\n  %i\n  %a")
-        ("e" "Event" entry
-         (file+headline ,(concat rr-agenda-dir "events.org") "Future")
-         "** %? %T")
-        ("b" "Bookmark" entry
-         (file+headline ,(concat rr-org-dir "bookmarks.org") "Inbox")
-         "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-        ("c" "Quick note" entry
-         (file ,(concat rr-notes-dir "quick-notes.org"))
-         "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-        ("j" "Journelly Entry" entry
-         (file ,rr-journelly-file)
-         "* %U @ -\n%?" :prepend t)))
+	 (file+headline ,(concat rr-agenda-dir "tasks.org") "Inbox")
+	 "** TODO %?\n  %i\n  %a")
+	("e" "Event" entry
+	 (file+headline ,(concat rr-agenda-dir "events.org") "Future")
+	 "** %? %T")
+	("b" "Bookmark" entry
+	 (file+headline ,(concat rr-org-dir "bookmarks.org") "Inbox")
+	 "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+	("c" "Quick note" entry
+	 (file ,(concat rr-notes-dir "quick-notes.org"))
+	 "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+	("j" "Journelly Entry" entry
+	 (file ,rr-journelly-file)
+	 "* %U @ -\n%?" :prepend t)))
 
   (with-eval-after-load 'org-capture
     (add-to-list 'org-capture-templates
@@ -3291,13 +3291,13 @@ body content wrapped in a #+begin_note ... #+end_note block."
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward
-            "^[ \t]*\\\\Huge{\\([^}]+\\)}"
-            nil t)
+	    "^[ \t]*\\\\Huge{\\([^}]+\\)}"
+	    nil t)
       (let ((text (match-string 1)))
-        (replace-match
-         (concat "#+BEGIN_EXPORT typst\n"
-                 "#text(size: 36pt)[*" text "*]\n"
-                 "#+END_EXPORT"))))))	
+	(replace-match
+	 (concat "#+BEGIN_EXPORT typst\n"
+		 "#text(size: 36pt)[*" text "*]\n"
+		 "#+END_EXPORT"))))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3311,10 +3311,7 @@ body content wrapped in a #+begin_note ... #+end_note block."
 #+begin_src emacs-lisp
     (defun kill-handoutnote ()
       (interactive)
-      (search-forward "#+begin_handoutnote" nil t)
-  (beginning-of-line)
-  (push-mark (point) nil t)
-  (search-forward "#+end_handoutnote" nil t)
+
   (end-of-line)
   (delete-region (region-beginning) (region-end)))
 #+end_src
@@ -3551,6 +3548,16 @@ The file lives in the system temp directory and is deleted when Emacs exits."
     ("C-c g p" . pdf-sync-forward-search))
 #+end_src
 
+** Math-Delimiters
+#+begin_src emacs-lisp
+(use-package math-delimiters
+  :bind
+  ;; (:map LaTeX-mode-map
+  ;;       ("$" . math-delimiters-insert))
+  (:map org-mode-map
+	("$" . math-delimiters-insert)))
+#+end_src
+
 ** LaTeX Build Functions
 
 #+begin_src emacs-lisp
@@ -3681,16 +3688,23 @@ Export presentation from Org to Typst, compile, and open PDF's.
 Delete handout notes from touying files.
 
 #+begin_src emacs-lisp
-(defun delete-handoutnote ()
-  "Delete all text from #+begin_handoutnote up to and including #+end_handoutnote."
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward "^[ \t]*#\\+begin_handoutnote" nil t)
-      (let ((start (match-beginning 0)))
-        (if (re-search-forward "^[ \t]*#\\+end_handoutnote[ \t]*$" nil t)
-            (delete-region start (min (1+ (match-end 0)) (point-max)))
-          (error "No matching #+end_handoutnote found"))))))
+  (defun delete-handoutnote ()
+    "Delete all text from #+begin_handoutnote up to and including #+end_handoutnote."
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^[ \t]*#\\+begin_handoutnote" nil t)
+	(let ((start (match-beginning 0)))
+	  (if (re-search-forward "^[ \t]*#\\+end_handoutnote[ \t]*$" nil t)
+	      (delete-region start (min (1+ (match-end 0)) (point-max)))
+	    (error "No matching #+end_handoutnote found"))))))
+
+  (defun delete-all-handoutnotes ()
+    (interactive)
+  (condition-case nil
+      (while t
+	(delete-handoutnote))
+    (error nil)))
 #+end_src
 
 ** Mosaic
@@ -4012,18 +4026,18 @@ Typst only uses files in the current directory. This scans the current Org or Ty
       :commands (mu4e mu4e-update-mail-and-index)
       :bind
       (:map mu4e-headers-mode-map
-  	  ("q"  . kill-current-buffer)
-  	  ("C-<tab>" . tab-next)
-  	  ("g" . my-mu4e-mark-add-tag)
-  	  :map mu4e-thread-mode-map
-  	  ("C-<tab>" . tab-next)
-  	  :map mu4e-main-mode-map
-  	  ("q"  . rlr/quit-mu4e)
-  	  ("u" . mu4e-update-mail-and-index)
-  	  :map mu4e-view-mode-map
-  	  ("," . link-hint-open-link)
-  	  ("." . rlr/link-hint-open-link-in-secondary-browser)
-  	  ("C-," . mu4e-sexp-at-point))
+	      ("q"  . kill-current-buffer)
+	      ("C-<tab>" . tab-next)
+	      ("g" . my-mu4e-mark-add-tag)
+	      :map mu4e-thread-mode-map
+	      ("C-<tab>" . tab-next)
+	      :map mu4e-main-mode-map
+	      ("q"  . rlr/quit-mu4e)
+	      ("u" . mu4e-update-mail-and-index)
+	      :map mu4e-view-mode-map
+	      ("," . link-hint-open-link)
+	      ("." . rlr/link-hint-open-link-in-secondary-browser)
+	      ("C-," . mu4e-sexp-at-point))
       :after org
       :init
       (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
@@ -4038,9 +4052,9 @@ Typst only uses files in the current directory. This scans the current Org or Ty
 
 (defconst my/mu4e-clean
   (concat "NOT flag:trashed AND "
-          (mapconcat (lambda (d) (format "NOT maildir:\"%s\"" d))
-                     (append my/mu4e-junk-maildirs my/mu4e-duplicate-maildirs)
-                     " AND ")))
+	  (mapconcat (lambda (d) (format "NOT maildir:\"%s\"" d))
+		     (append my/mu4e-junk-maildirs my/mu4e-duplicate-maildirs)
+		     " AND ")))
 
 (defconst my/mu4e-inboxes
   "(maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX)")
@@ -4050,7 +4064,7 @@ Typst only uses files in the current directory. This scans the current Org or Ty
       (setq mu4e-get-mail-command "mbsync -a")
       (setq mu4e-update-interval 1800) ;; update every 5 minutes
       (setq mu4e-read-option-use-builtin nil
-  	  mu4e-completing-read-function 'completing-read)
+	      mu4e-completing-read-function 'completing-read)
       (setq mu4e-split-view 'horizontal)
       (setq mu4e-index-update-error-warning nil)
       (setq mu4e-headers-skip-duplicates  t)
@@ -4070,90 +4084,90 @@ Typst only uses files in the current directory. This scans the current Org or Ty
       (setq mu4e-attachment-dir "~/Downloads")
       (setq mu4e-context-policy 'pick-first)
       (setq  mu4e-contexts (list
-  			  (make-mu4e-context
-  			   :name "fastmail"
-  			   :match-func
-  			   (lambda (msg)
-  			     (when msg
-  			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-  			   :vars '((user-mail-address . "rlridenour@fastmail.com")
-  				   (user-full-name    . "Randy Ridenour")
-  				   (mu4e-drafts-folder  . "/fastmail/Drafts")
-  				   (mu4e-sent-folder  . "/fastmail/Sent")
-  				   (mu4e-trash-folder  . "/fastmail/Trash")
-  				   (mu4e-refile-folder  . "/fastmail/Archive")
-  				   (sendmail-program . "msmtp")
-  				   (send-mail-function . smtpmail-send-it)
-  				   (message-sendmail-f-is-evil . t)
-  				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
-  				   (message-send-mail-function . message-send-mail-with-sendmail)
-  				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
-  				   (smtpmail-smtp-server  . "smtp.fastmail.com")
-  				   ))
-  			  (make-mu4e-context
-  			   :name "obu"
-  			   :match-func
-  			   (lambda (msg)
-  			     (when msg
-  			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
-  			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
-  				   (user-full-name    . "Randy Ridenour")
-  				   (mu4e-drafts-folder  . "/obu/Drafts")
-  				   (mu4e-sent-folder  . "/obu/Sent")
-  				   (mu4e-trash-folder . "/obu/Trash")
-  				   (mu4e-refile-folder  . "/obu/Archive")
-  				   ;; (sendmail-program . "msmtp")
-  				   (send-mail-function . smtpmail-send-it)
-  				   (message-sendmail-f-is-evil . t)
-  				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
-  				   (message-send-mail-function . message-send-mail-with-sendmail)
-  				   (smtpmail-smtp-server  . "localhost")
-  				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
-  				   (smtpmail-stream-type . plain)
-  				   (smtpmail-smtp-service . 1025)
-  				   ))
-  			  (make-mu4e-context
-  			   :name "gmail"
-  			   :name "fastmail"
-  			   :match-func
-  			   (lambda (msg)
-  			     (when msg
-  			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-  			   :vars '((user-mail-address . "rlridenour@gmail.com")
-  				   (user-full-name . "Randy Ridenour")
-  				   (mu4e-drafts-folder . "/gmail/Drafts")
-  				   (mu4e-refile-folder . "/gmail/Archive")
-  				   (mu4e-sent-folder . "/gmail/Sent")
-  				   (mu4e-trash-folder . "/gmail/Trash")))
-  			  ))
+				  (make-mu4e-context
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+				       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@fastmail.com")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/fastmail/Drafts")
+					     (mu4e-sent-folder  . "/fastmail/Sent")
+					     (mu4e-trash-folder  . "/fastmail/Trash")
+					     (mu4e-refile-folder  . "/fastmail/Archive")
+					     (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
+					     (smtpmail-smtp-server  . "smtp.fastmail.com")
+					     ))
+				  (make-mu4e-context
+				   :name "obu"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+				       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+					     (user-full-name    . "Randy Ridenour")
+					     (mu4e-drafts-folder  . "/obu/Drafts")
+					     (mu4e-sent-folder  . "/obu/Sent")
+					     (mu4e-trash-folder . "/obu/Trash")
+					     (mu4e-refile-folder  . "/obu/Archive")
+					     ;; (sendmail-program . "msmtp")
+					     (send-mail-function . smtpmail-send-it)
+					     (message-sendmail-f-is-evil . t)
+					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
+					     (message-send-mail-function . message-send-mail-with-sendmail)
+					     (smtpmail-smtp-server  . "localhost")
+					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+					     (smtpmail-stream-type . plain)
+					     (smtpmail-smtp-service . 1025)
+					     ))
+				  (make-mu4e-context
+				   :name "gmail"
+				   :name "fastmail"
+				   :match-func
+				   (lambda (msg)
+				     (when msg
+				       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+				   :vars '((user-mail-address . "rlridenour@gmail.com")
+					     (user-full-name . "Randy Ridenour")
+					     (mu4e-drafts-folder . "/gmail/Drafts")
+					     (mu4e-refile-folder . "/gmail/Archive")
+					     (mu4e-sent-folder . "/gmail/Sent")
+					     (mu4e-trash-folder . "/gmail/Trash")))
+				  ))
 
   (setq mu4e-bookmarks
-        `((:name "Unread messages"
-           :query ,(concat "flag:unread AND " my/mu4e-clean)
-           :key ?b)
-          (:name "Unread in inboxes"
-           :query ,(concat "flag:unread AND " my/mu4e-inboxes " AND NOT flag:trashed")
-           :key ?i)
-          (:name "Flagged messages"
-           :query ,(concat "flag:flagged AND " my/mu4e-clean)
-           :key ?f)
-          (:name "All inboxes"
-           :query ,(concat my/mu4e-inboxes " AND NOT flag:trashed")
-           :key ?A)
-          (:name "Today's messages"
-           :query ,(concat "date:today..now AND " my/mu4e-clean)
-           :key ?t)
-          (:name "Last 7 days"
-           :query ,(concat "date:7d..now AND " my/mu4e-clean)
-           :hide-unread t
-           :key ?w)
-          (:name "Messages with images"
-           :query ,(concat "flag:attach AND mime:image/* AND " my/mu4e-clean)
-           :key ?p)))
+	`((:name "Unread messages"
+	   :query ,(concat "flag:unread AND " my/mu4e-clean)
+	   :key ?b)
+	  (:name "Unread in inboxes"
+	   :query ,(concat "flag:unread AND " my/mu4e-inboxes " AND NOT flag:trashed")
+	   :key ?i)
+	  (:name "Flagged messages"
+	   :query ,(concat "flag:flagged AND " my/mu4e-clean)
+	   :key ?f)
+	  (:name "All inboxes"
+	   :query ,(concat my/mu4e-inboxes " AND NOT flag:trashed")
+	   :key ?A)
+	  (:name "Today's messages"
+	   :query ,(concat "date:today..now AND " my/mu4e-clean)
+	   :key ?t)
+	  (:name "Last 7 days"
+	   :query ,(concat "date:7d..now AND " my/mu4e-clean)
+	   :hide-unread t
+	   :key ?w)
+	  (:name "Messages with images"
+	   :query ,(concat "flag:attach AND mime:image/* AND " my/mu4e-clean)
+	   :key ?p)))
       (setq mu4e-maildir-shortcuts
-  	  '((:maildir "/obu/INBOX" :key ?u)
-  	    (:maildir "/fastmail/INBOX" :key ?f)
-  	    (:maildir "/gmail/INBOX" :key ?g)))
+	      '((:maildir "/obu/INBOX" :key ?u)
+	        (:maildir "/fastmail/INBOX" :key ?f)
+	        (:maildir "/gmail/INBOX" :key ?g)))
       (require 'mu4e-transient))
 #+end_src
 
@@ -4577,7 +4591,7 @@ Commands for writing and publishing the blog (new draft, insert image, publish d
 #+begin_src emacs-lisp
   (use-package org-publish-rss
     :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
-  	      :rev :newest)
+	          :rev :newest)
     :commands (org-publish-all)
     :config
     (setq org-publish-rss-publish-immediately t)
@@ -4618,6 +4632,11 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
     ;; minimal rendering by default
     (setq-default shr-inhibit-images t)   ; toggle with `I`
     (setq-default shr-use-fonts t)      ; toggle with `F`
+    (setq eww-download-directory (expand-file-name "~/Downloads/"))
+    (with-eval-after-load 'eww
+      (define-key eww-mode-map (kbd "=") #'text-scale-increase)
+      (define-key eww-mode-map (kbd "-") #'text-scale-decrease)
+      (define-key eww-mode-map (kbd "0") #'text-scale-adjust))
     :bind
     (nil
      :map eww-mode-map
