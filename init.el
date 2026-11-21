@@ -3333,7 +3333,7 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("s" crux-find-shell-init-file "fish config"))
    ))
 
-(pretty-hydra-define hydra-locate
+z(pretty-hydra-define hydra-locate
   (:color teal :quit-key "q" title: "Search")
   ("Buffer"
    (("c" pulsar-highlight-pulse "find cursor")
@@ -3341,7 +3341,9 @@ Calling this again on an already-watched buffer stops the old watcher first."
     ("l" consult-goto-line "goto-line")
     ("i" consult-imenu "imenu")
     ("m" consult-mark "mark")
-    ("o" consult-outline "outline"))
+    ("o" consult-outline "outline")
+    ("vr" vr/replace "visual-regex-replace")
+    ("vq" vr/query-replace "visual-regex-query"))
    "Global"
    (("M" consult-global-mark "global-mark")
     ("n" consult-notes "notes")
