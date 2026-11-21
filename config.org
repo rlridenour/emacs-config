@@ -1449,6 +1449,15 @@ Find non-ascii characters in buffer.
     (occur "[^[:ascii:]]"))
 #+end_src
 
+Increase height of regex-builder window.
+
+#+begin_src emacs-lisp
+(add-to-list 'display-buffer-alist
+             '("\\*RE-Builder\\*"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (window-height . 10)))
+#+end_src
+
 *** Avy
 
 #+begin_src emacs-lisp

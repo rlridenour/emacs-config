@@ -811,6 +811,11 @@
   (interactive)
   (occur "[^[:ascii:]]"))
 
+(add-to-list 'display-buffer-alist
+             '("\\*RE-Builder\\*"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (window-height . 10)))
+
 (use-package avy
   :config
   (avy-setup-default)
