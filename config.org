@@ -19,7 +19,7 @@ Set the header and prevent package initialization.
 #+end_src
 
 #+begin_src emacs-lisp :lexical t
-;;  (setq package-enable-at-startup nil)
+  ;;  (setq package-enable-at-startup nil)
   (setq inhibit-default-init nil)
 #+end_src
 
@@ -45,23 +45,23 @@ Silence native compilation warnings.
 Defer garbage collection during startup and when using the minibuffer. Afterwards raise the threshold to 64MB.
 
 #+begin_src emacs-lisp
-(setq gc-cons-threshold most-positive-fixnum
-      gc-cons-percentage 1.0)
+  (setq gc-cons-threshold most-positive-fixnum
+	gc-cons-percentage 1.0)
 
-(defconst rlr/gc-normal-threshold (* 64 1024 1024)) ;; 64MB
-(defconst rlr/gc-normal-percentage 0.1)
+  (defconst rlr/gc-normal-threshold (* 64 1024 1024)) ;; 64MB
+  (defconst rlr/gc-normal-percentage 0.1)
 
-(add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (setq gc-cons-threshold rlr/gc-normal-threshold
-		  gc-cons-percentage rlr/gc-normal-percentage)))
+  (add-hook 'emacs-startup-hook
+	    (lambda ()
+	      (setq gc-cons-threshold rlr/gc-normal-threshold
+		    gc-cons-percentage rlr/gc-normal-percentage)))
 
-(add-hook 'minibuffer-setup-hook
-	  (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+  (add-hook 'minibuffer-setup-hook
+	    (lambda () (setq gc-cons-threshold most-positive-fixnum)))
 
-(add-hook 'minibuffer-exit-hook
-	  (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
-			   gc-cons-percentage rlr/gc-normal-percentage)))
+  (add-hook 'minibuffer-exit-hook
+	    (lambda () (setq gc-cons-threshold rlr/gc-normal-threshold
+			     gc-cons-percentage rlr/gc-normal-percentage)))
 #+end_src
 
 *** File-Name-Handler-Alist
@@ -69,13 +69,13 @@ Defer garbage collection during startup and when using the minibuffer. Afterward
 Skipping a bunch of regular expression searching in the =file-name-handler-alist= should improve start time.
 
 #+begin_src emacs-lisp
-(defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
-(setq file-name-handler-alist nil)
-(add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (setq file-name-handler-alist
-		  (delete-dups (append file-name-handler-alist
-				       rlr/file-name-handler-alist-backup)))))
+  (defvar rlr/file-name-handler-alist-backup file-name-handler-alist)
+  (setq file-name-handler-alist nil)
+  (add-hook 'emacs-startup-hook
+	    (lambda ()
+	      (setq file-name-handler-alist
+		    (delete-dups (append file-name-handler-alist
+					 rlr/file-name-handler-alist-backup)))))
 #+end_src
 
 ** Personal Identification
@@ -175,7 +175,7 @@ Prevent font compacting. [[https://www.jamescherti.com/emacs-user-interface-bett
 I got tired of seeing this error: =Error loading autoloads: (void-function transient-define-prefix)=. Requiring transient early fixed it.
 
 #+begin_src emacs-lisp
-(require 'transient)
+  (require 'transient)
 #+end_src
 
 ** Footer
@@ -193,7 +193,7 @@ I got tired of seeing this error: =Error loading autoloads: (void-function trans
 Enable lexical bindings in the exported Emacs Lisp file.
 
 #+begin_src emacs-lisp
-;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
+  ;; init.el --- Randy Ridenour's Emacs configuration file -*- lexical-binding: t; -*-
 #+end_src
 
 #+begin_src emacs-lisp
@@ -249,7 +249,7 @@ Use Exec-Path-From-Shell to set path.
 
 #+begin_src emacs-lisp
   (defconst rr-cache-dir (expand-file-name "~/.cache/emacs/"
-    "The directory for Emacs activity files."))
+				 "The directory for Emacs activity files."))
 
   (defconst rr-backup-dir (concat rr-cache-dir "backup/")
     "The directory for Emacs backup files.")
@@ -261,10 +261,10 @@ Use Exec-Path-From-Shell to set path.
     "The directory for my org agenda files.")
 
   (defconst rr-notes-dir
-  (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"))
+    (expand-file-name "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/notes/"))
 
-(defconst rr-journelly-file
-  (expand-file-name "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
+  (defconst rr-journelly-file
+    (expand-file-name "~/Library/Mobile Documents/iCloud~com~xenodium~Journelly/Documents/Journelly.org"))
 #+end_src
 
 ** Create directories
@@ -321,7 +321,7 @@ Use [[https://github.com/jamescherti/buffer-guardian.el\]][Buffer Guardian]] for
 ** Menus
 
 #+begin_src emacs-lisp
-(unbind-key "s-m")
+  (unbind-key "s-m")
 #+end_src
 
 *** Transient
@@ -332,55 +332,63 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
   (use-package transient
     :bind
     (:map transient-map
-	 ("<escape>" . transient-quit-one)))
+	  ("<escape>" . transient-quit-one)))
 #+end_src
 
 *** Casual Suite
 
-#+begin_src emacs-lisp
-   (use-package casual-suite
-     :bind
-     ("H-." . casual-editkit-main-tmenu)
-     ("M-g a" . casual-avy-tmenu)
-     :config
-     (casual-suite-init))
+#+begin_src emacs-lisp :tangle no
+  (use-package casual-suite
+    :bind
+    ("H-." . casual-editkit-main-tmenu)
+    ("M-g a" . casual-avy-tmenu)
+    :config
+    (casual-suite-init))
 
-   (with-eval-after-load 'dired
-     (bind-key "s-." #'casual-dired-tmenu dired-mode-map))
+  (with-eval-after-load 'dired
+    (bind-key "s-." #'casual-dired-tmenu dired-mode-map))
 
-   (with-eval-after-load 'calc
-     (bind-key "s-." #'casual-calc-tmenu calc-mode-map))
+  (with-eval-after-load 'calc
+    (bind-key "s-." #'casual-calc-tmenu calc-mode-map))
 
-   (with-eval-after-load 'isearch
-     (bind-key "s-." #'casual-isearch-tmenu isearch-mode-map))
+  (with-eval-after-load 'isearch
+    (bind-key "s-." #'casual-isearch-tmenu isearch-mode-map))
 
-   (with-eval-after-load 'reb
-     (bind-key "s-." #'casual-re-builder-menu casual-re-builder-map))
+  (with-eval-after-load 'reb
+    (bind-key "s-." #'casual-re-builder-menu casual-re-builder-map))
 
-   (with-eval-after-load 'ibuffer
-     (bind-key "s-." #'casual-ibuffer-tmenu ibuffer-mode-map)
-     (bind-key "F" #'casual-ibuffer-filter-tmenu ibuffer-mode-map)
-     (bind-key "s" #'casual-ibuffer-sortby-tmenu ibuffer-mode-map))
+  (with-eval-after-load 'ibuffer
+    (bind-key "s-." #'casual-ibuffer-tmenu ibuffer-mode-map)
+    (bind-key "F" #'casual-ibuffer-filter-tmenu ibuffer-mode-map)
+    (bind-key "s" #'casual-ibuffer-sortby-tmenu ibuffer-mode-map))
 
-   (with-eval-after-load 'bookmark
-     (bind-key "s-." #'casual-bookmarks-tmenu bookmark-bmenu-mode-map))
+  (with-eval-after-load 'bookmark
+    (bind-key "s-." #'casual-bookmarks-tmenu bookmark-bmenu-mode-map))
 
   (with-eval-after-load 'org-agenda
-     (bind-key "s-." #'casual-agenda-tmenu org-agenda-mode-map))
+    (bind-key "s-." #'casual-agenda-tmenu org-agenda-mode-map))
 
-   (with-eval-after-load 'Info
-     (bind-key "s-." #'casual-info-tmenu Info-mode-map))
+  (with-eval-after-load 'Info
+    (bind-key "s-." #'casual-info-tmenu Info-mode-map))
 
-   (with-eval-after-load 'calendar
-     (bind-key "s-." #'casual-calendar-tmenu calendar-mode-map))
+  (with-eval-after-load 'calendar
+    (bind-key "s-." #'casual-calendar-tmenu calendar-mode-map))
 
-   (with-eval-after-load 'eww
-     (bind-key "s-." #'casual-eww-tmenu eww-mode-map))
+  (with-eval-after-load 'eww
+    (bind-key "s-." #'casual-eww-tmenu eww-mode-map))
 
-   (with-eval-after-load 'org
-     (bind-key "s-." #'casual-org-tmenu org-mode-map))
+  (with-eval-after-load 'org
+    (bind-key "s-." #'casual-org-tmenu org-mode-map))
 
   (bind-key "H-r" 'casual-editkit-rectangle-tmenu)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package casual
+    :custom
+    (casual-keybinding-primary "s-.")
+    :config
+    (casual-init))
 #+end_src
 
 *** Hydra
@@ -396,8 +404,8 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 *** Context Clues
 
 #+begin_src emacs-lisp
-(use-package context-clues
-  :bind ("H-c" . context-clues))
+  (use-package context-clues
+    :bind ("H-c" . context-clues))
 #+end_src
 
 ** Bookmarks
@@ -454,7 +462,7 @@ Open fish functions directory.
     (enable-recursive-minibuffers t)
     (read-extended-command-predicate #'command-completion-default-include-p) ;; Hide commands irrelevant to current mode.
     (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt)) ;; Don't allow cursor in minibuffer prompt.
+     '(read-only t cursor-intangible t face minibuffer-prompt)) ;; Don't allow cursor in minibuffer prompt.
     :hook
     (after-init . (lambda () (vertico-mode) (vertico-multiform-mode))))
 #+end_src
@@ -462,11 +470,11 @@ Open fish functions directory.
 ** Orderless
 
 #+begin_src emacs-lisp
-(use-package orderless
-  :custom
-  (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles partial-completion))))
-  (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substring
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles partial-completion))))
+    (completion-pcm-leading-wildcard t)) ;; Emacs 31: partial-completion behaves like substring
 #+end_src
 
 ** Marginalia
@@ -476,7 +484,7 @@ Enrich existing commands with completion annotations
 #+begin_src emacs-lisp
   (use-package marginalia
     :hook (after-init . marginalia-mode))
-    #+end_src
+#+end_src
 
 ** Consult
 
@@ -500,9 +508,9 @@ Enrich existing commands with completion annotations
 From [[https://www.jamescherti.com/emacs-consult-speed-async-searche-grep-ripgrep-fd-find/][Why Emacs Consult async searches feel slow and how to speed them up? (consult-fd, consult-find, consult-grep, consult-ripgrep...) | James Cherti]]
 
 #+begin_src emacs-lisp
-(setq consult-async-input-debounce 0.05
-      consult-async-input-throttle 0.1
-      consult-async-refresh-delay 0.05)
+  (setq consult-async-input-debounce 0.05
+	consult-async-input-throttle 0.1
+	consult-async-refresh-delay 0.05)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -897,7 +905,7 @@ General variables (one-liners).
 Try this for speed. See [[https://www.jamescherti.com/emacs-user-interface-better-responsiveness-and-latency/][How to Make the Emacs UI Feel More Responsive | James Cherti]]
 
 #+begin_src emacs-lisp
-(setq font-lock-maximum-decoration '((t . 2)))
+  (setq font-lock-maximum-decoration '((t . 2)))
 #+end_src
 
 **** Toggle Dark
@@ -1452,10 +1460,10 @@ Find non-ascii characters in buffer.
 Increase height of regex-builder window.
 
 #+begin_src emacs-lisp
-(add-to-list 'display-buffer-alist
-             '("\\*RE-Builder\\*"
-               (display-buffer-reuse-window display-buffer-at-bottom)
-               (window-height . 10)))
+  (add-to-list 'display-buffer-alist
+	       '("\\*RE-Builder\\*"
+		 (display-buffer-reuse-window display-buffer-at-bottom)
+		 (window-height . 10)))
 #+end_src
 
 *** Avy
@@ -1581,82 +1589,82 @@ Some of these settings are from [[https://www.jamescherti.com/emacs-dired-config
 Copy path of current buffer or dired entry.From [[http://xahlee.info/emacs/emacs/emacs_copy_file_path.html][Emacs: Copy File Path of Current Buffer]]
 
 #+begin_src emacs-lisp
-(defun xah-copy-file-path (&optional DirPathOnlyQ)
-  "Copy current buffer file path or dired path.
-Result is full path.
-If `universal-argument' is called first, copy only the dir path.
+  (defun xah-copy-file-path (&optional DirPathOnlyQ)
+    "Copy current buffer file path or dired path.
+  Result is full path.
+  If `universal-argument' is called first, copy only the dir path.
 
-If in dired, copy the current or marked files.
+  If in dired, copy the current or marked files.
 
-If a buffer is not file and not dired, copy value of `default-directory'.
+  If a buffer is not file and not dired, copy value of `default-directory'.
 
-URL `http://xahlee.info/emacs/emacs/emacs_copy_file_path.html'
-Created: 2018-06-18
-Version: 2021-09-30"
-  (interactive "P")
-  (let ((xfpath
-	 (if (eq major-mode 'dired-mode)
-	     (progn
-	       (let ((xresult (mapconcat #'identity
-					 (dired-get-marked-files) "\n")))
-		 (if (equal (length xresult) 0)
-		     (progn default-directory )
-		   (progn xresult))))
-	   (if buffer-file-name
-	       buffer-file-name
-	     (expand-file-name default-directory)))))
-    (kill-new
-     (if DirPathOnlyQ
+  URL `http://xahlee.info/emacs/emacs/emacs_copy_file_path.html'
+  Created: 2018-06-18
+  Version: 2021-09-30"
+    (interactive "P")
+    (let ((xfpath
+	   (if (eq major-mode 'dired-mode)
+	       (progn
+		 (let ((xresult (mapconcat #'identity
+					   (dired-get-marked-files) "\n")))
+		   (if (equal (length xresult) 0)
+		       (progn default-directory )
+		     (progn xresult))))
+	     (if buffer-file-name
+		 buffer-file-name
+	       (expand-file-name default-directory)))))
+      (kill-new
+       (if DirPathOnlyQ
+	   (progn
+	     (message "Directory copied: %s" (file-name-directory xfpath))
+	     (file-name-directory xfpath))
 	 (progn
-	   (message "Directory copied: %s" (file-name-directory xfpath))
-	   (file-name-directory xfpath))
-       (progn
-	 (message "File path copied: %s" xfpath)
-	 xfpath )))))
+	   (message "File path copied: %s" xfpath)
+	   xfpath )))))
 #+end_src
 
 Open Org and Markdown files in the default browser.
 
 #+begin_src emacs-lisp
-(defun rlr/dired-preview-in-browser ()
-  "Export the Org or Markdown file at point in Dired to HTML and open it.
-The file is opened in a temporary buffer that is killed after export."
-  (interactive)
-  (let ((file (dired-get-file-for-visit)))
-    (unless file
-      (user-error "No file on this line"))
-    (let ((ext (file-name-extension file)))
-      (cond
-       ((string= ext "org")
-	(let ((buf (find-file-noselect file)))
-	  (with-current-buffer buf
-	    (rlr/org-export-html-to-browser))
-	  (kill-buffer buf)))
-       ((member ext '("md" "markdown" "mkd"))
-	(let ((buf (find-file-noselect file)))
-	  (with-current-buffer buf
-	    (rlr/markdown-export-html-to-browser))
-	  (kill-buffer buf)))
-       (t
-	(user-error "Not a Markdown or Org file: %s" file))))))
+  (defun rlr/dired-preview-in-browser ()
+    "Export the Org or Markdown file at point in Dired to HTML and open it.
+  The file is opened in a temporary buffer that is killed after export."
+    (interactive)
+    (let ((file (dired-get-file-for-visit)))
+      (unless file
+	(user-error "No file on this line"))
+      (let ((ext (file-name-extension file)))
+	(cond
+	 ((string= ext "org")
+	  (let ((buf (find-file-noselect file)))
+	    (with-current-buffer buf
+	      (rlr/org-export-html-to-browser))
+	    (kill-buffer buf)))
+	 ((member ext '("md" "markdown" "mkd"))
+	  (let ((buf (find-file-noselect file)))
+	    (with-current-buffer buf
+	      (rlr/markdown-export-html-to-browser))
+	    (kill-buffer buf)))
+	 (t
+	  (user-error "Not a Markdown or Org file: %s" file))))))
 #+end_src
 
 List folders before individual files.
 
 #+begin_src emacs-lisp
-(setq ls-lisp-verbosity nil
-      ls-lisp-dirs-first t)
+  (setq ls-lisp-verbosity nil
+	ls-lisp-dirs-first t)
 
-(when (eq system-type 'darwin)
-  (setq dired-use-ls-dired nil)) ; macOS/BSD ls
+  (when (eq system-type 'darwin)
+    (setq dired-use-ls-dired nil)) ; macOS/BSD ls
 
-(let ((args "--group-directories-first -ahlv"))
-  (when (or (eq system-type 'darwin) (eq system-type 'berkeley-unix))
-    (if-let* ((gls (executable-find "gls")))
-	(setq insert-directory-program gls)
-      (setq args nil)))
-  (when args
-    (setq dired-listing-switches args)))
+  (let ((args "--group-directories-first -ahlv"))
+    (when (or (eq system-type 'darwin) (eq system-type 'berkeley-unix))
+      (if-let* ((gls (executable-find "gls")))
+	  (setq insert-directory-program gls)
+	(setq args nil)))
+    (when args
+      (setq dired-listing-switches args)))
 #+end_src
 
 Use quicklook in Dired. From [[https://www.reddit.com/r/emacs/comments/1skliaw/has_anyone_managed_to_launch_the_macos_quick_look/][Has anyone managed to launch the macOS Quick Look from emacs? : r/emacs]]
@@ -1786,6 +1794,12 @@ Go to current directory in Ghostty.
 #+end_src
 
 ** Help
+
+Add Prot's Emacs Lisp Elements to Info
+
+#+begin_src emacs-lisp 
+(setq Info-additional-directory-list '("~/github/emacs-lisp-elements/"))
+#+end_src
 
 Use which-key-mode for hints.
 
@@ -2091,9 +2105,9 @@ For spell-checking
 Display suggestions in grid.
 
 #+begin_src emacs-lisp :tangle no
-(add-to-list 'vertico-multiform-categories
-	     '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
-(vertico-multiform-mode)
+  (add-to-list 'vertico-multiform-categories
+	       '(jinx grid (vertico-grid-annotate . 20) (vertico-count . 4)))
+  (vertico-multiform-mode)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2121,19 +2135,19 @@ Change color of misspelled words. From [[https://irreal.org/blog/?p=13958][A Sma
 ** Merriam-Webster Thesaurus
 
 #+begin_src emacs-lisp
-(use-package mw-thesaurus
-  :bind ("C-M-s-t" . mw-thesaurus-lookup-dwim)
-  :hook (mw-thesaurus-mode . variable-pitch-mode)
-  :config
-  ;; window on the right side
-  (add-to-list
-   'display-buffer-alist
-   `(,mw-thesaurus-buffer-name
-     (display-buffer-reuse-window
-      display-buffer-in-direction)
-     (direction . right)
-     (window . root)
-     (window-width . 0.3))))
+  (use-package mw-thesaurus
+    :bind ("C-M-s-t" . mw-thesaurus-lookup-dwim)
+    :hook (mw-thesaurus-mode . variable-pitch-mode)
+    :config
+    ;; window on the right side
+    (add-to-list
+     'display-buffer-alist
+     `(,mw-thesaurus-buffer-name
+       (display-buffer-reuse-window
+	display-buffer-in-direction)
+       (direction . right)
+       (window . root)
+       (window-width . 0.3))))
 #+end_src
 
 ** Shrink Whitespace
@@ -2265,68 +2279,68 @@ For word counts.
 ** Org Settings
 
 #+begin_src emacs-lisp
-    (use-package org
-      :init
-      ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
-      (setq org-directory rr-org-dir)
-      :config
-      (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
-      (setq org-list-allow-alphabetical t)
-      (setq org-highlight-latex-and-related '(latex script entities))
-      (setq org-startup-indented nil)
-      (setq org-adapt-indentation nil)
-      (setq org-hide-leading-stars nil)
-      (setq org-hide-emphasis-markers t)
-      (setq org-list-indent-offset 2)
-      (setq org-use-speed-commands t)
+  (use-package org
+    :init
+    ;; (setq org-directory "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/org/")
+    (setq org-directory rr-org-dir)
+    :config
+    (setq org-modules '(org-id org-attach)) ;; Recommended by Boris
+    (setq org-list-allow-alphabetical t)
+    (setq org-highlight-latex-and-related '(latex script entities))
+    (setq org-startup-indented nil)
+    (setq org-adapt-indentation nil)
+    (setq org-hide-leading-stars nil)
+    (setq org-hide-emphasis-markers t)
+    (setq org-list-indent-offset 2)
+    (setq org-use-speed-commands t)
 
-      (setq org-deadline-warning-days 1)
+    (setq org-deadline-warning-days 1)
 
-      ;; Hide drawers
-      (setopt org-cycle-hide-drawer-startup t)
-      (setopt org-startup-folded 'nofold)
+    ;; Hide drawers
+    (setopt org-cycle-hide-drawer-startup t)
+    (setopt org-startup-folded 'nofold)
 
-      (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
-      (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-1 nil :height 1.3 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-2 nil :height 1.2 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-3 nil :height 1.1 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-4 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-5 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-6 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-7 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
+    (set-face-attribute 'org-level-8 nil :height 1.0 :weight 'bold :inherit 'fixed-pitch)
 
-      ;; Make the document title a bit bigger
-      (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
+    ;; Make the document title a bit bigger
+    (set-face-attribute 'org-document-title nil :weight 'bold :height 1.5)
 
-      ;; Make LaTeX previews larger.
-      (plist-put org-format-latex-options :scale 1.5)
+    ;; Make LaTeX previews larger.
+    (plist-put org-format-latex-options :scale 1.5)
 
-      ;; (setq org-support-shift-select t)
-      (setq org-special-ctrl-a/e t)
-      ;; (setq org-footnote-section nil)
-      (setq org-html-validation-link nil)
-      (setq org-time-stamp-rounding-minutes '(0 15))
-      (setq org-log-done t)
-      (setq org-todo-keyword-faces
-	      '(("DONE" . "green4") ("TODO" . org-warning)))
-      (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
-      ;; (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
-      (setq org-log-into-drawer t)
-      (setq org-agenda-start-on-weekday nil)
-      (setq org-agenda-window-setup 'current-window)
-      (setq org-link-frame-setup
-	      '((vm . vm-visit-folder-other-frame)
+    ;; (setq org-support-shift-select t)
+    (setq org-special-ctrl-a/e t)
+    ;; (setq org-footnote-section nil)
+    (setq org-html-validation-link nil)
+    (setq org-time-stamp-rounding-minutes '(0 15))
+    (setq org-log-done t)
+    (setq org-todo-keyword-faces
+	  '(("DONE" . "green4") ("TODO" . org-warning)))
+    (setq org-agenda-files '("/Users/rlridenour/Library/Mobile Documents/iCloud~com~appsonthemove~beorg/Documents/org/"))
+    ;; (setq org-agenda-files (setq org-agenda-files (list rr-agenda-dir "/Users/rlridenour/Library/Mobile Documents/com~apple~CloudDocs/apple-calendar/apple-calendar.org")))
+    (setq org-log-into-drawer t)
+    (setq org-agenda-start-on-weekday nil)
+    (setq org-agenda-window-setup 'current-window)
+    (setq org-link-frame-setup
+	  '((vm . vm-visit-folder-other-frame)
 	    (vm-imap . vm-visit-imap-folder-other-frame)
 	    (gnus . org-gnus-no-new-news)
 	    (file . find-file)
 	    (wl . wl-other-frame)))
-      (require 'org-tempo)
-      ;; Open directory links in Dired.
-      (add-to-list 'org-file-apps '(directory . emacs))
-      :bind
-  ("C-c a" . org-agenda)
-  ("C-c c" . org-capture)
-      )
+    (require 'org-tempo)
+    ;; Open directory links in Dired.
+    (add-to-list 'org-file-apps '(directory . emacs))
+    :bind
+    ("C-c a" . org-agenda)
+    ("C-c c" . org-capture)
+    )
 #+end_src
 
 Add markdown export
@@ -2347,10 +2361,10 @@ Use variable pitch mode in Org and Markdown modes. Toggle with ~C-M-S-s-v~, boun
 Prevent electric-pair from adding ">" when using structure block shortcuts
 
 #+begin_src emacs-lisp
-(add-hook 'org-mode-hook
-  (lambda ()
-    (setq-local electric-pair-inhibit-predicate
-      (lambda (c) (if (char-equal c ?<) t (electric-pair-default-inhibit c))))))
+  (add-hook 'org-mode-hook
+	(lambda ()
+	  (setq-local electric-pair-inhibit-predicate
+		    (lambda (c) (if (char-equal c ?<) t (electric-pair-default-inhibit c))))))
 #+end_src
 
 Word count in Org files, ignoring heading and comment lines. From [[https://chrismaiorana.com/summer-productivity-reset-emacs-functions/][Summer Productivity Reset: Emacs functions to streamline your writing workflow - The Daily Macro]]
@@ -2426,7 +2440,7 @@ Convert Org mode to Markdown
 
   (defun my-org-insert-src-template ()
     "Surround region in #+begin_src/#+end_src.
-  Uses `language-detection-string' to guess language."
+    Uses `language-detection-string' to guess language."
     (interactive)
     (let* ((str (buffer-substring-no-properties (region-beginning) (region-end)))
 	   (lang (and (require 'language-detection)
@@ -2437,8 +2451,8 @@ Convert Org mode to Markdown
 	  (goto-char (line-end-position))
 	  (insert (format "%s" lang))))))
 
-;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
-;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
+  ;;  (keymap-set embark-region-map "q" #'my-org-insert-quote-template)
+  ;;  (keymap-set embark-region-map "s" #'my-org-insert-src-template) ;; overrides info-lookup
 #+end_src
 
 ** Org Word Count
@@ -2448,38 +2462,38 @@ Add =[0w]= to a heading, then =M-x my/org-update-word-count-cookies= from anywhe
 From [[https://www.reddit.com/r/orgmode/comments/1xmnt5c/word_counting_cookies/?%24deep_link=true&correlation_id=ea361d6c-054c-473b-a725-bcb9a14cde72&post_fullname=t3_1xmnt5c&post_index=7&ref=email_digest&ref_campaign=email_digest&ref_source=email&target_user=okphil&%243p=e_as&_branch_match_id=1346396330329104972&_branch_referrer=H4sIAAAAAAAAA22QS27DMAxET8PskjSUP2iBoChg%2BAI9gCBLtCPEEgVKhrPq2Qv1t%2Bp2Hmc4mFspKb%2Bcz0LO%2BXIyKZ1WH%2B9nlV4BG5WupE0%2BADYsfvHRrHqT9XqrLlBvgCPguO%2F76cdvOQCOAjiyLIEdAY6WQ6BYMuB4eYRYWls9LE5b3mLxcdGW%2Be6pXoAaAVtsHFHStQmoochGgJ1lEVpN8Ry1d6AGMqq7uM4en9rGHpteTUfTY3uc7PRsLo111CNglzgXPW%2FrGk2gGqf0X49v6KOjB6ihB%2ByE5hodjF%2B18wvl8i1qa0Iyfon%2F08ybWPplgF0xslDRWyYBNfA93b7krQRtORaKBdRQvx8%2BhGYSqTtMwnsmub6b2Yj%2FBMUWEJecAQAA][Word counting cookies : r/orgmode]]
 
 #+begin_src emacs-lisp
-(defun my/org-word-count-in-subtree ()
-  "Count words in subtree at point."
-  (save-excursion
-    (org-back-to-heading t)
-    (let ((start (line-beginning-position 2))
-	  (end (save-excursion (org-end-of-subtree t t) (point))))
-      (count-words start end))))
+  (defun my/org-word-count-in-subtree ()
+    "Count words in subtree at point."
+    (save-excursion
+      (org-back-to-heading t)
+      (let ((start (line-beginning-position 2))
+	    (end (save-excursion (org-end-of-subtree t t) (point))))
+	(count-words start end))))
 
-(defun my/org-update-word-count-cookies ()
-  "Search and update the nearest enclosing [Nw] word count cookie.
-Returns the updated word count if cookie found, returns nil otherwise."
-  (interactive)
-  (save-excursion
-    (ignore-errors (org-back-to-heading t))
-    (catch 'done
-      (while (org-at-heading-p)
-	(when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
-	  (let* ((cookie-start (match-beginning 0))
-		 (cookie-end   (match-end 0))
-		 (wc           (my/org-word-count-in-subtree)))
-	    (goto-char cookie-start)
-	    (delete-region cookie-start cookie-end)
-	    (insert (format "[%dw]" wc)))
-	  (throw 'done t))
-	(unless (org-up-heading-safe)
-	  (throw 'done nil))))))
+  (defun my/org-update-word-count-cookies ()
+    "Search and update the nearest enclosing [Nw] word count cookie.
+  Returns the updated word count if cookie found, returns nil otherwise."
+    (interactive)
+    (save-excursion
+      (ignore-errors (org-back-to-heading t))
+      (catch 'done
+	(while (org-at-heading-p)
+	  (when (re-search-forward "\\[[0-9]*w\\]" (line-end-position) t)
+	    (let* ((cookie-start (match-beginning 0))
+		   (cookie-end   (match-end 0))
+		   (wc           (my/org-word-count-in-subtree)))
+	      (goto-char cookie-start)
+	      (delete-region cookie-start cookie-end)
+	      (insert (format "[%dw]" wc)))
+	    (throw 'done t))
+	  (unless (org-up-heading-safe)
+	    (throw 'done nil))))))
 
-;; (add-hook 'org-mode-hook
-;;           (lambda ()
-;;             (add-hook 'org-ctrl-c-ctrl-c-hook
-;;                       #'my/org-update-word-count-cookies
-;;                       nil t)))
+  ;; (add-hook 'org-mode-hook
+  ;;           (lambda ()
+  ;;             (add-hook 'org-ctrl-c-ctrl-c-hook
+  ;;                       #'my/org-update-word-count-cookies
+  ;;                       nil t)))
 #+end_src
 
 ** Valign
@@ -2487,8 +2501,8 @@ Returns the updated word count if cookie found, returns nil otherwise."
 This fixes alignment problems in Org tables that have hidden emphasis markers.
 
 #+begin_src emacs-lisp
-(use-package valign
-  :hook (org-mode . valign-mode))
+  (use-package valign
+    :hook (org-mode . valign-mode))
 #+end_src
 
 ** Org Appear
@@ -2581,15 +2595,15 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
 #+end_src
 
 #+begin_src emacs-lisp
-    ;; (setq org-latex-pdf-process '("arara %f"))
-    (setq org-latex-pdf-process '("mkl %f"))
+  ;; (setq org-latex-pdf-process '("arara %f"))
+  (setq org-latex-pdf-process '("mkl %f"))
 
-    (defun rlr/org-mkpdf ()
-      "Make PDF with pdf latexmk."
-      (interactive)
-      (save-buffer)
-      (org-latex-export-to-latex)
-      (async-shell-command-no-window (concat "mkp " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
+  (defun rlr/org-mkpdf ()
+    "Make PDF with pdf latexmk."
+    (interactive)
+    (save-buffer)
+    (org-latex-export-to-latex)
+    (async-shell-command-no-window (concat "mkp " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
 
   (defun rlr/org-open-pdf ()
     "Open the PDF matching the current Org buffer in the background.
@@ -2613,29 +2627,29 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
       (async-shell-command-no-window
        (concat "open -g " (shell-quote-argument (expand-file-name pdf dir))))))
 
-      (defun rlr/org-goto-pdf ()
-      "View PDF with default viewer."
-      (interactive)
-      (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
+  (defun rlr/org-goto-pdf ()
+    "View PDF with default viewer."
+    (interactive)
+    (async-shell-command-no-window (concat "open " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "pdf"))))))
 
-    (defun rlr/org-mklua ()
-      "Make PDF with lua latexmk."
-      (interactive)
-      (save-buffer)
-      (org-latex-export-to-latex)
-      (async-shell-command-no-window (concat "mkl " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
+  (defun rlr/org-mklua ()
+    "Make PDF with lua latexmk."
+    (interactive)
+    (save-buffer)
+    (org-latex-export-to-latex)
+    (async-shell-command-no-window (concat "mkl " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "tex"))))))
 
-    (defun rlr/org-arara ()
-      "Make PDF with Arara."
-      (interactive)
-      (save-buffer)
-      (org-arara-export-to-latex)
-      (async-shell-command-no-window (concat "mkarara " (shell-quote-argument(file-name-sans-extension (buffer-file-name)))".tex")))
+  (defun rlr/org-arara ()
+    "Make PDF with Arara."
+    (interactive)
+    (save-buffer)
+    (org-arara-export-to-latex)
+    (async-shell-command-no-window (concat "mkarara " (shell-quote-argument(file-name-sans-extension (buffer-file-name)))".tex")))
 
-    (defun rlr/org-date ()
-      "Update existing date: timestamp on a Hugo post."
-      (interactive)
-      (save-excursion (
+  (defun rlr/org-date ()
+    "Update existing date: timestamp on a Hugo post."
+    (interactive)
+    (save-excursion (
 		     goto-char 1)
 		    (re-search-forward "^#\\+date:")
 		    (let ((beg (point)))
@@ -2658,7 +2672,7 @@ Use [[https://math.nist.gov/~BMiller/LaTeXML/ussage.html][latexml]] to export la
 Use my custom exporter, ox-rlr-typst.
 
 #+begin_src emacs-lisp
-(require 'ox-rlr-typst)
+  (require 'ox-rlr-typst)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -2704,7 +2718,7 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
       (let ((proc (start-process "typst-watch" buf-name "typst" "watch" typst-file)))
 	(puthash org-file proc rlr/org-rlr-typst-watch-processes)
 	(set-process-sentinel proc
-			(lambda (p _event)
+			      (lambda (p _event)
 			(when (memq (process-status p) '(exit signal))
 			  (remhash org-file rlr/org-rlr-typst-watch-processes)
 			  (message "typst watch ended for %s" typst-file))))
@@ -2770,19 +2784,19 @@ This exports the Org file to Typst, starts typst-watch, opens the PDF, then expo
 Export exam data files to Typst
 
 #+begin_src emacs-lisp
-(require 'ox-exam)
+  (require 'ox-exam)
 #+end_src
 
 ** Citations
 
 #+begin_src emacs-lisp
-(use-package oc
-  :ensure nil
-  :after org
-  :config
-  (require 'oc-csl)
-  (setq org-cite-csl-styles-dir (expand-file-name "~/.config/emacs/styles/"))
-  (setq org-cite-export-processors '((t csl "chicago-author-date.csl"))))
+  (use-package oc
+    :ensure nil
+    :after org
+    :config
+    (require 'oc-csl)
+    (setq org-cite-csl-styles-dir (expand-file-name "~/.config/emacs/styles/"))
+    (setq org-cite-export-processors '((t csl "chicago-author-date.csl"))))
 #+end_src
 
 ** Org Auto Tangle
@@ -2799,21 +2813,21 @@ Use ~org-auto-tangle~ to generate ~early-init.el~ and ~init.el~ whenever ~README
 #+begin_src emacs-lisp
   ;; Org-capture
   (setq org-capture-templates
-      `(("t" "Todo" entry
-	 (file+headline ,(concat rr-agenda-dir "tasks.org") "Inbox")
-	 "** TODO %?\n  %i\n  %a")
-	("e" "Event" entry
-	 (file+headline ,(concat rr-agenda-dir "events.org") "Future")
-	 "** %? %T")
-	("b" "Bookmark" entry
-	 (file+headline ,(concat rr-org-dir "bookmarks.org") "Inbox")
-	 "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-	("c" "Quick note" entry
-	 (file ,(concat rr-notes-dir "quick-notes.org"))
-	 "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
-	("j" "Journelly Entry" entry
-	 (file ,rr-journelly-file)
-	 "* %U @ -\n%?" :prepend t)))
+	`(("t" "Todo" entry
+	   (file+headline ,(concat rr-agenda-dir "tasks.org") "Inbox")
+	   "** TODO %?\n  %i\n  %a")
+	  ("e" "Event" entry
+	   (file+headline ,(concat rr-agenda-dir "events.org") "Future")
+	   "** %? %T")
+	  ("b" "Bookmark" entry
+	   (file+headline ,(concat rr-org-dir "bookmarks.org") "Inbox")
+	   "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+	  ("c" "Quick note" entry
+	   (file ,(concat rr-notes-dir "quick-notes.org"))
+	   "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n" :empty-lines 1)
+	  ("j" "Journelly Entry" entry
+	   (file ,rr-journelly-file)
+	   "* %U @ -\n%?" :prepend t)))
 
   (with-eval-after-load 'org-capture
     (add-to-list 'org-capture-templates
@@ -3001,7 +3015,7 @@ Use Emacs appointment system for notifications.
 Update apple-calendar.org
 
 #+begin_src emacs-lisp
-(run-with-timer 0 900 #'start-process "apple-cal" nil "/usr/bin/perl" (expand-file-name "~/bin/apple-cal-to-org.pl"))
+  (run-with-timer 0 900 #'start-process "apple-cal" nil "/usr/bin/perl" (expand-file-name "~/bin/apple-cal-to-org.pl"))
 #+end_src
 
 ** Org Contrib
@@ -3164,18 +3178,18 @@ Update apple-calendar.org
 Convert region from "LastName, FirstName" to "FirstName LastName".
 
 #+begin_src emacs-lisp
-(defun rlr/swap-lastname-firstname-in-region (start end)
-  "Swap \"LastName, FirstName\" to \"FirstName LastName\" for each line in region."
-  (interactive "r")
-  (save-excursion
-    (save-match-data
-      (goto-char start)
-      (let ((end-marker (copy-marker end)))
-	(while (< (point) end-marker)
-	  (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
-	    (replace-match "\\2 \\1" nil nil))
-	  (forward-line 1))
-	(set-marker end-marker nil)))))
+  (defun rlr/swap-lastname-firstname-in-region (start end)
+    "Swap \"LastName, FirstName\" to \"FirstName LastName\" for each line in region."
+    (interactive "r")
+    (save-excursion
+      (save-match-data
+	(goto-char start)
+	(let ((end-marker (copy-marker end)))
+	  (while (< (point) end-marker)
+	    (when (looking-at "^\\([^,\n]+\\), *\\([^\n]+\\)$")
+	      (replace-match "\\2 \\1" nil nil))
+	    (forward-line 1))
+	  (set-marker end-marker nil)))))
 #+end_src
 
 Create Typst attendance sheet.
@@ -3217,45 +3231,45 @@ Create Typst attendance sheet.
 For converting simple org mode list quiz questions to the lisp format.
 
 #+begin_src emacs-lisp
-(require 'org-mcq-to-lisp)
+  (require 'org-mcq-to-lisp)
 #+end_src
 
 Tools for converting Beamer to Mosaic.
 
 #+begin_src emacs-lisp
-(defun rlr/org-beamer-notes-to-block ()
-  "Convert all Beamer note subtrees into #+begin_note/#+end_note blocks.
-Any heading with :BEAMER_ENV: note in its property drawer, at any
-level, has its heading line and property drawer removed, and its
-body content wrapped in a #+begin_note ... #+end_note block."
-  (interactive)
-  (org-with-wide-buffer
-   (let ((markers (org-map-entries (lambda () (point-marker))
-				    "BEAMER_ENV=\"note\"|BEAMER_ENV=\"noteNH\"")))
-     (dolist (m markers)
-       (goto-char m)
-       (org-back-to-heading t)
-       (let ((heading-start (point-marker))
-	     (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
-	 (goto-char heading-start)
-	 (forward-line 1)
-	 (when (looking-at-p "^[ \t]*:PROPERTIES:")
-	   (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
-	 ;; skip any blank lines before the content
-	 (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
-	   (forward-line 1))
-	 (delete-region heading-start (point))
-	 (goto-char heading-start)
-	 (insert "#+begin_note\n")
-	 ;; find the real end of content, trimming trailing blank lines
-	 (goto-char subtree-end)
-	 (skip-chars-backward " \t\n")
-	 (forward-line 1)
-	 (delete-region (point) subtree-end)
-	 (insert "#+end_note\n\n")
-	 (set-marker heading-start nil)
-	 (set-marker subtree-end nil))
-       (set-marker m nil)))))
+  (defun rlr/org-beamer-notes-to-block ()
+    "Convert all Beamer note subtrees into #+begin_note/#+end_note blocks.
+  Any heading with :BEAMER_ENV: note in its property drawer, at any
+  level, has its heading line and property drawer removed, and its
+  body content wrapped in a #+begin_note ... #+end_note block."
+    (interactive)
+    (org-with-wide-buffer
+     (let ((markers (org-map-entries (lambda () (point-marker))
+				     "BEAMER_ENV=\"note\"|BEAMER_ENV=\"noteNH\"")))
+       (dolist (m markers)
+	 (goto-char m)
+	 (org-back-to-heading t)
+	 (let ((heading-start (point-marker))
+	       (subtree-end (save-excursion (org-end-of-subtree t t) (point-marker))))
+	   (goto-char heading-start)
+	   (forward-line 1)
+	   (when (looking-at-p "^[ \t]*:PROPERTIES:")
+	     (re-search-forward "^[ \t]*:END:[ \t]*\n" subtree-end t))
+	   ;; skip any blank lines before the content
+	   (while (and (< (point) subtree-end) (looking-at-p "^[ \t]*$"))
+	     (forward-line 1))
+	   (delete-region heading-start (point))
+	   (goto-char heading-start)
+	   (insert "#+begin_note\n")
+	   ;; find the real end of content, trimming trailing blank lines
+	   (goto-char subtree-end)
+	   (skip-chars-backward " \t\n")
+	   (forward-line 1)
+	   (delete-region (point) subtree-end)
+	   (insert "#+end_note\n\n")
+	   (set-marker heading-start nil)
+	   (set-marker subtree-end nil))
+	 (set-marker m nil)))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3294,19 +3308,19 @@ body content wrapped in a #+begin_note ... #+end_note block."
 #+end_src
 
 #+begin_src emacs-lisp
-(defun my/convert-huge-to-typst ()
-  "Convert \\Huge{...} inside #+begin_center blocks to Typst export blocks."
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward
-	    "^[ \t]*\\\\Huge{\\([^}]+\\)}"
-	    nil t)
-      (let ((text (match-string 1)))
-	(replace-match
-	 (concat "#+BEGIN_EXPORT typst\n"
-		 "#text(size: 36pt)[*" text "*]\n"
-		 "#+END_EXPORT"))))))
+  (defun my/convert-huge-to-typst ()
+    "Convert \\Huge{...} inside #+begin_center blocks to Typst export blocks."
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward
+	      "^[ \t]*\\\\Huge{\\([^}]+\\)}"
+	      nil t)
+	(let ((text (match-string 1)))
+	  (replace-match
+	   (concat "#+BEGIN_EXPORT typst\n"
+		   "#text(size: 36pt)[*" text "*]\n"
+		   "#+END_EXPORT"))))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -3318,11 +3332,11 @@ body content wrapped in a #+begin_note ... #+end_note block."
 #+end_src
 
 #+begin_src emacs-lisp
-    (defun kill-handoutnote ()
-      (interactive)
+  (defun kill-handoutnote ()
+    (interactive)
 
-  (end-of-line)
-  (delete-region (region-beginning) (region-end)))
+    (end-of-line)
+    (delete-region (region-beginning) (region-end)))
 #+end_src
 
 *** Exams
@@ -3416,81 +3430,81 @@ From [[https://kitchingroup.cheme.cmu.edu/blog/2016/06/16/Copy-formatted-org-mod
 View Org file in the default browser.
 
 #+begin_src emacs-lisp
-(defvar rlr/org-preview-css "
-<style>
-  :root { color-scheme: light dark; }
-  body {
-    max-width: 40rem;
-    margin: 3rem auto;
-    padding: 0 1.25rem;
-    font-family: -apple-system, BlinkMacSystemFont, 'Iowan Old Style',
-		 'Palatino Linotype', Georgia, serif;
-    font-size: 1.125rem;
-    line-height: 1.65;
-    color: #24292f;
-    background: #fdfdfc;
-    text-rendering: optimizeLegibility;
-    hyphens: auto;
-  }
-  h1, h2, h3, h4 {
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    line-height: 1.25;
-    margin-top: 2.25em;
-    color: #14181c;
-  }
-  h1 { font-size: 1.9rem; margin-bottom: 0.2em; }
-  h2 { font-size: 1.45rem; }
-  h3 { font-size: 1.2rem; }
-  .title { text-align: left; margin-bottom: 2rem; }
-  #table-of-contents { font-size: 0.95rem; }
-  a { color: #0b5cad; text-underline-offset: 2px; }
-  blockquote {
-    margin: 1.5em 0; padding: 0.25em 0 0.25em 1.25em;
-    border-left: 3px solid #d0d7de; color: #4a5058; font-style: italic;
-  }
-  pre, code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.9rem; }
-  pre {
-    background: #f4f4f2; padding: 0.9em 1.1em;
-    border-radius: 6px; overflow-x: auto; line-height: 1.45;
-  }
-  code { background: #f0f0ee; padding: 0.1em 0.3em; border-radius: 3px; }
-  pre code { background: none; padding: 0; }
-  table { border-collapse: collapse; margin: 1.5em 0; font-size: 0.95rem; }
-  th, td { border: 1px solid #d0d7de; padding: 0.4em 0.7em; text-align: left; }
-  th { background: #f4f4f2; }
-  hr { border: none; border-top: 1px solid #d8d8d4; margin: 2.5em 0; }
-  .footpara { display: inline; }
-  #postamble { margin-top: 3rem; font-size: 0.85rem; color: #6a707a; }
-  @media (prefers-color-scheme: dark) {
-    body { color: #d6d3cd; background: #16181a; }
-    h1, h2, h3, h4 { color: #f0ede8; }
-    a { color: #6cb3f5; }
-    blockquote { border-left-color: #3a3f45; color: #a8a49d; }
-    pre { background: #1e2124; }
-    code { background: #24282c; }
-    th, td { border-color: #3a3f45; }
-    th { background: #1e2124; }
-    hr { border-top-color: #2e3236; }
-  }
-</style>"
-  "Stylesheet injected into throwaway HTML previews of Org buffers.")
+  (defvar rlr/org-preview-css "
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      max-width: 40rem;
+      margin: 3rem auto;
+      padding: 0 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Iowan Old Style',
+		   'Palatino Linotype', Georgia, serif;
+      font-size: 1.125rem;
+      line-height: 1.65;
+      color: #24292f;
+      background: #fdfdfc;
+      text-rendering: optimizeLegibility;
+      hyphens: auto;
+    }
+    h1, h2, h3, h4 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      line-height: 1.25;
+      margin-top: 2.25em;
+      color: #14181c;
+    }
+    h1 { font-size: 1.9rem; margin-bottom: 0.2em; }
+    h2 { font-size: 1.45rem; }
+    h3 { font-size: 1.2rem; }
+    .title { text-align: left; margin-bottom: 2rem; }
+    #table-of-contents { font-size: 0.95rem; }
+    a { color: #0b5cad; text-underline-offset: 2px; }
+    blockquote {
+      margin: 1.5em 0; padding: 0.25em 0 0.25em 1.25em;
+      border-left: 3px solid #d0d7de; color: #4a5058; font-style: italic;
+    }
+    pre, code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.9rem; }
+    pre {
+      background: #f4f4f2; padding: 0.9em 1.1em;
+      border-radius: 6px; overflow-x: auto; line-height: 1.45;
+    }
+    code { background: #f0f0ee; padding: 0.1em 0.3em; border-radius: 3px; }
+    pre code { background: none; padding: 0; }
+    table { border-collapse: collapse; margin: 1.5em 0; font-size: 0.95rem; }
+    th, td { border: 1px solid #d0d7de; padding: 0.4em 0.7em; text-align: left; }
+    th { background: #f4f4f2; }
+    hr { border: none; border-top: 1px solid #d8d8d4; margin: 2.5em 0; }
+    .footpara { display: inline; }
+    #postamble { margin-top: 3rem; font-size: 0.85rem; color: #6a707a; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #d6d3cd; background: #16181a; }
+      h1, h2, h3, h4 { color: #f0ede8; }
+      a { color: #6cb3f5; }
+      blockquote { border-left-color: #3a3f45; color: #a8a49d; }
+      pre { background: #1e2124; }
+      code { background: #24282c; }
+      th, td { border-color: #3a3f45; }
+      th { background: #1e2124; }
+      hr { border-top-color: #2e3236; }
+    }
+  </style>"
+    "Stylesheet injected into throwaway HTML previews of Org buffers.")
 
-(defun rlr/org-export-html-to-browser ()
-  "Export the current Org buffer to a temporary HTML file and open it.
-The file lives in the system temp directory and is deleted when Emacs exits."
-  (interactive)
-  (unless (derived-mode-p 'org-mode)
-    (user-error "Not in an Org buffer"))
-  (let* ((tmp (make-temp-file "org-preview-" nil ".html"))
-	 (org-export-in-background nil)
-	 (org-html-head-include-default-style nil)
-	 (org-html-head-include-scripts nil)
-	 (org-html-head rlr/org-preview-css)
-	 (org-html-validation-link nil))
-    (org-export-to-file 'html tmp)
-    (add-hook 'kill-emacs-hook
-	      (lambda () (ignore-errors (delete-file tmp))))
-    (browse-url-of-file tmp)))
+  (defun rlr/org-export-html-to-browser ()
+    "Export the current Org buffer to a temporary HTML file and open it.
+  The file lives in the system temp directory and is deleted when Emacs exits."
+    (interactive)
+    (unless (derived-mode-p 'org-mode)
+      (user-error "Not in an Org buffer"))
+    (let* ((tmp (make-temp-file "org-preview-" nil ".html"))
+	   (org-export-in-background nil)
+	   (org-html-head-include-default-style nil)
+	   (org-html-head-include-scripts nil)
+	   (org-html-head rlr/org-preview-css)
+	   (org-html-validation-link nil))
+      (org-export-to-file 'html tmp)
+      (add-hook 'kill-emacs-hook
+		(lambda () (ignore-errors (delete-file tmp))))
+      (browse-url-of-file tmp)))
 #+end_src
 
 ** Org Mode Hydra
@@ -3559,12 +3573,12 @@ The file lives in the system temp directory and is deleted when Emacs exits."
 
 ** Math-Delimiters
 #+begin_src emacs-lisp
-(use-package math-delimiters
-  :bind
-  ;; (:map LaTeX-mode-map
-  ;;       ("$" . math-delimiters-insert))
-  (:map org-mode-map
-	("$" . math-delimiters-insert)))
+  (use-package math-delimiters
+    :bind
+    ;; (:map LaTeX-mode-map
+    ;;       ("$" . math-delimiters-insert))
+    (:map org-mode-map
+	  ("$" . math-delimiters-insert)))
 #+end_src
 
 ** LaTeX Build Functions
@@ -3710,10 +3724,10 @@ Delete handout notes from touying files.
 
   (defun delete-all-handoutnotes ()
     (interactive)
-  (condition-case nil
-      (while t
-	(delete-handoutnote))
-    (error nil)))
+    (condition-case nil
+	(while t
+	  (delete-handoutnote))
+      (error nil)))
 #+end_src
 
 ** Mosaic
@@ -3735,92 +3749,92 @@ Create PDF with Mosaic.
 Export Mosaic file and start Typst watch.
 
 #+begin_src emacs-lisp
-(defvar rlr/org-rlr-mosaic-watch-processes (make-hash-table :test 'equal)
-  "Hash table mapping org file paths to their Mosaic typst watch processes.")
+  (defvar rlr/org-rlr-mosaic-watch-processes (make-hash-table :test 'equal)
+    "Hash table mapping org file paths to their Mosaic typst watch processes.")
 
-(defun rlr/org-rlr-mosaic-export-and-watch ()
-  "Export current org buffer to Mosaic Typst, start `typst watch', and re-export on save.
-Subsequent saves of the org file will trigger a fresh Mosaic export.
-Calling this again on an already-watched buffer stops the old watcher first."
-  (interactive)
-  (unless (derived-mode-p 'org-mode)
-    (user-error "Not in an org-mode buffer"))
-  (unless (require 'ox-rlr-mosaic nil t)
-    (user-error "ox-rlr-mosaic is not available; please install it"))
+  (defun rlr/org-rlr-mosaic-export-and-watch ()
+    "Export current org buffer to Mosaic Typst, start `typst watch', and re-export on save.
+  Subsequent saves of the org file will trigger a fresh Mosaic export.
+  Calling this again on an already-watched buffer stops the old watcher first."
+    (interactive)
+    (unless (derived-mode-p 'org-mode)
+      (user-error "Not in an org-mode buffer"))
+    (unless (require 'ox-rlr-mosaic nil t)
+      (user-error "ox-rlr-mosaic is not available; please install it"))
 
-  (let* ((org-file (buffer-file-name))
-	 (typst-file (concat (file-name-sans-extension org-file) ".typ"))
-	 (pdf-file (concat (file-name-sans-extension org-file) ".pdf"))
-	 (buf-name (format "*mosaic-watch: %s*"
-			   (file-name-nondirectory typst-file))))
+    (let* ((org-file (buffer-file-name))
+	   (typst-file (concat (file-name-sans-extension org-file) ".typ"))
+	   (pdf-file (concat (file-name-sans-extension org-file) ".pdf"))
+	   (buf-name (format "*mosaic-watch: %s*"
+			     (file-name-nondirectory typst-file))))
 
-    ;; Kill any existing watcher for this file
-    (rlr/org-rlr-mosaic-stop-watch org-file)
+      ;; Kill any existing watcher for this file
+      (rlr/org-rlr-mosaic-stop-watch org-file)
 
-    ;; Initial export
-    (message "Exporting %s → %s..." (file-name-nondirectory org-file)
-	     (file-name-nondirectory typst-file))
-    (org-rlr-mosaic-export-to-typst)
+      ;; Initial export
+      (message "Exporting %s → %s..." (file-name-nondirectory org-file)
+	       (file-name-nondirectory typst-file))
+      (org-rlr-mosaic-export-to-typst)
 
-    ;; Start typst watch in a dedicated buffer, from the deck's own directory
-    ;; so that `--root .' resolves relative image paths the same way
-    ;; `org-rlr-mosaic-compile' does.
-    (let* ((default-directory (file-name-directory typst-file))
-	   (proc (apply #'start-process "mosaic-watch" buf-name
-			org-rlr-mosaic-typst-command
-			(append (list "watch")
-				org-rlr-mosaic-typst-compile-options
-				(list (file-relative-name typst-file)
-				      (file-relative-name pdf-file))))))
-      (puthash org-file proc rlr/org-rlr-mosaic-watch-processes)
-      (set-process-sentinel proc
-			    (lambda (p _event)
-			      (when (memq (process-status p) '(exit signal))
-				(remhash org-file rlr/org-rlr-mosaic-watch-processes)
-				(message "typst watch ended for %s" typst-file))))
-      (message "typst watch started → %s" typst-file))
+      ;; Start typst watch in a dedicated buffer, from the deck's own directory
+      ;; so that `--root .' resolves relative image paths the same way
+      ;; `org-rlr-mosaic-compile' does.
+      (let* ((default-directory (file-name-directory typst-file))
+	     (proc (apply #'start-process "mosaic-watch" buf-name
+			  org-rlr-mosaic-typst-command
+			  (append (list "watch")
+				  org-rlr-mosaic-typst-compile-options
+				  (list (file-relative-name typst-file)
+					(file-relative-name pdf-file))))))
+	(puthash org-file proc rlr/org-rlr-mosaic-watch-processes)
+	(set-process-sentinel proc
+			      (lambda (p _event)
+				(when (memq (process-status p) '(exit signal))
+				  (remhash org-file rlr/org-rlr-mosaic-watch-processes)
+				  (message "typst watch ended for %s" typst-file))))
+	(message "typst watch started → %s" typst-file))
 
-    ;; Give typst a moment to complete the first compile, then open the PDF
-    (sleep-for 1)
-    (rlr/org-open-pdf)
+      ;; Give typst a moment to complete the first compile, then open the PDF
+      (sleep-for 1)
+      (rlr/org-open-pdf)
 
-    ;; Add a buffer-local after-save hook
-    (add-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save nil t)
-    (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
+      ;; Add a buffer-local after-save hook
+      (add-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save nil t)
+      (message "Auto-export on save enabled for %s" (file-name-nondirectory org-file))))
 
-(defun rlr/org-rlr-mosaic--on-save ()
-  "Re-export the current org buffer to Mosaic Typst on save."
-  (when (and (derived-mode-p 'org-mode)
-	     (buffer-file-name)
-	     (gethash (buffer-file-name) rlr/org-rlr-mosaic-watch-processes))
-    (org-rlr-mosaic-export-to-typst)
-    (message "Re-exported %s to Mosaic Typst" (file-name-nondirectory (buffer-file-name)))))
+  (defun rlr/org-rlr-mosaic--on-save ()
+    "Re-export the current org buffer to Mosaic Typst on save."
+    (when (and (derived-mode-p 'org-mode)
+	       (buffer-file-name)
+	       (gethash (buffer-file-name) rlr/org-rlr-mosaic-watch-processes))
+      (org-rlr-mosaic-export-to-typst)
+      (message "Re-exported %s to Mosaic Typst" (file-name-nondirectory (buffer-file-name)))))
 
-(defun rlr/org-rlr-mosaic-stop-watch (&optional org-file)
-  "Stop the Mosaic typst watch process for ORG-FILE (default: current buffer)."
-  (interactive)
-  (let* ((file (or org-file (buffer-file-name)))
-	 (proc (gethash file rlr/org-rlr-mosaic-watch-processes)))
-    (when (process-live-p proc)
-      (delete-process proc)
-      (message "Stopped typst watch for %s" (file-name-nondirectory file)))
-    (remhash file rlr/org-rlr-mosaic-watch-processes)
-    (remove-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save t)))
+  (defun rlr/org-rlr-mosaic-stop-watch (&optional org-file)
+    "Stop the Mosaic typst watch process for ORG-FILE (default: current buffer)."
+    (interactive)
+    (let* ((file (or org-file (buffer-file-name)))
+	   (proc (gethash file rlr/org-rlr-mosaic-watch-processes)))
+      (when (process-live-p proc)
+	(delete-process proc)
+	(message "Stopped typst watch for %s" (file-name-nondirectory file)))
+      (remhash file rlr/org-rlr-mosaic-watch-processes)
+      (remove-hook 'after-save-hook #'rlr/org-rlr-mosaic--on-save t)))
 
-(defun rlr/org-rlr-mosaic-list-watches ()
-  "Show all active Mosaic typst watch processes."
-  (interactive)
-  (if (hash-table-empty-p rlr/org-rlr-mosaic-watch-processes)
-      (message "No active Mosaic typst watch processes.")
-    (with-current-buffer (get-buffer-create "*mosaic-watches*")
-      (erase-buffer)
-      (insert "Active Mosaic typst watch processes:\n\n")
-      (maphash (lambda (file proc)
-		 (insert (format "  %-50s [%s]\n"
-				 (file-name-nondirectory file)
-				 (process-status proc))))
-	       rlr/org-rlr-mosaic-watch-processes)
-      (display-buffer (current-buffer)))))
+  (defun rlr/org-rlr-mosaic-list-watches ()
+    "Show all active Mosaic typst watch processes."
+    (interactive)
+    (if (hash-table-empty-p rlr/org-rlr-mosaic-watch-processes)
+	(message "No active Mosaic typst watch processes.")
+      (with-current-buffer (get-buffer-create "*mosaic-watches*")
+	(erase-buffer)
+	(insert "Active Mosaic typst watch processes:\n\n")
+	(maphash (lambda (file proc)
+		   (insert (format "  %-50s [%s]\n"
+				   (file-name-nondirectory file)
+				   (process-status proc))))
+		 rlr/org-rlr-mosaic-watch-processes)
+	(display-buffer (current-buffer)))))
 #+end_src
 
 * Markdown
@@ -3836,24 +3850,24 @@ Calling this again on an already-watched buffer stops the old watcher first."
 View Markdown file in the default browser.
 
 #+begin_src emacs-lisp
-(defun rlr/markdown-export-html-to-browser ()
-  "Export the current Markdown buffer to a temporary HTML file and open it."
-  (interactive)
-  (unless (derived-mode-p 'markdown-mode 'gfm-mode)
-    (user-error "Not in a Markdown buffer"))
-  (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
-	 (html (shell-command-to-string
-		(format "pandoc --from=gfm --to=html5 %s"
-			(shell-quote-argument (buffer-file-name))))))
-    (with-temp-file tmp
-      (insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
-	      rlr/org-preview-css
-	      "</head><body>\n"
-	      html
-	      "\n</body></html>"))
-    (add-hook 'kill-emacs-hook
-	      (lambda () (ignore-errors (delete-file tmp))))
-    (browse-url-of-file tmp)))
+  (defun rlr/markdown-export-html-to-browser ()
+    "Export the current Markdown buffer to a temporary HTML file and open it."
+    (interactive)
+    (unless (derived-mode-p 'markdown-mode 'gfm-mode)
+      (user-error "Not in a Markdown buffer"))
+    (let* ((tmp (make-temp-file "md-preview-" nil ".html"))
+	   (html (shell-command-to-string
+		  (format "pandoc --from=gfm --to=html5 %s"
+			  (shell-quote-argument (buffer-file-name))))))
+      (with-temp-file tmp
+	(insert "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+		rlr/org-preview-css
+		"</head><body>\n"
+		html
+		"\n</body></html>"))
+      (add-hook 'kill-emacs-hook
+		(lambda () (ignore-errors (delete-file tmp))))
+      (browse-url-of-file tmp)))
 #+end_src
 
 * Slipshow
@@ -4030,154 +4044,154 @@ Typst only uses files in the current directory. This scans the current Org or Ty
 ** Mu4e
 
 #+begin_src emacs-lisp
-    (use-package mu4e
-      :ensure nil
-      :commands (mu4e mu4e-update-mail-and-index)
-      :bind
-      (:map mu4e-headers-mode-map
-	      ("q"  . kill-current-buffer)
-	      ("C-<tab>" . tab-next)
-	      ("g" . my-mu4e-mark-add-tag)
-	      :map mu4e-thread-mode-map
-	      ("C-<tab>" . tab-next)
-	      :map mu4e-main-mode-map
-	      ("q"  . rlr/quit-mu4e)
-	      ("u" . mu4e-update-mail-and-index)
-	      :map mu4e-view-mode-map
-	      ("," . link-hint-open-link)
-	      ("." . rlr/link-hint-open-link-in-secondary-browser)
-	      ("C-," . mu4e-sexp-at-point))
-      :after org
-      :init
-      (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
-      (defconst my/mu4e-junk-maildirs
-  '("/obu/Trash" "/obu/Junk" "/obu/Blocked"
-    "/gmail/Trash" "/gmail/[Gmail]/Trash" "/gmail/[Gmail]/Spam"
-    "/fastmail/Trash" "/fastmail/Spam"))
+  (use-package mu4e
+    :ensure nil
+    :commands (mu4e mu4e-update-mail-and-index)
+    :bind
+    (:map mu4e-headers-mode-map
+	  ("q"  . kill-current-buffer)
+	  ("C-<tab>" . tab-next)
+	  ("g" . my-mu4e-mark-add-tag)
+	  :map mu4e-thread-mode-map
+	  ("C-<tab>" . tab-next)
+	  :map mu4e-main-mode-map
+	  ("q"  . rlr/quit-mu4e)
+	  ("u" . mu4e-update-mail-and-index)
+	  :map mu4e-view-mode-map
+	  ("," . link-hint-open-link)
+	  ("." . rlr/link-hint-open-link-in-secondary-browser)
+	  ("C-," . mu4e-sexp-at-point))
+    :after org
+    :init
+    (add-to-list 'load-path "/opt/homebrew/Cellar/mu/1.14.4/share/emacs/site-lisp/mu/mu4e/")
+    (defconst my/mu4e-junk-maildirs
+      '("/obu/Trash" "/obu/Junk" "/obu/Blocked"
+	"/gmail/Trash" "/gmail/[Gmail]/Trash" "/gmail/[Gmail]/Spam"
+	"/fastmail/Trash" "/fastmail/Spam"))
 
-;; Gmail label folders that duplicate mail stored elsewhere
-(defconst my/mu4e-duplicate-maildirs
-  '("/gmail/[Gmail]/All Mail" "/gmail/[Gmail]/Important" "/gmail/[Gmail]/Starred"))
+    ;; Gmail label folders that duplicate mail stored elsewhere
+    (defconst my/mu4e-duplicate-maildirs
+      '("/gmail/[Gmail]/All Mail" "/gmail/[Gmail]/Important" "/gmail/[Gmail]/Starred"))
 
-(defconst my/mu4e-clean
-  (concat "NOT flag:trashed AND "
-	  (mapconcat (lambda (d) (format "NOT maildir:\"%s\"" d))
-		     (append my/mu4e-junk-maildirs my/mu4e-duplicate-maildirs)
-		     " AND ")))
+    (defconst my/mu4e-clean
+      (concat "NOT flag:trashed AND "
+	      (mapconcat (lambda (d) (format "NOT maildir:\"%s\"" d))
+			 (append my/mu4e-junk-maildirs my/mu4e-duplicate-maildirs)
+			 " AND ")))
 
-(defconst my/mu4e-inboxes
-  "(maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX)")
-      :config
-      (setq mail-user-agent 'mu4e-user-agent)
-      (setq mu4e-maildir "~/.maildir/")
-      (setq mu4e-get-mail-command "mbsync -a")
-      (setq mu4e-update-interval 1800) ;; update every 5 minutes
-      (setq mu4e-read-option-use-builtin nil
-	      mu4e-completing-read-function 'completing-read)
-      (setq mu4e-split-view 'horizontal)
-      (setq mu4e-index-update-error-warning nil)
-      (setq mu4e-headers-skip-duplicates  t)
-      (setq mu4e-view-show-images t)
-      (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
-      (setq mu4e-view-show-addresses t)
-      (setq mu4e-use-fancy-chars t)
-      (setq mu4e-compose-format-flowed t)
-      (setq mu4e-date-format "%y/%m/%d")
-      (setq mu4e-headers-date-format "%Y/%m/%d")
-      (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
-      (setq mu4e-change-filenames-when-moving t)
-      ;; customize the reply-quote-string
-      (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
-      ;; choose to use the formatted string
-      (setq message-citation-line-function 'message-insert-formatted-citation-line)
-      (setq mu4e-attachment-dir "~/Downloads")
-      (setq mu4e-context-policy 'pick-first)
-      (setq  mu4e-contexts (list
-				  (make-mu4e-context
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-				       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@fastmail.com")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/fastmail/Drafts")
-					     (mu4e-sent-folder  . "/fastmail/Sent")
-					     (mu4e-trash-folder  . "/fastmail/Trash")
-					     (mu4e-refile-folder  . "/fastmail/Archive")
-					     (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-default-smtp-server . "smtp.fastmail.com")
-					     (smtpmail-smtp-server  . "smtp.fastmail.com")
-					     ))
-				  (make-mu4e-context
-				   :name "obu"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-				       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
-					     (user-full-name    . "Randy Ridenour")
-					     (mu4e-drafts-folder  . "/obu/Drafts")
-					     (mu4e-sent-folder  . "/obu/Sent")
-					     (mu4e-trash-folder . "/obu/Trash")
-					     (mu4e-refile-folder  . "/obu/Archive")
-					     ;; (sendmail-program . "msmtp")
-					     (send-mail-function . smtpmail-send-it)
-					     (message-sendmail-f-is-evil . t)
-					     (message-sendmail-extra-arguments . ("--read-envelope-from"))
-					     (message-send-mail-function . message-send-mail-with-sendmail)
-					     (smtpmail-smtp-server  . "localhost")
-					     (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
-					     (smtpmail-stream-type . plain)
-					     (smtpmail-smtp-service . 1025)
-					     ))
-				  (make-mu4e-context
-				   :name "gmail"
-				   :name "fastmail"
-				   :match-func
-				   (lambda (msg)
-				     (when msg
-				       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
-				   :vars '((user-mail-address . "rlridenour@gmail.com")
-					     (user-full-name . "Randy Ridenour")
-					     (mu4e-drafts-folder . "/gmail/Drafts")
-					     (mu4e-refile-folder . "/gmail/Archive")
-					     (mu4e-sent-folder . "/gmail/Sent")
-					     (mu4e-trash-folder . "/gmail/Trash")))
-				  ))
+    (defconst my/mu4e-inboxes
+      "(maildir:/obu/INBOX OR maildir:/fastmail/INBOX OR maildir:/gmail/INBOX)")
+    :config
+    (setq mail-user-agent 'mu4e-user-agent)
+    (setq mu4e-maildir "~/.maildir/")
+    (setq mu4e-get-mail-command "mbsync -a")
+    (setq mu4e-update-interval 1800) ;; update every 5 minutes
+    (setq mu4e-read-option-use-builtin nil
+	  mu4e-completing-read-function 'completing-read)
+    (setq mu4e-split-view 'horizontal)
+    (setq mu4e-index-update-error-warning nil)
+    (setq mu4e-headers-skip-duplicates  t)
+    (setq mu4e-view-show-images t)
+    (setq shr-use-colors nil) ;; Hides the dark backgrounds that are hard to read
+    (setq mu4e-view-show-addresses t)
+    (setq mu4e-use-fancy-chars t)
+    (setq mu4e-compose-format-flowed t)
+    (setq mu4e-date-format "%y/%m/%d")
+    (setq mu4e-headers-date-format "%Y/%m/%d")
+    (setq gnus-article-date-headers '(combined-local-lapsed)) ;; Show local time in message header
+    (setq mu4e-change-filenames-when-moving t)
+    ;; customize the reply-quote-string
+    (setq message-citation-line-format "On %a %d %b %Y at %R, %f wrote:\n")
+    ;; choose to use the formatted string
+    (setq message-citation-line-function 'message-insert-formatted-citation-line)
+    (setq mu4e-attachment-dir "~/Downloads")
+    (setq mu4e-context-policy 'pick-first)
+    (setq  mu4e-contexts (list
+			  (make-mu4e-context
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@fastmail.com")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/fastmail/Drafts")
+				   (mu4e-sent-folder  . "/fastmail/Sent")
+				   (mu4e-trash-folder  . "/fastmail/Trash")
+				   (mu4e-refile-folder  . "/fastmail/Archive")
+				   (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-default-smtp-server . "smtp.fastmail.com")
+				   (smtpmail-smtp-server  . "smtp.fastmail.com")
+				   ))
+			  (make-mu4e-context
+			   :name "obu"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/obu" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "randy.ridenour@okbu.edu")
+				   (user-full-name    . "Randy Ridenour")
+				   (mu4e-drafts-folder  . "/obu/Drafts")
+				   (mu4e-sent-folder  . "/obu/Sent")
+				   (mu4e-trash-folder . "/obu/Trash")
+				   (mu4e-refile-folder  . "/obu/Archive")
+				   ;; (sendmail-program . "msmtp")
+				   (send-mail-function . smtpmail-send-it)
+				   (message-sendmail-f-is-evil . t)
+				   (message-sendmail-extra-arguments . ("--read-envelope-from"))
+				   (message-send-mail-function . message-send-mail-with-sendmail)
+				   (smtpmail-smtp-server  . "localhost")
+				   (smtpmail-smtp-user . "randy.ridenour@okbu.edu")
+				   (smtpmail-stream-type . plain)
+				   (smtpmail-smtp-service . 1025)
+				   ))
+			  (make-mu4e-context
+			   :name "gmail"
+			   :name "fastmail"
+			   :match-func
+			   (lambda (msg)
+			     (when msg
+			       (string-prefix-p "/gmail" (mu4e-message-field msg :maildir))))
+			   :vars '((user-mail-address . "rlridenour@gmail.com")
+				   (user-full-name . "Randy Ridenour")
+				   (mu4e-drafts-folder . "/gmail/Drafts")
+				   (mu4e-refile-folder . "/gmail/Archive")
+				   (mu4e-sent-folder . "/gmail/Sent")
+				   (mu4e-trash-folder . "/gmail/Trash")))
+			  ))
 
-  (setq mu4e-bookmarks
-	`((:name "Unread messages"
-	   :query ,(concat "flag:unread AND " my/mu4e-clean)
-	   :key ?b)
-	  (:name "Unread in inboxes"
-	   :query ,(concat "flag:unread AND " my/mu4e-inboxes " AND NOT flag:trashed")
-	   :key ?i)
-	  (:name "Flagged messages"
-	   :query ,(concat "flag:flagged AND " my/mu4e-clean)
-	   :key ?f)
-	  (:name "All inboxes"
-	   :query ,(concat my/mu4e-inboxes " AND NOT flag:trashed")
-	   :key ?A)
-	  (:name "Today's messages"
-	   :query ,(concat "date:today..now AND " my/mu4e-clean)
-	   :key ?t)
-	  (:name "Last 7 days"
-	   :query ,(concat "date:7d..now AND " my/mu4e-clean)
-	   :hide-unread t
-	   :key ?w)
-	  (:name "Messages with images"
-	   :query ,(concat "flag:attach AND mime:image/* AND " my/mu4e-clean)
-	   :key ?p)))
-      (setq mu4e-maildir-shortcuts
-	      '((:maildir "/obu/INBOX" :key ?u)
-	        (:maildir "/fastmail/INBOX" :key ?f)
-	        (:maildir "/gmail/INBOX" :key ?g)))
-      (require 'mu4e-transient))
+    (setq mu4e-bookmarks
+	  `((:name "Unread messages"
+		   :query ,(concat "flag:unread AND " my/mu4e-clean)
+		   :key ?b)
+	    (:name "Unread in inboxes"
+		   :query ,(concat "flag:unread AND " my/mu4e-inboxes " AND NOT flag:trashed")
+		   :key ?i)
+	    (:name "Flagged messages"
+		   :query ,(concat "flag:flagged AND " my/mu4e-clean)
+		   :key ?f)
+	    (:name "All inboxes"
+		   :query ,(concat my/mu4e-inboxes " AND NOT flag:trashed")
+		   :key ?A)
+	    (:name "Today's messages"
+		   :query ,(concat "date:today..now AND " my/mu4e-clean)
+		   :key ?t)
+	    (:name "Last 7 days"
+		   :query ,(concat "date:7d..now AND " my/mu4e-clean)
+		   :hide-unread t
+		   :key ?w)
+	    (:name "Messages with images"
+		   :query ,(concat "flag:attach AND mime:image/* AND " my/mu4e-clean)
+		   :key ?p)))
+    (setq mu4e-maildir-shortcuts
+	  '((:maildir "/obu/INBOX" :key ?u)
+	    (:maildir "/fastmail/INBOX" :key ?f)
+	    (:maildir "/gmail/INBOX" :key ?g)))
+    (require 'mu4e-transient))
 #+end_src
 
 Claude suggestions to fix crash. Added June 4, 2026
@@ -4556,16 +4570,16 @@ Open Elfeed entry in EWW
 ** Mastodon
 
 #+begin_src emacs-lisp
-(use-package mastodon
-  :config
-  (setq mastodon-instance-url "https://mastodon.social"
-	mastodon-active-user "randyridenour"))
+  (use-package mastodon
+    :config
+    (setq mastodon-instance-url "https://mastodon.social"
+	  mastodon-active-user "randyridenour"))
 #+end_src
 
 Force GPG to use the minibuffer to ask for password.
 
 #+begin_src emacs-lisp
-(setq epg-pinentry-mode 'loopback)
+  (setq epg-pinentry-mode 'loopback)
 #+end_src
 
 * HTML and Web
@@ -4581,9 +4595,9 @@ Force GPG to use the minibuffer to ask for password.
 ** CSS
 
 #+begin_src emacs-lisp
-(use-package css-ts-mode
-  :ensure nil
-  :mode ("\\.css\\'"))
+  (use-package css-ts-mode
+    :ensure nil
+    :mode ("\\.css\\'"))
 
 #+end_src
 
@@ -4600,7 +4614,7 @@ Commands for writing and publishing the blog (new draft, insert image, publish d
 #+begin_src emacs-lisp
   (use-package org-publish-rss
     :vc (:url "https://git.sr.ht/~taingram/org-publish-rss"
-	          :rev :newest)
+	      :rev :newest)
     :commands (org-publish-all)
     :config
     (setq org-publish-rss-publish-immediately t)
@@ -4689,7 +4703,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 ** Agent-Shell
 
 #+begin_src emacs-lisp
-(use-package agent-shell
+  (use-package agent-shell
     :ensure t
     :ensure-system-package
     ;; Add agent installation configs here
@@ -4731,7 +4745,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 ** Emureader
 
 #+begin_src emacs-lisp
-(use-package emureader)
+  (use-package emureader)
 #+end_src
 
 * Calc
@@ -4764,7 +4778,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
   (bind-key "s-d" 'randy-dashboard-open)
 
   (setq randy-dashboard-recent-files-exclude
-	    '("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "refile-beorg.org" "beorg-customize-init.org" "apple-calendar.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld" "docx" "maildir"))
+	'("/emacs/config.org" "tasks.org" "events.org" "calendar-beorg.org" "refile-beorg.org" "beorg-customize-init.org" "apple-calendar.org" "lib.typ" "typst.toml" "index" "init.el" "cookies" "xml" "publish.el" "eld" "docx" "maildir"))
 
   (defun dashboard-startup ()
     (randy-dashboard-open)
@@ -4801,13 +4815,13 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 
 #+begin_src emacs-lisp
   (pretty-hydra-define orglatex
-      (:color teal :quit-key "q" :title "Org LaTeX")
-      (" "
-       (("l" rlr/org-mklua "Make PDF with LuaLaTeX")
-	("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
-	("c" tex-clean "clean aux")
-	("C" tex-clean-all "clean all")
-	("o" rlr/org-open-pdf "View PDF"))))
+    (:color teal :quit-key "q" :title "Org LaTeX")
+    (" "
+     (("l" rlr/org-mklua "Make PDF with LuaLaTeX")
+      ("p" rlr/org-mkpdf "Make PDF with PDFLaTeX")
+      ("c" tex-clean "clean aux")
+      ("C" tex-clean-all "clean all")
+      ("o" rlr/org-open-pdf "View PDF"))))
 #+end_src
 
 *** Hydra Toggle
@@ -4865,7 +4879,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 *** Hydra Locate
 
 #+begin_src emacs-lisp
-  z(pretty-hydra-define hydra-locate
+  (pretty-hydra-define hydra-locate
     (:color teal :quit-key "q" title: "Search")
     ("Buffer"
      (("c" pulsar-highlight-pulse "find cursor")
@@ -5270,48 +5284,48 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
     (:quit-key "q")
     ("Timelines"
      (("H" mastodon-tl--get-home-timeline)
-    ("L" mastodon-tl--get-local-timeline)
-    ("F" mastodon-tl--get-federated-timeline)
-    ("V" mastodon-profile--view-favourites)
-    ("#" mastodon-tl--get-tag-timeline)
-    ("@" mastodon-notifications--get-mentions)
-    ("K" mastodon-profile--view-bookmarks)
-    ("g" mastodon-search--trending-tags)
-    ("u" mastodon-tl--update :exit nil))
-"Toots"
-    (("n" mastodon-tl--goto-next-toot)
-    ("p" mastodon-tl--goto-prev-toot)
-    ("T" mastodon-tl--thread)
-    ("b" mastodon-toot--toggle-boost :exit nil)
-    ("f" mastodon-toot--toggle-favourite :exit nil)
-    ("i" mastodon-toot--pin-toot-toggle :exit nil)
-    ("k" mastodon-toot--bookmark-toot-toggle :exit nil)
-    ("c" mastodon-tl--toggle-spoiler-text-in-toot)
-    ("v" mastodon-tl--poll-vote))
-"Own Toots"
-    (("A" mastodon-profile--get-toot-author)
-    ("P" mastodon-profile--show-user)
-    ("O" mastodon-profile--my-profile)
-    ("U" mastodon-profile--update-user-profile-note))
-"Profiles"
-    (("W" mastodon-tl--follow-user)
-    ("N" mastodon-notifications-get)
-    ("R" mastodon-profile--view-follow-requests)
-    ("G" mastodon-tl--get-follow-suggestions)
-    ("M" mastodon-tl--mute-user)
-    ("B" mastodon-tl--block-user))
-"Users/Follows"
-    (("r" mastodon-toot--reply)
-    ("t" mastodon-toot)
-    ("e" mastodon-toot--edit-toot-at-point)
-    ("d" mastodon-toot--delete-toot)
-    ("E" mastodon-toot--view-toot-edits))
-"Misc"
-    (("I" mastodon-tl--view-filters)
-    ("X" mastodon-tl--view-lists)
-    ("C" mastodon-toot--copy-toot-url)
-    ("S" mastodon-search--search-query)
-    ("h" describe-mode))))
+      ("L" mastodon-tl--get-local-timeline)
+      ("F" mastodon-tl--get-federated-timeline)
+      ("V" mastodon-profile--view-favourites)
+      ("#" mastodon-tl--get-tag-timeline)
+      ("@" mastodon-notifications--get-mentions)
+      ("K" mastodon-profile--view-bookmarks)
+      ("g" mastodon-search--trending-tags)
+      ("u" mastodon-tl--update :exit nil))
+     "Toots"
+     (("n" mastodon-tl--goto-next-toot)
+      ("p" mastodon-tl--goto-prev-toot)
+      ("T" mastodon-tl--thread)
+      ("b" mastodon-toot--toggle-boost :exit nil)
+      ("f" mastodon-toot--toggle-favourite :exit nil)
+      ("i" mastodon-toot--pin-toot-toggle :exit nil)
+      ("k" mastodon-toot--bookmark-toot-toggle :exit nil)
+      ("c" mastodon-tl--toggle-spoiler-text-in-toot)
+      ("v" mastodon-tl--poll-vote))
+     "Own Toots"
+     (("A" mastodon-profile--get-toot-author)
+      ("P" mastodon-profile--show-user)
+      ("O" mastodon-profile--my-profile)
+      ("U" mastodon-profile--update-user-profile-note))
+     "Profiles"
+     (("W" mastodon-tl--follow-user)
+      ("N" mastodon-notifications-get)
+      ("R" mastodon-profile--view-follow-requests)
+      ("G" mastodon-tl--get-follow-suggestions)
+      ("M" mastodon-tl--mute-user)
+      ("B" mastodon-tl--block-user))
+     "Users/Follows"
+     (("r" mastodon-toot--reply)
+      ("t" mastodon-toot)
+      ("e" mastodon-toot--edit-toot-at-point)
+      ("d" mastodon-toot--delete-toot)
+      ("E" mastodon-toot--view-toot-edits))
+     "Misc"
+     (("I" mastodon-tl--view-filters)
+      ("X" mastodon-tl--view-lists)
+      ("C" mastodon-toot--copy-toot-url)
+      ("S" mastodon-search--search-query)
+      ("h" describe-mode))))
 
 #+end_src
 
