@@ -337,52 +337,6 @@ Quit transient menus with escape. This affects /all/ transient menus, so it migh
 
 *** Casual Suite
 
-#+begin_src emacs-lisp :tangle no
-  (use-package casual-suite
-    :bind
-    ("H-." . casual-editkit-main-tmenu)
-    ("M-g a" . casual-avy-tmenu)
-    :config
-    (casual-suite-init))
-
-  (with-eval-after-load 'dired
-    (bind-key "s-." #'casual-dired-tmenu dired-mode-map))
-
-  (with-eval-after-load 'calc
-    (bind-key "s-." #'casual-calc-tmenu calc-mode-map))
-
-  (with-eval-after-load 'isearch
-    (bind-key "s-." #'casual-isearch-tmenu isearch-mode-map))
-
-  (with-eval-after-load 'reb
-    (bind-key "s-." #'casual-re-builder-menu casual-re-builder-map))
-
-  (with-eval-after-load 'ibuffer
-    (bind-key "s-." #'casual-ibuffer-tmenu ibuffer-mode-map)
-    (bind-key "F" #'casual-ibuffer-filter-tmenu ibuffer-mode-map)
-    (bind-key "s" #'casual-ibuffer-sortby-tmenu ibuffer-mode-map))
-
-  (with-eval-after-load 'bookmark
-    (bind-key "s-." #'casual-bookmarks-tmenu bookmark-bmenu-mode-map))
-
-  (with-eval-after-load 'org-agenda
-    (bind-key "s-." #'casual-agenda-tmenu org-agenda-mode-map))
-
-  (with-eval-after-load 'Info
-    (bind-key "s-." #'casual-info-tmenu Info-mode-map))
-
-  (with-eval-after-load 'calendar
-    (bind-key "s-." #'casual-calendar-tmenu calendar-mode-map))
-
-  (with-eval-after-load 'eww
-    (bind-key "s-." #'casual-eww-tmenu eww-mode-map))
-
-  (with-eval-after-load 'org
-    (bind-key "s-." #'casual-org-tmenu org-mode-map))
-
-  (bind-key "H-r" 'casual-editkit-rectangle-tmenu)
-#+end_src
-
 #+begin_src emacs-lisp
   (use-package casual
     :custom
@@ -1997,6 +1951,25 @@ Ediff settings.
 				; Horizontal splitting really ought to be the default, honestly.
   (setq ediff-split-window-function 'split-window-horizontally)
 #+end_src
+
+** CSV
+
+Recommended settings for [[https://kickingvegas.github.io/casual/CSV-Install.html][casual-suite]].
+
+#+begin_src emacs-lisp
+;; disable line wrap
+(add-hook 'csv-mode-hook
+          (lambda ()
+            (visual-line-mode -1)
+            (toggle-truncate-lines 1)))
+
+;; auto detect separator
+(add-hook 'csv-mode-hook #'csv-guess-set-separator)
+;; turn on field alignment
+(add-hook 'csv-mode-hook #'csv-align-mode)
+#+end_src
+
+
 
 ** Surround
 

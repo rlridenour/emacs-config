@@ -1156,6 +1156,17 @@ The file is opened in a temporary buffer that is killed after export."
 				; Horizontal splitting really ought to be the default, honestly.
 (setq ediff-split-window-function 'split-window-horizontally)
 
+;; disable line wrap
+(add-hook 'csv-mode-hook
+          (lambda ()
+            (visual-line-mode -1)
+            (toggle-truncate-lines 1)))
+
+;; auto detect separator
+(add-hook 'csv-mode-hook #'csv-guess-set-separator)
+;; turn on field alignment
+(add-hook 'csv-mode-hook #'csv-align-mode)
+
 (use-package surround
   :ensure t
   :bind-keymap ("H-'" . surround-keymap))
