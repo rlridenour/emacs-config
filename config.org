@@ -1751,7 +1751,7 @@ Go to current directory in Ghostty.
 
 Add Prot's Emacs Lisp Elements to Info
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (setq Info-additional-directory-list '("~/github/emacs-lisp-elements/"))
 #+end_src
 
@@ -1952,6 +1952,17 @@ Ediff settings.
   (setq ediff-split-window-function 'split-window-horizontally)
 #+end_src
 
+Open links with browse-url without stealing focus from Emacs.
+
+#+begin_src emacs-lisp
+(defun rlr/browse-url-macos-background (url &optional _new-window)
+  "Open URL in the default macOS browser in the background."
+  (interactive (browse-url-interactive-arg "URL: "))
+  (start-process (concat "open " url) nil "open" "-g" url))
+
+;; (setq browse-url-browser-function #'rlr/browse-url-macos-background)
+#+end_src
+
 ** CSV
 
 Recommended settings for [[https://kickingvegas.github.io/casual/CSV-Install.html][casual-suite]].
@@ -1959,17 +1970,15 @@ Recommended settings for [[https://kickingvegas.github.io/casual/CSV-Install.htm
 #+begin_src emacs-lisp
 ;; disable line wrap
 (add-hook 'csv-mode-hook
-          (lambda ()
-            (visual-line-mode -1)
-            (toggle-truncate-lines 1)))
+	  (lambda ()
+	    (visual-line-mode -1)
+	    (toggle-truncate-lines 1)))
 
 ;; auto detect separator
 (add-hook 'csv-mode-hook #'csv-guess-set-separator)
 ;; turn on field alignment
 (add-hook 'csv-mode-hook #'csv-align-mode)
 #+end_src
-
-
 
 ** Surround
 
@@ -2588,15 +2597,15 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
 	   (base  (file-name-base buffer-file-name))
 	   (exact (concat base ".pdf"))
 	   (regex (concat "\\`"
-			  (mapconcat #'regexp-quote (split-string base "-") ".*")
-			  ".*\\.pdf\\'"))
+		    (mapconcat #'regexp-quote (split-string base "-") ".*")
+		    ".*\\.pdf\\'"))
 	   (pdf   (if (file-exists-p (expand-file-name exact dir))
-		      exact
-		    (let ((matches (directory-files dir nil regex)))
-		      (cond ((null matches)
-			     (user-error "No PDF found for %s" base))
-			    ((null (cdr matches)) (car matches))
-			    (t (completing-read "Open PDF: " matches nil t)))))))
+		exact
+		(let ((matches (directory-files dir nil regex)))
+		(cond ((null matches)
+		       (user-error "No PDF found for %s" base))
+		      ((null (cdr matches)) (car matches))
+		      (t (completing-read "Open PDF: " matches nil t)))))))
       (async-shell-command-no-window
        (concat "open -g " (shell-quote-argument (expand-file-name pdf dir))))))
 
@@ -2630,7 +2639,7 @@ This fixes alignment problems in Org tables that have hidden emphasis markers.
 		      (delete-region beg (point)))
 		    (insert (concat " " (format-time-string "%B %e, %Y")))))
 
-#+end_src
+			    #+end_src
 
 Use [[https://math.nist.gov/~BMiller/LaTeXML/ussage.html][latexml]] to export latex to html. Load additional packages by adding --preload= flags.
 
@@ -2655,7 +2664,8 @@ Use my custom exporter, ox-rlr-typst.
     (save-buffer)
     ;; (org-typst-export-to-typst) ;; ox-typst
     (org-rlr-typst-export-to-typst) ;; ox-rlr-typst
-    (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
+    (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ")))))
+    (rlr/org-open-pdf))
 #+end_src
 
 This exports the Org file to Typst, starts typst-watch, opens the PDF, then exports again on subsequent saves of the Org file. Uses ox-rlr-typst for export.
@@ -2758,6 +2768,32 @@ Export exam data files to Typst
 
 #+begin_src emacs-lisp
   (require 'ox-exam)
+#+end_src
+
+** Burnish
+
+#+begin_src emacs-lisp
+  (use-package burnish
+    :custom
+    (burnish-export-functions '((html . burnish-export-html)
+  				(md . burnish-export-md)
+  				(odt . burnish-export-odt)
+  				(info . burnish-export-info)
+  				(latex-pdf . burnish-export-latex-pdf)
+  				(typst-pdf . burnish-export-typst-pdf)
+  				(mosaic-pdf . burnish-export-mosaic-pdf )))
+    :config
+    (defun burnish-export-typst-pdf ()
+      "Export Org file to Typst PDF and view."
+      (let ((basename (file-name-sans-extension (buffer-file-name))))
+  	(org-rlr-typst-export-to-pdf)
+  	(rlr/browse-url-macos-background (file-name-with-extension basename "pdf"))))
+    
+    (defun burnish-export-mosaic-pdf ()
+      "Export Org file to Typst PDF and view."
+      (let ((basename (file-name-sans-extension (buffer-file-name))))
+        (org-rlr-mosaic-export-to-pdf)
+  	(rlr/browse-url-macos-background (file-name-with-extension basename "pdf")))))
 #+end_src
 
 ** Citations
@@ -4207,6 +4243,38 @@ Show images from Woot.
 						     :with-toc nil)))
 #+end_src
 
+This forces mu4e to display remote images in xwidget and browswer.
+
+#+begin_src emacs-lisp :tangle no
+  (with-eval-after-load 'mu4e-view-html
+    (setq mu4e--view-html-meta
+	  (concat "<meta charset=\"utf-8\">"
+		  "<meta http-equiv=\"Content-Security-Policy\" content=\""
+		  "default-src 'none'; style-src 'unsafe-inline'; "
+		  "img-src data: https: http:; font-src data:; "
+		  "form-action 'none'; base-uri 'none'\">")))
+#+end_src
+
+This displays remote images when opened in a browser.
+
+#+begin_src emacs-lisp
+(defun rlr/mu4e-view-in-browser-with-images (msg)
+  "View MSG in a browser, allowing remote images."
+  (let ((mu4e--view-html-meta
+	 (concat "<meta charset=\"utf-8\">"
+		 "<meta http-equiv=\"Content-Security-Policy\" content=\""
+		 "default-src 'none'; style-src 'unsafe-inline'; "
+		 "img-src data: https: http:; font-src data:; "
+		 "form-action 'none'; base-uri 'none'\">")))
+    (mu4e-action-view-in-browser msg)))
+
+(with-eval-after-load 'mu4e
+  (add-to-list 'mu4e-view-actions
+	       '("images in browser" . rlr/mu4e-view-in-browser-with-images) t)
+  (add-to-list 'mu4e-headers-actions
+	       '("images in browser" . rlr/mu4e-view-in-browser-with-images) t))
+#+end_src
+
 Quit Mu4e and close tab.
 
 #+begin_src emacs-lisp
@@ -4653,6 +4721,13 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 #+end_src
 
 * Coding
+** Indent Bars
+
+#+begin_src emacs-lisp :tangle no
+(use-package indent-bars
+  :hook ((yaml-mode) . indent-bars-mode))
+#+end_src
+
 
 ** Language Detection
 
@@ -4682,6 +4757,62 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
     ;; Add agent installation configs here
     ((claude . "brew install claude-code")
      (claude-agent-acp . "npm install -g @agentclientprotocol/claude-agent-acp")))
+#+end_src
+
+** YAML
+
+#+begin_src emacs-lisp :tangle no
+  (setq yaml-indent-offset 2)
+  (add-hook 'yaml-mode-hook
+	    (lambda ()
+	      (define-key yaml-mode-map "\C-m" 'newline-and-indent)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package treesit
+    :ensure nil
+    :config
+    (add-to-list 'treesit-language-source-alist
+	     '(yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+  ;; Run this once: M-x treesit-install-language-grammar RET yaml RET
+
+  (use-package yaml-ts-mode
+    :ensure nil
+    :mode ("\.ya?ml\'" . yaml-ts-mode)
+    :hook (yaml-ts-mode . my/yaml-setup))
+
+  (defun my/yaml-setup ()
+    "Settings for any YAML buffer."
+    (setq-local indent-tabs-mode nil ; YAML forbids tabs for indentation
+	    tab-width 2
+	    standard-indent 2)
+    (display-line-numbers-mode 1)
+    (setq-local show-trailing-whitespace t))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package indent-bars
+    :ensure t
+    :hook ((yaml-ts-mode yaml-mode) . indent-bars-mode)
+    :custom
+    (indent-bars-treesit-support t)
+    (indent-bars-starting-column 0))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package eglot
+    :ensure nil
+    :hook ((yaml-ts-mode yaml-mode) . eglot-ensure)
+    :config
+    (setq-default eglot-workspace-configuration
+	      (plist-put (default-value 'eglot-workspace-configuration)
+		       :yaml '(:format (:enable t)
+				   :validate t
+				   :hover t
+				   :completion t
+				   :schemaStore (:enable t)))))
 #+end_src
 
 * PDF Readers
@@ -4762,6 +4893,14 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 
 #+begin_src emacs-lisp
   (add-hook 'server-after-make-frame-hook #'dashboard-startup)
+#+end_src
+
+* Password
+
+#+begin_src emacs-lisp
+(use-package password-store-menu
+  :config (password-store-menu-enable)
+  :custom (password-store-menu-key "C-c p"))
 #+end_src
 
 * Keybindings

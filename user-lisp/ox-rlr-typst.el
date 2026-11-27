@@ -69,7 +69,8 @@
 ;;
 ;; Usage: `M-x org-rlr-typst-export-to-typst' exports the current
 ;; buffer to a sibling ".typ" file; `M-x org-rlr-typst-export-as-typst'
-;; exports to a temporary buffer instead.
+;; exports to a temporary buffer instead; `M-x org-rlr-typst-export-to-pdf'
+;; exports and then compiles the result with the `typst' binary.
 
 ;;; Code:
 
@@ -104,6 +105,15 @@ and `:with-latex' is non-nil."
   :group 'org-export-rlr-typst
   :type 'string)
 
+(defcustom org-rlr-typst-compile-command '("typst" "compile" "%f" "%o")
+  "Command used to turn the exported `.typ' file into a PDF.
+A list of strings: the program followed by its arguments, run without a
+shell.  In each element `%f' is replaced by the `.typ' file name and
+`%o' by the PDF file name.  Add arguments such as \"--root\" or
+\"--font-path\" here as needed."
+  :group 'org-export-rlr-typst
+  :type '(repeat string))
+
 (defcustom org-rlr-typst-list-attributes
   '(("wrap" . org-rlr-typst--list-attr-wrap))
   "Handlers for `#+ATTR_TYPST' attributes written above a plain list.
@@ -132,7 +142,12 @@ are ignored."
         (?o "To file and open"
             (lambda (a s v b)
               (if a (org-rlr-typst-export-to-typst t s v)
-                (org-open-file (org-rlr-typst-export-to-typst nil s v)))))))
+                (org-open-file (org-rlr-typst-export-to-typst nil s v)))))
+        (?p "To PDF file" org-rlr-typst-export-to-pdf)
+        (?P "To PDF file and open"
+            (lambda (a s v b)
+              (if a (org-rlr-typst-export-to-pdf t s v)
+                (org-open-file (org-rlr-typst-export-to-pdf nil s v)))))))
   :translate-alist
   '((bold . org-rlr-typst-bold)
     (center-block . org-rlr-typst-center-block)
@@ -873,6 +888,41 @@ Return output file's name."
   (interactive)
   (let ((outfile (org-export-output-file-name ".typ" subtreep)))
     (org-export-to-file 'rlr-typst outfile async subtreep visible-only)))
+
+;;;###autoload
+(defun org-rlr-typst-compile (typfile)
+  "Compile TYPFILE to a PDF with `org-rlr-typst-compile-command'.
+Return the PDF's file name.  If the compiler fails, signal an error
+whose message is the compiler's output."
+  (let* ((typfile (expand-file-name typfile))
+         (pdf (concat (file-name-sans-extension typfile) ".pdf"))
+         (spec `((?f . ,typfile) (?o . ,pdf)))
+         (args (mapcar (lambda (a) (format-spec a spec))
+                       org-rlr-typst-compile-command))
+         (program (car args)))
+    (unless (executable-find program)
+      (user-error "Cannot find `%s'; is Typst installed?" program))
+    (message "Compiling %s..." (file-name-nondirectory typfile))
+    (with-temp-buffer
+      (let ((status (apply #'call-process program nil t nil (cdr args))))
+        (unless (eq status 0)
+          (error "Typst compilation failed:\n%s" (buffer-string)))))
+    (message "Wrote %s" (file-name-nondirectory pdf))
+    pdf))
+
+;;;###autoload
+(defun org-rlr-typst-export-to-pdf (&optional async subtreep visible-only)
+  "Export current buffer to a Typst file, then compile it to PDF.
+
+ASYNC, SUBTREEP and VISIBLE-ONLY are as in
+`org-rlr-typst-export-to-typst'.  The compile step is controlled by
+`org-rlr-typst-compile-command'.
+
+Return the PDF file's name."
+  (interactive)
+  (let ((outfile (org-export-output-file-name ".typ" subtreep)))
+    (org-export-to-file 'rlr-typst outfile
+      async subtreep visible-only nil nil #'org-rlr-typst-compile)))
 
 ;;;###autoload
 (defun org-rlr-typst-publish-to-typst (plist filename pub-dir)

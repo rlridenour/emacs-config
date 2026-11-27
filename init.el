@@ -1156,11 +1156,18 @@ The file is opened in a temporary buffer that is killed after export."
 				; Horizontal splitting really ought to be the default, honestly.
 (setq ediff-split-window-function 'split-window-horizontally)
 
+(defun rlr/browse-url-macos-background (url &optional _new-window)
+  "Open URL in the default macOS browser in the background."
+  (interactive (browse-url-interactive-arg "URL: "))
+  (start-process (concat "open " url) nil "open" "-g" url))
+
+;; (setq browse-url-browser-function #'rlr/browse-url-macos-background)
+
 ;; disable line wrap
 (add-hook 'csv-mode-hook
-          (lambda ()
-            (visual-line-mode -1)
-            (toggle-truncate-lines 1)))
+	  (lambda ()
+	    (visual-line-mode -1)
+	    (toggle-truncate-lines 1)))
 
 ;; auto detect separator
 (add-hook 'csv-mode-hook #'csv-guess-set-separator)
@@ -1605,15 +1612,15 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
 	   (base  (file-name-base buffer-file-name))
 	   (exact (concat base ".pdf"))
 	   (regex (concat "\\`"
-			  (mapconcat #'regexp-quote (split-string base "-") ".*")
-			  ".*\\.pdf\\'"))
+		    (mapconcat #'regexp-quote (split-string base "-") ".*")
+		    ".*\\.pdf\\'"))
 	   (pdf   (if (file-exists-p (expand-file-name exact dir))
-		      exact
-		    (let ((matches (directory-files dir nil regex)))
-		      (cond ((null matches)
-			     (user-error "No PDF found for %s" base))
-			    ((null (cdr matches)) (car matches))
-			    (t (completing-read "Open PDF: " matches nil t)))))))
+		exact
+		(let ((matches (directory-files dir nil regex)))
+		(cond ((null matches)
+		       (user-error "No PDF found for %s" base))
+		      ((null (cdr matches)) (car matches))
+		      (t (completing-read "Open PDF: " matches nil t)))))))
     (async-shell-command-no-window
      (concat "open -g " (shell-quote-argument (expand-file-name pdf dir))))))
 
@@ -1659,7 +1666,8 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
   (save-buffer)
   ;; (org-typst-export-to-typst) ;; ox-typst
   (org-rlr-typst-export-to-typst) ;; ox-rlr-typst
-  (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ"))))))
+  (async-shell-command-no-window (concat "typst compile " (shell-quote-argument(file-name-nondirectory (file-name-with-extension buffer-file-name "typ")))))
+  (rlr/org-open-pdf))
 
 (defvar rlr/org-rlr-typst-watch-processes (make-hash-table :test 'equal)
   "Hash table mapping org file paths to their typst watch processes.")
@@ -1752,6 +1760,28 @@ matches 26f-midterm-exam.pdf).  Prompts if more than one file matches."
   (shell-command "canvas-handout"))
 
 (require 'ox-exam)
+
+(use-package burnish
+  :custom
+  (burnish-export-functions '((html . burnish-export-html)
+				(md . burnish-export-md)
+				(odt . burnish-export-odt)
+				(info . burnish-export-info)
+				(latex-pdf . burnish-export-latex-pdf)
+				(typst-pdf . burnish-export-typst-pdf)
+				(mosaic-pdf . burnish-export-mosaic-pdf )))
+  :config
+  (defun burnish-export-typst-pdf ()
+    "Export Org file to Typst PDF and view."
+    (let ((basename (file-name-sans-extension (buffer-file-name))))
+	(org-rlr-typst-export-to-pdf)
+	(rlr/browse-url-macos-background (file-name-with-extension basename "pdf"))))
+  
+  (defun burnish-export-mosaic-pdf ()
+    "Export Org file to Typst PDF and view."
+    (let ((basename (file-name-sans-extension (buffer-file-name))))
+      (org-rlr-mosaic-export-to-pdf)
+	(rlr/browse-url-macos-background (file-name-with-extension basename "pdf")))))
 
 (use-package oc
   :ensure nil
@@ -2883,6 +2913,22 @@ Calling this again on an already-watched buffer stops the old watcher first."
 
 (add-hook 'message-send-hook #'my-confirm-empty-subject)
 
+(defun rlr/mu4e-view-in-browser-with-images (msg)
+  "View MSG in a browser, allowing remote images."
+  (let ((mu4e--view-html-meta
+	 (concat "<meta charset=\"utf-8\">"
+		 "<meta http-equiv=\"Content-Security-Policy\" content=\""
+		 "default-src 'none'; style-src 'unsafe-inline'; "
+		 "img-src data: https: http:; font-src data:; "
+		 "form-action 'none'; base-uri 'none'\">")))
+    (mu4e-action-view-in-browser msg)))
+
+(with-eval-after-load 'mu4e
+  (add-to-list 'mu4e-view-actions
+	       '("images in browser" . rlr/mu4e-view-in-browser-with-images) t)
+  (add-to-list 'mu4e-headers-actions
+	       '("images in browser" . rlr/mu4e-view-in-browser-with-images) t))
+
 (defun rlr/quit-mu4e ()
   (interactive)
   (mu4e-quit)
@@ -3194,6 +3240,46 @@ Calling this again on an already-watched buffer stops the old watcher first."
   ((claude . "brew install claude-code")
    (claude-agent-acp . "npm install -g @agentclientprotocol/claude-agent-acp")))
 
+(use-package treesit
+  :ensure nil
+  :config
+  (add-to-list 'treesit-language-source-alist
+	     '(yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+;; Run this once: M-x treesit-install-language-grammar RET yaml RET
+
+(use-package yaml-ts-mode
+  :ensure nil
+  :mode ("\.ya?ml\'" . yaml-ts-mode)
+  :hook (yaml-ts-mode . my/yaml-setup))
+
+(defun my/yaml-setup ()
+  "Settings for any YAML buffer."
+  (setq-local indent-tabs-mode nil ; YAML forbids tabs for indentation
+	    tab-width 2
+	    standard-indent 2)
+  (display-line-numbers-mode 1)
+  (setq-local show-trailing-whitespace t))
+
+(use-package indent-bars
+  :ensure t
+  :hook ((yaml-ts-mode yaml-mode) . indent-bars-mode)
+  :custom
+  (indent-bars-treesit-support t)
+  (indent-bars-starting-column 0))
+
+(use-package eglot
+  :ensure nil
+  :hook ((yaml-ts-mode yaml-mode) . eglot-ensure)
+  :config
+  (setq-default eglot-workspace-configuration
+	      (plist-put (default-value 'eglot-workspace-configuration)
+		       :yaml '(:format (:enable t)
+				   :validate t
+				   :hover t
+				   :completion t
+				   :schemaStore (:enable t)))))
+
 (use-package pdf-tools
   :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
   :init
@@ -3242,6 +3328,10 @@ Calling this again on an already-watched buffer stops the old watcher first."
   )
 
 (add-hook 'server-after-make-frame-hook #'dashboard-startup)
+
+(use-package password-store-menu
+  :config (password-store-menu-enable)
+  :custom (password-store-menu-key "C-c p"))
 
 (pretty-hydra-define hydra-blog
   (:color teal :quit-key "q" :title "Blog")
