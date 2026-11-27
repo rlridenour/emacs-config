@@ -3268,18 +3268,6 @@ Calling this again on an already-watched buffer stops the old watcher first."
   (indent-bars-treesit-support t)
   (indent-bars-starting-column 0))
 
-(use-package eglot
-  :ensure nil
-  :hook ((yaml-ts-mode yaml-mode) . eglot-ensure)
-  :config
-  (setq-default eglot-workspace-configuration
-	      (plist-put (default-value 'eglot-workspace-configuration)
-		       :yaml '(:format (:enable t)
-				   :validate t
-				   :hover t
-				   :completion t
-				   :schemaStore (:enable t)))))
-
 (use-package pdf-tools
   :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
   :init

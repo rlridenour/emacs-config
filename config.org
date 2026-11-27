@@ -4801,7 +4801,7 @@ Helper functions (open links in a new tab, toggle images, Safari page in EWW, EW
 #+end_src
 
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package eglot
     :ensure nil
     :hook ((yaml-ts-mode yaml-mode) . eglot-ensure)
